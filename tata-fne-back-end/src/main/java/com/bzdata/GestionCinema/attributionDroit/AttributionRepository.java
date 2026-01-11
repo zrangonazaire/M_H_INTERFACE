@@ -1,9 +1,9 @@
 package com.bzdata.GestionCinema.attributionDroit;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AttributionRepository extends JpaRepository<Attribution, Long> {
     List<Attribution> findByUser_Id(int user_Id);
