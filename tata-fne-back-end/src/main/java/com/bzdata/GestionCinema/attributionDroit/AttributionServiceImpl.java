@@ -37,7 +37,7 @@ public class AttributionServiceImpl implements AttributionService {
     }
 
     @Override
-    public AttributionDTO update(Long id, AttributionDTO dto) {
+    public AttributionDTO update(int id, AttributionDTO dto) {
         Attribution entity = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Attribution non trouvée"));
 
@@ -58,7 +58,7 @@ public class AttributionServiceImpl implements AttributionService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(int id) {
         repository.deleteById(id);
     }
 
@@ -70,7 +70,7 @@ public class AttributionServiceImpl implements AttributionService {
     }
 
     @Override
-    public AttributionDTO getById(Long id) {
+    public AttributionDTO getById(int id) {
         Attribution entity = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Attribution non trouvée"));
         return mapper.toDTO(entity);

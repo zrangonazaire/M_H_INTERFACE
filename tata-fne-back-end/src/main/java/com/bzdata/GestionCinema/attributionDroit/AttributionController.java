@@ -41,7 +41,7 @@ public class AttributionController {
 
     // ✅ Mettre à jour une attribution
     @PutMapping("/{id}")
-    public ResponseEntity<HttpResponse> update(@PathVariable Long id, @RequestBody AttributionDTO dto) {
+    public ResponseEntity<HttpResponse> update(@PathVariable int id, @RequestBody AttributionDTO dto) {
         log.info("Updating attribution id {} with data {}", id, dto);
         AttributionDTO updated = service.update(id, dto);
 
@@ -58,7 +58,7 @@ public class AttributionController {
 
     // ✅ Supprimer une attribution
     @DeleteMapping("/{id}")
-    public ResponseEntity<HttpResponse> delete(@PathVariable Long id) {
+    public ResponseEntity<HttpResponse> delete(@PathVariable int id) {
         log.info("Deleting attribution with id {}", id);
         service.delete(id);
 
@@ -91,7 +91,7 @@ public class AttributionController {
 
     // ✅ Récupérer une attribution par ID
     @GetMapping("/{id}")
-    public ResponseEntity<HttpResponse> getById(@PathVariable Long id) {
+    public ResponseEntity<HttpResponse> getById(@PathVariable int id) {
         log.info("Fetching attribution with id {}", id);
         AttributionDTO dto = service.getById(id);
 

@@ -4,10 +4,10 @@ import java.util.List;
 
 public interface AttributionService {
     AttributionDTO create(AttributionDTO dto);
-    AttributionDTO update(Long id, AttributionDTO dto);
-    void delete(Long id);
+    AttributionDTO update(int id, AttributionDTO dto);
+    void delete(int id);
     List<AttributionDTO> getAll();
-    AttributionDTO getById(Long id);
+    AttributionDTO getById(int id);
     List<AttributionDTO> getByUserId(int userId);
     // Nouvelle méthode pour lister les fonctionnalités par role
     List<AttributionDTO> getFunctionalitiesByRoleId(int roleId);
