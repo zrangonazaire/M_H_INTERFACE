@@ -38,6 +38,7 @@ public class security {
                                         "/functionality/**",
                                         "/role-functionalities/**",
                                         "/societes/**",
+                                        "/sync/**",
                                         "/etablissements/**",
                                         "/departments/**",
                                         "/services/**",
