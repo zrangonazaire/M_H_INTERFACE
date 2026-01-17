@@ -36,7 +36,7 @@ public class Functionality {
     private LocalDateTime createdDate;
 
     @LastModifiedDate
-    @Column(insertable = false)
+    @Column
     private LocalDateTime lastModifiedDate;
 
 }

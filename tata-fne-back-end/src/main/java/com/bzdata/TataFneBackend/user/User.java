@@ -53,7 +53,7 @@ public class User  implements UserDetails, Principal {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdDate;
     @LastModifiedDate
-    @Column(insertable = false)
+    @Column
     private LocalDateTime lastModifiedDate;
     @ManyToMany(fetch = EAGER)
     private List<Role> roles;

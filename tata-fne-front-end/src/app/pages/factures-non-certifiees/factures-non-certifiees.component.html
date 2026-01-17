@@ -1,0 +1,183 @@
+<section class="page-header">
+  <div class="container-fluid">
+    <div class="header-grid">
+      <div>
+        <p class="eyebrow">Centre de certification</p>
+        <h1>Factures non certifiees</h1>
+        <p class="subtext">
+          Controle, validation et preparation des factures avant certification.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-light border">Telecharger le modele</button>
+        <input
+          #excelInput
+          type="file"
+          class="d-none"
+          accept=".xls,.xlsx"
+          (change)="onFileSelected($event)"
+        />
+        <button class="btn btn-outline-primary" (click)="excelInput.click()">
+          Lire Excel
+        </button>
+        <button class="btn btn-primary">Nouvelle facture</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-fluid stats-row">
+  <div class="stat-card">
+    <p class="label">Total dossiers</p>
+    <h2>{{ totals().total }}</h2>
+  </div>
+  <div class="stat-card accent">
+    <p class="label">En attente</p>
+    <h2>{{ totals().pending }}</h2>
+  </div>
+  <div class="stat-card">
+    <p class="label">Certifiees</p>
+    <h2>{{ totals().certified }}</h2>
+  </div>
+  <div class="stat-card danger">
+    <p class="label">Rejetes</p>
+    <h2>{{ totals().rejected }}</h2>
+  </div>
+</section>
+
+<section class="container-fluid filters">
+  <div class="filter-grid">
+    <div class="filter-item">
+      <label>Recherche rapide</label>
+      <input
+        class="form-control"
+        type="text"
+        placeholder="Reference, client, identifiant..."
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+    </div>
+    <div class="filter-item">
+      <label>Statut</label>
+      <select
+        class="form-select"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event)"
+      >
+        <option value="all">Tous</option>
+        <option value="a_certifier">A certifier</option>
+        <option value="en_attente">En attente</option>
+        <option value="rejete">Rejete</option>
+        <option value="certifie">Certifie</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>Actions</label>
+      <div class="action-group">
+        <button class="btn btn-outline-secondary">Voir anomalies</button>
+        <button
+          class="btn btn-dark"
+          [disabled]="false"
+          (click)="certifyAll()"
+        >
+          Certification en masse ({{ apiInvoicesCount() }})
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-fluid table-panel">
+  <div class="import-feedback" *ngIf="loadState() === 'error'">
+    <div class="alert alert-danger">
+      {{ loadError() || 'Impossible de charger les factures.' }}
+    </div>
+  </div>
+  <div class="import-feedback" *ngIf="readState() !== 'idle' || certifyState() !== 'idle'">
+    <div class="alert alert-info" *ngIf="readState() === 'loading'">
+      Lecture en cours...
+    </div>
+    <div class="alert alert-success" *ngIf="readState() === 'success' && readResult()">
+      <strong>Lecture terminee.</strong>
+      {{ readResult()!.rowCount }} lignes chargees.
+    </div>
+    <div class="alert alert-danger" *ngIf="readState() === 'error'">
+      {{ readError() || 'Une erreur est survenue.' }}
+    </div>
+    <div class="alert alert-info" *ngIf="certifyState() === 'loading'">
+      Certification en masse en cours...
+    </div>
+    <div class="alert alert-success" *ngIf="certifyState() === 'success'">
+      <strong>Certification terminee.</strong>
+      {{ certifyCount() }} facture(s) certifiee(s).
+    </div>
+    <div class="alert alert-danger" *ngIf="certifyState() === 'error'">
+      {{ certifyError() || 'Une erreur est survenue.' }}
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th scope="col" class="checkbox-col">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [checked]="filteredInvoices().length > 0 && selectedCount() === filteredInvoices().length"
+              (change)="toggleAll($any($event.target).checked)"
+            />
+          </th>
+          <th scope="col">Reference</th>
+          <th scope="col">Client</th>
+          <th scope="col">NCC</th>
+          <th scope="col">Emission</th>
+          <th scope="col">Type</th>
+          <th scope="col">Paiement</th>
+          <th scope="col">Statut</th>
+          <th scope="col">Derniere mise a jour</th>
+          <th scope="col" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invoice of filteredInvoices(); track trackById) {
+          <tr>
+            <td class="checkbox-col">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [checked]="isSelected(invoice.id)"
+                (change)="toggleSelection(invoice.id)"
+              />
+            </td>
+            <td>
+              <div class="fw-semibold">{{ invoice.invoiceNumber }}</div>
+              <small class="text-muted">ID {{ invoice.id }}</small>
+            </td>
+            <td>{{ invoice.clientCompanyName || '-' }}</td>
+            <td>{{ invoice.clientNcc || '-' }}</td>
+            <td>{{ getEmissionLabel(invoice) }}</td>
+            <td>{{ invoice.invoiceType || '-' }}</td>
+            <td>{{ invoice.paymentMethod || '-' }}</td>
+            <td>
+              <span class="status-badge" [class]="normalizeStatus(invoice)">
+                {{ getStatusLabel(normalizeStatus(invoice)) }}
+              </span>
+            </td>
+            <td>{{ getDisplayDateTime(invoice.dateDeModification) }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary">Voir</button>
+              <button class="btn btn-sm btn-outline-secondary">Verifier</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" *ngIf="filteredInvoices().length === 0">
+    <h3>Aucune facture disponible</h3>
+    <p>Modifie tes filtres ou importe un nouveau lot de factures.</p>
+    <button class="btn btn-primary" (click)="excelInput.click()">Lire Excel</button>
+  </div>
+</section>

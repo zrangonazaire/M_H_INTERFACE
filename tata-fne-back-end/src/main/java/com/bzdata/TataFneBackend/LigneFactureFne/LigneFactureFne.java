@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bzdata.TataFneBackend.CustomTaxe.CustomTaxe;
-import com.bzdata.TataFneBackend.FactureFne.FactureNonCertifier;
+import com.bzdata.TataFneBackend.FactureFneNonCertifier.FactureNonCertifier;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
