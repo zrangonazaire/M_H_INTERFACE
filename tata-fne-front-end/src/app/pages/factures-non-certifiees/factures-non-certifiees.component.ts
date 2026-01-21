@@ -245,7 +245,7 @@ export class FacturesNonCertifieesComponent {
     const paymentMethod = this.normalizePaymentMethod(invoice.modePaiement || invoice.paymentMethod);
 
     return {
-      invoiceType: invoice.typeClient || invoice.invoiceType || 'sale',
+      invoiceType: 'sale',
       paymentMethod: paymentMethod,
       template: 'B2B',
       numeroFacture: invoice.invoiceNumber,
