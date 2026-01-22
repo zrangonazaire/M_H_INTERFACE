@@ -26,6 +26,7 @@ export class FacturesNonCertifieesComponent {
 
   readonly invoices = signal<NonCertifiedInvoice[]>([]);
   readonly selected = signal<Set<number>>(new Set());
+  readonly expandedGroups = signal<Set<string>>(new Set());
   readonly loadState = signal<'idle' | 'loading' | 'error'>('idle');
   readonly loadError = signal<string | null>(null);
 
@@ -80,12 +81,43 @@ export class FacturesNonCertifieesComponent {
   );
   readonly apiInvoicesCount = computed(() => this.invoices().filter((invoice) => invoice.source !== 'excel').length);
 
+  readonly groupedInvoices = computed(() => {
+    const filtered = this.filteredInvoices();
+    const grouped = new Map<string, NonCertifiedInvoice[]>();
+    
+    filtered.forEach((invoice) => {
+      const invoiceNumber = invoice.invoiceNumber || 'unknown';
+      if (!grouped.has(invoiceNumber)) {
+        grouped.set(invoiceNumber, []);
+      }
+      grouped.get(invoiceNumber)!.push(invoice);
+    });
+
+    return Array.from(grouped.entries()).map(([invoiceNumber, items]) => ({
+      invoiceNumber,
+      items,
+      mainInvoice: items[0]
+    }));
+  });
+
   toggleSelection(invoiceId: number): void {
     const next = new Set(this.selected());
     if (next.has(invoiceId)) {
       next.delete(invoiceId);
     } else {
       next.add(invoiceId);
+    }
+    this.selected.set(next);
+  }
+
+  toggleGroupSelection(invoiceIds: number[]): void {
+    const next = new Set(this.selected());
+    const allSelected = invoiceIds.every((id) => next.has(id));
+    
+    if (allSelected) {
+      invoiceIds.forEach((id) => next.delete(id));
+    } else {
+      invoiceIds.forEach((id) => next.add(id));
     }
     this.selected.set(next);
   }
@@ -103,6 +135,95 @@ export class FacturesNonCertifieesComponent {
 
   isSelected(invoiceId: number): boolean {
     return this.selected().has(invoiceId);
+  }
+
+  isGroupFullySelected(items: NonCertifiedInvoice[]): boolean {
+    return items.length > 0 && items.every((item) => this.selected().has(item.id));
+  }
+
+  getGroupItemIds(items: NonCertifiedInvoice[]): number[] {
+    return items.map((item) => item.id);
+  }
+
+  toggleGroupExpand(invoiceNumber: string): void {
+    const next = new Set(this.expandedGroups());
+    if (next.has(invoiceNumber)) {
+      next.delete(invoiceNumber);
+    } else {
+      next.add(invoiceNumber);
+    }
+    this.expandedGroups.set(next);
+  }
+
+  isGroupExpanded(invoiceNumber: string): boolean {
+    return this.expandedGroups().has(invoiceNumber);
+  }
+
+  calculateGroupAmountHT(items: NonCertifiedInvoice[]): number {
+    return items.reduce((sum, item) => {
+      const quantity = this.toNumber(item.quantite) ?? 0;
+      const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+      const discount = this.toNumber(item.remise) ?? 0; // Remise en %
+      const amountBeforeDiscount = quantity * unitPrice;
+      const discountAmount = amountBeforeDiscount * (discount / 100);
+      return sum + (amountBeforeDiscount - discountAmount);
+    }, 0);
+  }
+
+  calculateGroupTotalDiscount(items: NonCertifiedInvoice[]): number {
+    return items.reduce((sum, item) => {
+      const quantity = this.toNumber(item.quantite) ?? 0;
+      const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+      const discount = this.toNumber(item.remise) ?? 0; // Remise en %
+      const amountBeforeDiscount = quantity * unitPrice;
+      const discountAmount = amountBeforeDiscount * (discount / 100);
+      return sum + discountAmount;
+    }, 0);
+  }
+
+  calculateGroupAmountTTC(items: NonCertifiedInvoice[]): number {
+    const ht = this.calculateGroupAmountHT(items);
+    const tax = this.calculateGroupTotalTax(items);
+    return ht + tax;
+  }
+
+  calculateGroupTotalTax(items: NonCertifiedInvoice[]): number {
+    return items.reduce((sum, item) => {
+      return sum + this.calculateProductTaxAmount(item);
+    }, 0);
+  }
+
+  calculateProductTaxAmount(item: NonCertifiedInvoice): number {
+    const quantity = this.toNumber(item.quantite) ?? 0;
+    const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+    const discount = this.toNumber(item.remise) ?? 0;
+    const amountBeforeDiscount = quantity * unitPrice;
+    const amountAfterDiscount = amountBeforeDiscount * (1 - discount / 100);
+    const taxRate = this.getTaxRate(item.codeTaxe);
+    return amountAfterDiscount * taxRate;
+  }
+
+  getTaxRate(taxCode: string | null | undefined): number {
+    if (!taxCode) return 0;
+    const code = taxCode.toLowerCase().trim();
+    if (code.includes('tva')) return 0.18; // TVA = 18%
+    if (code.includes('tvac')) return 0.18; // TVAC = 18%
+    if (code.includes('exempt')) return 0; // Exempt
+    return 0.18; // Défaut: 18%
+  }
+
+  getTaxLabel(taxCode: string | null | undefined): string {
+    if (!taxCode) return '-';
+    const code = taxCode.toUpperCase().trim();
+    const rate = this.getTaxRate(taxCode);
+    return `${code} (${Math.round(rate * 100)})`;
+  }
+
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'XOF'
+    }).format(value);
   }
 
   getStatusLabel(status: InvoiceStatus): string {
@@ -219,7 +340,10 @@ export class FacturesNonCertifieesComponent {
       return;
     }
 
-    const payload = this.buildSignRequest(invoice);
+    // Récupérer tous les produits de cette facture
+    const allItems = this.invoices().filter((item) => item.invoiceNumber === numFacture);
+    
+    const payload = this.buildSignRequest(invoice, allItems);
 
     // Log payload sent to backend for traceability
     console.log('Certifier FNE payload', { numFacture, utilisateur, payload });
@@ -238,11 +362,29 @@ export class FacturesNonCertifieesComponent {
     });
   }
 
-  private buildSignRequest(invoice: NonCertifiedInvoice): InvoiceSignRequest {
-    const amount = this.toNumber(invoice.prixUnitaireHT);
-    const quantity = this.toNumber(invoice.quantite);
-    const discount = this.toNumber(invoice.remise);
+  private buildSignRequest(invoice: NonCertifiedInvoice, items: NonCertifiedInvoice[]): InvoiceSignRequest {
     const paymentMethod = this.normalizePaymentMethod(invoice.modePaiement || invoice.paymentMethod);
+
+    // Construire les items à partir de tous les produits
+    const signItems = items.map((item) => {
+      const quantity = this.toNumber(item.quantite) ?? 0;
+      const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+      const discount = this.toNumber(item.remise) ?? 0;
+      
+      // Calculer dynamiquement le montant: (quantité × prix unitaire) × (1 - remise%)
+      const amount = quantity * unitPrice * (1 - discount / 100);
+      
+      return {
+        taxes: item.codeTaxe ? [item.codeTaxe] : undefined,
+        customTaxes: undefined,
+        reference: item.refArticle || undefined,
+        description: item.designation || item.refArticle || undefined,
+        quantity: quantity || undefined,
+        amount: amount || undefined,
+        discount: discount > 0 ? discount : undefined,
+        measurementUnit: item.unite || undefined
+      };
+    });
 
     return {
       invoiceType: 'sale',
@@ -253,18 +395,16 @@ export class FacturesNonCertifieesComponent {
       clientCompanyName: invoice.clientCompanyName || invoice.nomClient || undefined,
       clientPhone: invoice.telephoneClient || undefined,
       clientEmail: invoice.emailClient || undefined,
+      clientSellerName: invoice.clientSellerName || undefined,
       pointOfSale: 'PDV_TATA_AFRICA_CI',
       establishment: 'TATA AFRICA CI',
       commercialMessage: invoice.commentaire || undefined,
-      items: [
-        {
-          taxes: invoice.codeTaxe ? [invoice.codeTaxe] : undefined,
-          description: invoice.designation || invoice.refArticle || undefined,
-          quantity: quantity ?? undefined,
-          amount: amount ?? undefined
-        }
-      ],
-      discount: discount ?? undefined
+      footer: undefined,
+      foreignCurrency: '',
+      foreignCurrencyRate: 0,
+      items: signItems,
+      customTaxes: undefined,
+      discount: undefined
     };
   }
 

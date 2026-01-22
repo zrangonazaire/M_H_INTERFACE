@@ -142,89 +142,98 @@
         <table>
           <thead>
             <tr>
-              <th class="checkbox-col">
-                <input
-                  type="checkbox"
-                  [checked]="filteredInvoices().length > 0 && selectedCount() === filteredInvoices().length"
-                  (change)="toggleAll($any($event.target).checked)"
-                />
-              </th>
-              <th>NumeroFacture</th>
-              <th>TypeClient</th>
-              <th>CodeClient</th>
-              <th>NomClient</th>
-              <th>NCCClient</th>
-              <th>TelephoneClient</th>
-              <th>EmailClient</th>
-              <th>RefArticle</th>
-              <th>Designation</th>
-              <th>Quantite</th>
-              <th>PrixUnitaireHT</th>
-              <th>CodeTaxe</th>
-              <th>Unite</th>
-              <th>Remise</th>
-              <th>ModePaiement</th>
+              <th class="expand-col"></th>
+              <th>Numéro Facture</th>
+              <th>Type Client</th>
+              <th>Client</th>
+              <th>NCC</th>
+              <th>Téléphone</th>
+              <th>Email</th>
+              <th>Mode Paiement</th>
               <th>Devise</th>
-              <th>TauxChange</th>
-              <th>commentaire</th>
-              <th>ClientSellerName</th>
+              <th>Commentaire</th>
+              <th class="text-right">Montant HT</th>
+              <th class="text-right">Montant TTC</th>
               <th>Statut</th>
               <th>Source</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            @for (invoice of filteredInvoices(); track trackById($index, invoice)) {
-              <tr>
-                <td class="checkbox-col">
-                  <input
-                    type="checkbox"
-                    [checked]="isSelected(invoice.id)"
-                    (change)="toggleSelection(invoice.id)"
-                  />
+            @for (group of groupedInvoices(); track group.invoiceNumber) {
+              <tr class="invoice-group-header">
+                <td class="expand-col">
+                  <button class="expand-btn" (click)="toggleGroupExpand(group.invoiceNumber)" title="Afficher/Masquer les produits">
+                    <span class="expand-icon" [class.expanded]="isGroupExpanded(group.invoiceNumber)">▸</span>
+                  </button>
                 </td>
-                <td>
-                  <div class="fw-semibold">{{ invoice.invoiceNumber }}</div>
-                  <small class="muted">ID {{ invoice.id }}</small>
+                <td class="fw-semibold">
+                  <div>{{ group.mainInvoice.invoiceNumber }}</div>
+                  <small class="muted">
+                    Facture ID: {{ group.mainInvoice.id }} • {{ group.items.length }} produit{{ group.items.length > 1 ? 's' : '' }}
+                  </small>
                 </td>
-                <td>{{ invoice.typeClient || invoice.invoiceType || '-' }}</td>
-                <td>{{ invoice.codeClient || '-' }}</td>
-                <td>{{ invoice.clientCompanyName || invoice.nomClient || '-' }}</td>
-                <td>{{ invoice.clientNcc || '-' }}</td>
-                <td>{{ invoice.telephoneClient || '-' }}</td>
-                <td>{{ invoice.emailClient || '-' }}</td>
-                <td>{{ invoice.refArticle || '-' }}</td>
-                <td>{{ invoice.designation || '-' }}</td>
-                <td>{{ invoice.quantite || '-' }}</td>
-                <td>{{ invoice.prixUnitaireHT || '-' }}</td>
-                <td>{{ invoice.codeTaxe || '-' }}</td>
-                <td>{{ invoice.unite || '-' }}</td>
-                <td>{{ invoice.remise || '-' }}</td>
-                <td>{{ invoice.paymentMethod || invoice.modePaiement || '-' }}</td>
-                <td>{{ invoice.devise || '-' }}</td>
-                <td>{{ invoice.tauxChange || '-' }}</td>
-                <td>{{ invoice.commentaire || '-' }}</td>
-                <td>{{ invoice.clientSellerName || '-' }}</td>
+                <td>{{ group.mainInvoice.typeClient || group.mainInvoice.invoiceType || '-' }}</td>
+                <td>{{ group.mainInvoice.clientCompanyName || group.mainInvoice.nomClient || '-' }}</td>
+                <td>{{ group.mainInvoice.clientNcc || '-' }}</td>
+                <td>{{ group.mainInvoice.telephoneClient || '-' }}</td>
+                <td>{{ group.mainInvoice.emailClient || '-' }}</td>
+                <td>{{ group.mainInvoice.paymentMethod || group.mainInvoice.modePaiement || '-' }}</td>
+                <td>{{ group.mainInvoice.devise || '-' }}</td>
+                <td>{{ group.mainInvoice.commentaire || '-' }}</td>
+                <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountHT(group.items)) }}</td>
+                <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountTTC(group.items)) }}</td>
                 <td>
-                  <span class="status-badge" [class]="normalizeStatus(invoice)">
-                    {{ getStatusLabel(normalizeStatus(invoice)) }}
+                  <span class="status-badge" [class]="normalizeStatus(group.mainInvoice)">
+                    {{ getStatusLabel(normalizeStatus(group.mainInvoice)) }}
                   </span>
                 </td>
-                <td>{{ getEmissionLabel(invoice) }}</td>
+                <td>{{ getEmissionLabel(group.mainInvoice) }}</td>
                 <td class="text-end">
                   <button
                     class="primary tiny"
                     type="button"
-                    [disabled]="certifyingId() === invoice.id"
-                    (click)="certifyOne(invoice)"
+                    [disabled]="certifyingId() === group.mainInvoice.id"
+                    (click)="certifyOne(group.mainInvoice)"
                   >
-                    {{ certifyingId() === invoice.id ? 'Certification...' : 'Certifier FNE' }}
+                    {{ certifyingId() === group.mainInvoice.id ? 'Certification...' : 'Certifier' }}
                   </button>
                 </td>
               </tr>
+              @if (isGroupExpanded(group.invoiceNumber)) {
+                <tr class="products-header">
+                  <td colspan="2"></td>
+                  <td class="header-label">Code Client</td>
+                  <td class="header-label">Référence</td>
+                  <td colspan="2" class="header-label">Désignation</td>
+                  <td class="header-label text-center">Quantité</td>
+                  <td class="header-label text-right">Prix HT</td>
+                  <td class="header-label">Taxe</td>
+                  <td class="header-label text-right">Montant TTC</td>
+                  <td class="header-label text-right">Remise %</td>
+                  <td></td>
+                </tr>
+                @for (product of group.items; track product.id) {
+                  <tr class="invoice-item-row">
+                    <td colspan="1"></td>
+                    <td class="item-indent">
+                      <span class="product-indicator">└</span>
+                    </td>
+                    <td>{{ product.codeClient || '-' }}</td>
+                    <td>{{ product.refArticle || '-' }}</td>
+                    <td colspan="2">{{ product.designation || '-' }}</td>
+                    <td class="text-center">{{ product.quantite || '-' }}</td>
+                    <td class="text-right">{{ product.prixUnitaireHT || '-' }}</td>
+                    <td>{{ getTaxLabel(product.codeTaxe) }}</td>
+                    <td class="text-right">{{ formatCurrency(calculateProductTaxAmount(product)) }}</td>
+                    <td class="text-right">{{ product.remise || '-' }}</td>
+                    <td></td>
+                  </tr>
+                }
+              }
             } @empty {
               <tr>
-                <td colspan="10" class="empty">Aucune facture disponible. Modifiez vos filtres ou importez un Excel.</td>
+                <td colspan="13" class="empty">Aucune facture disponible. Modifiez vos filtres ou importez un Excel.</td>
               </tr>
             }
           </tbody>
