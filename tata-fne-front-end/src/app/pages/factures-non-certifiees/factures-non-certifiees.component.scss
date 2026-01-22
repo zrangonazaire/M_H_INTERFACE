@@ -305,6 +305,15 @@ table {
   min-width: 960px;
 }
 
+/* Augmenter la largeur de la colonne Désignation */
+td:nth-child(7),
+th:nth-child(7) {
+  min-width: 350px;
+  max-width: 500px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
 th,
 td {
   padding: 0.75rem;
@@ -330,12 +339,130 @@ tbody tr:hover {
   width: 42px;
 }
 
+.expand-col {
+  width: 50px;
+  text-align: center;
+}
+
+.expand-btn {
+  background: transparent;
+  border: 1px solid #d9e2ef;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.expand-btn:hover {
+  background: #e5f3ff;
+  border-color: #0c3c74;
+}
+
+.expand-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: #0c3c74;
+  font-weight: 700;
+  font-size: 1rem;
+
+  &.expanded {
+    transform: rotate(90deg);
+  }
+}
+
 .fw-semibold {
   font-weight: 700;
 }
 
 .muted {
   color: #6b7280;
+}
+
+.invoice-group-header {
+  background: linear-gradient(90deg, #f7fbff 0%, #eef6ff 100%);
+  font-weight: 700;
+  border-top: 2px solid #0c3c74;
+  border-bottom: 1px solid #d9e2ef;
+}
+
+.invoice-group-header:hover {
+  background: linear-gradient(90deg, #eef6ff 0%, #e6f0ff 100%);
+}
+
+.invoice-item-row {
+  background: #fafbfc;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 0.95rem;
+}
+
+.invoice-item-row:hover {
+  background: #f3f7fc;
+}
+
+.products-header {
+  background: #f0f5fa;
+  border-top: 1px solid #d9e2ef;
+  border-bottom: 2px solid #0c3c74;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0c3c74;
+
+  td {
+    padding: 0.6rem 0.75rem;
+    border: none;
+  }
+}
+
+.header-label {
+  font-weight: 700;
+  color: #0c3c74;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.item-indent {
+  padding-left: 2rem;
+  position: relative;
+}
+
+.product-indicator {
+  color: #0c3c74;
+  font-weight: 700;
+  opacity: 0.6;
+  margin-right: 0.5rem;
+}
+
+.product-count {
+  display: inline-block;
+  background: #e5f3ff;
+  color: #0c3c74;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid rgba(12, 60, 116, 0.2);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .status-badge {
