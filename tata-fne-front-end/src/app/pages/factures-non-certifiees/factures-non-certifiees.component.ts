@@ -441,10 +441,8 @@ export class FacturesNonCertifieesComponent {
       const quantity = this.toNumber(item.quantite) ?? 0;
       const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
       const discount = this.toNumber(item.remise) ?? 0;
-      
-      // Calculer dynamiquement le montant: (quantité × prix unitaire) × (1 - remise%)
-      const amount = quantity * unitPrice * (1 - discount / 100);
-      
+      // amount = prix unitaire HT
+      const amount = unitPrice;
       return {
         taxes: item.codeTaxe ? [item.codeTaxe] : undefined,
         customTaxes: undefined,
