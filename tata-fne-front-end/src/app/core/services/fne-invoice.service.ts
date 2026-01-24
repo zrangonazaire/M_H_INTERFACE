@@ -31,4 +31,37 @@ export class FneInvoiceService {
   certifyFinalFacture(numFacture: string, utilisateur: string, payload: InvoiceSignRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/new-invoices/certify-final-facture/${numFacture}/${utilisateur}`, payload);
   }
+
+  // Retourne une URL probable pour télécharger la facture certifiée (backend doit exposer cet endpoint)
+  getDownloadUrl(numFacture: string): string {
+    return `${this.baseUrl}/new-invoices/download/${encodeURIComponent(numFacture)}`;
+  }
+
+  getByNumero(numeroFacture: string) {
+    return this.http.get<CertifiedInvoice[]>(`${this.baseUrl}/new-invoices/by-numero?numeroFacture=${encodeURIComponent(numeroFacture)}`);
+  }
+
+  getVerificationUrl(token: string): string {
+    if (!token) return '';
+
+    // Si le token est déjà une URL décodée ou encodée (http://... ou http%3A%2F%2F...), retourner l'URL décodée
+    try {
+      const decoded = decodeURIComponent(token);
+      if (/^https?:\/\//i.test(decoded)) return decoded;
+    } catch (e) {
+      // ignore
+    }
+
+    if (/^https?:\/\//i.test(token)) return token;
+
+    try {
+      const u = new URL(this.baseUrl);
+      u.pathname = `/fr/verification/${encodeURIComponent(token)}`;
+      u.search = '';
+      u.hash = '';
+      return u.toString();
+    } catch (e) {
+      return `/fr/verification/${encodeURIComponent(token)}`;
+    }
+  }
 }

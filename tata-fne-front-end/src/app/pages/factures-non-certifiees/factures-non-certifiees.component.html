@@ -58,6 +58,14 @@
       </div>
     </section>
 
+    <!-- Alerte de succès de certification (toujours rendue si présente) -->
+    <div class="alert success" *ngIf="certificationSuccessMessage()">
+      <strong>{{ certificationSuccessMessage() }}</strong>
+      <div *ngIf="certificationDownloadUrl()">
+        <a [href]="certificationDownloadUrl()" target="_blank">Télécharger la facture</a>
+      </div>
+    </div>
+
     <section class="summary">
       <div class="summary-card">
         <p>Total dossiers</p>
@@ -112,7 +120,13 @@
       <div class="alert info" *ngIf="readState() === 'loading'">
         Lecture en cours...
       </div>
-      <div class="alert success" *ngIf="readState() === 'success' && readResult()">
+      <div class="alert success" *ngIf="certificationSuccessMessage()">
+        <strong>{{ certificationSuccessMessage() }}</strong>
+        <div *ngIf="certificationDownloadUrl()">
+          <a [href]="certificationDownloadUrl()" target="_blank">Télécharger la facture</a>
+        </div>
+      </div>
+      <div class="alert success" *ngIf="!certificationSuccessMessage() && readState() === 'success' && readResult()">
         <strong>Lecture terminée.</strong>
         {{ readResult()!.rowCount }} lignes chargées.
       </div>
@@ -207,7 +221,7 @@
                   <td class="header-label">Référence</td>
                   <td colspan="2" class="header-label">Désignation</td>
                   <td class="header-label text-center">Quantité</td>
-                  <td class="header-label text-right">Prix HT</td>
+                    <td class="header-label text-right">Prix unitaire HT</td>
                   <td class="header-label">Taxe</td>
                   <td class="header-label text-right">Montant TTC</td>
                   <td class="header-label text-right">Remise %</td>
@@ -223,10 +237,10 @@
                     <td>{{ product.refArticle || '-' }}</td>
                     <td colspan="2">{{ product.designation || '-' }}</td>
                     <td class="text-center">{{ product.quantite || '-' }}</td>
-                    <td class="text-right">{{ product.prixUnitaireHT || '-' }}</td>
+                    <td class="text-right">{{ displayCurrency(product.prixUnitaireHT) }}</td>
                     <td>{{ getTaxLabel(product.codeTaxe) }}</td>
-                    <td class="text-right">{{ formatCurrency(calculateProductTaxAmount(product)) }}</td>
-                    <td class="text-right">{{ product.remise || '-' }}</td>
+                    <td class="text-right">{{ formatCurrency(calculateLineAmountTTC(product)) }}</td>
+                    <td class="text-right">{{ displayPercentage(product.remise) }}</td>
                     <td></td>
                   </tr>
                 }
