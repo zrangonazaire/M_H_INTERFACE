@@ -40,6 +40,8 @@ export class FacturesNonCertifieesComponent {
   readonly certifyingId = signal<number | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly userFullName = signal('Compte');
+  readonly certificationSuccessMessage = signal<string | null>(null);
+  readonly certificationDownloadUrl = signal<string | null>(null);
 
   constructor(
     private readonly excelService: FneExcelService,
@@ -67,19 +69,35 @@ export class FacturesNonCertifieesComponent {
 
   readonly totals = computed(() => {
     const all = this.invoices();
+    // Grouper par numéro de facture pour compter les factures uniques
+    const grouped = new Map<string, NonCertifiedInvoice[]>();
+    all.forEach((invoice) => {
+      const key = invoice.invoiceNumber || `__${invoice.id}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(invoice);
+    });
+
+    const mains = Array.from(grouped.values()).map((items) => items[0]);
     return {
-      total: all.length,
-      pending: all.filter((invoice) => this.normalizeStatus(invoice) === 'en_attente').length,
-      certified: all.filter((invoice) => this.normalizeStatus(invoice) === 'certifie').length,
-      rejected: all.filter((invoice) => this.normalizeStatus(invoice) === 'rejete').length
+      total: grouped.size,
+      pending: mains.filter((invoice) => this.normalizeStatus(invoice) === 'en_attente').length,
+      certified: mains.filter((invoice) => this.normalizeStatus(invoice) === 'certifie').length,
+      rejected: mains.filter((invoice) => this.normalizeStatus(invoice) === 'rejete').length
     };
   });
 
   readonly selectedCount = computed(() => this.selected().size);
-  readonly selectedApiCount = computed(() =>
-    this.invoices().filter((invoice) => this.selected().has(invoice.id) && invoice.source !== 'excel').length
-  );
-  readonly apiInvoicesCount = computed(() => this.invoices().filter((invoice) => invoice.source !== 'excel').length);
+  readonly selectedApiCount = computed(() => {
+    const sel = this.selected();
+    const selectedItems = this.invoices().filter((invoice) => sel.has(invoice.id) && invoice.source !== 'excel');
+    const unique = new Set(selectedItems.map((i) => i.invoiceNumber || `__${i.id}`));
+    return unique.size;
+  });
+  readonly apiInvoicesCount = computed(() => {
+    const apiItems = this.invoices().filter((invoice) => invoice.source !== 'excel');
+    const unique = new Set(apiItems.map((i) => i.invoiceNumber || `__${i.id}`));
+    return unique.size;
+  });
 
   readonly groupedInvoices = computed(() => {
     const filtered = this.filteredInvoices();
@@ -201,6 +219,28 @@ export class FacturesNonCertifieesComponent {
     const amountAfterDiscount = amountBeforeDiscount * (1 - discount / 100);
     const taxRate = this.getTaxRate(item.codeTaxe);
     return amountAfterDiscount * taxRate;
+  }
+
+  calculateLineAmountTTC(item: NonCertifiedInvoice): number {
+    const quantity = this.toNumber(item.quantite) ?? 0;
+    const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+    const discount = this.toNumber(item.remise) ?? 0;
+    const amountBeforeDiscount = quantity * unitPrice;
+    const amountAfterDiscount = amountBeforeDiscount * (1 - (discount / 100));
+    const taxAmount = this.calculateProductTaxAmount(item);
+    return amountAfterDiscount + taxAmount;
+  }
+
+  // Affiche une valeur monétaire ou '-' si invalide
+  displayCurrency(value: string | number | null | undefined): string {
+    const num = this.toNumber(value);
+    return num === null ? '-' : this.formatCurrency(num);
+  }
+
+  // Affiche un pourcentage (ex: '10 %') ou '-' si invalide
+  displayPercentage(value: string | number | null | undefined): string {
+    const num = this.toNumber(value);
+    return num === null ? '-' : `${num} %`;
   }
 
   getTaxRate(taxCode: string | null | undefined): number {
@@ -351,8 +391,39 @@ export class FacturesNonCertifieesComponent {
     this.certifyingId.set(invoice.id);
     this.invoiceService.certifyFinalFacture(numFacture, utilisateur, payload).subscribe({
       next: () => {
+        // Retirer de l'affichage toutes les lignes appartenant à cette facture
+        this.invoices.set(this.invoices().filter((it) => it.invoiceNumber !== numFacture));
+        this.selected.set(new Set(Array.from(this.selected()).filter((id) => this.invoices().some((inv) => inv.id === id))));
+
+        // Construire un message de succès et un lien de téléchargement probable
+        const msg = `Certification effectuée avec succès: ${numFacture}`;
+        this.certificationSuccessMessage.set(msg);
+
+        // Récupérer la facture certifiée pour obtenir le token public
+        this.invoiceService.getByNumero(numFacture).subscribe({
+          next: (certified) => {
+            if (certified && certified.length > 0 && certified[0].token) {
+              const token = certified[0].token;
+              const verificationUrl = this.invoiceService.getVerificationUrl(token);
+              this.certificationDownloadUrl.set(verificationUrl);
+              console.log('Certification success (with token):', { numFacture, msg, token, verificationUrl });
+            } else {
+              // fallback to previous heuristic
+              const url = this.invoiceService.getDownloadUrl(numFacture);
+              this.certificationDownloadUrl.set(url);
+              console.log('Certification success (no token):', { numFacture, msg, url });
+            }
+          },
+          error: (err) => {
+            const url = this.invoiceService.getDownloadUrl(numFacture);
+            this.certificationDownloadUrl.set(url);
+            console.warn('Failed to fetch certified invoice token, fallback to download URL', err);
+          }
+        });
+
         this.certifyingId.set(null);
-        this.loadInvoices();
+        // réinitialiser l'état de lecture pour remplacer le message "Lecture terminée"
+        this.readState.set('idle');
       },
       error: (error: unknown) => {
         const message = error instanceof Error ? error.message : 'Certification impossible.';
@@ -410,7 +481,26 @@ export class FacturesNonCertifieesComponent {
 
   private toNumber(value: string | number | null | undefined): number | null {
     if (value === null || value === undefined) return null;
-    const num = typeof value === 'number' ? value : Number((value as string).replace(',', '.'));
+    if (typeof value === 'number') return Number.isNaN(value) ? null : value;
+
+    // Normaliser la chaîne : retirer espaces et caractères non numériques sauf . , -
+    let s = (value as string).trim();
+    if (!s) return null;
+    // Enlever caractères non numériques sauf . , -
+    s = s.replace(/[^ -\d.,-]/g, '');
+
+    // Cas où la chaîne contient à la fois '.' et ',' -> supposer que '.' est séparateur de milliers
+    if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+      s = s.replace(/\./g, ''); // enlever points milliers
+      s = s.replace(/,/g, '.'); // la virgule devient décimale
+    } else if (s.indexOf(',') !== -1) {
+      // si seule la virgule est présente, l'utiliser comme séparateur décimal
+      s = s.replace(/,/g, '.');
+    } else {
+      // pas de virgule, points éventuels peuvent être milliers ou décimale selon contexte; on laisse
+    }
+
+    const num = Number(s);
     return Number.isNaN(num) ? null : num;
   }
 
