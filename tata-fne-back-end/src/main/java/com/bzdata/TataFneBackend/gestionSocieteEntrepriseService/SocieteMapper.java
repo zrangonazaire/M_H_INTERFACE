@@ -22,6 +22,8 @@ public class SocieteMapper {
                 .email(dto.getEmail())
                 .siteWeb(dto.getSiteWeb())
                 .dirigeantPrincipal(dto.getDirigeantPrincipal())
+                .exerciceComptableDebut(dto.getExerciceComptableDebut())
+                .exerciceComptableFin(dto.getExerciceComptableFin())
                 .build();
     }
 

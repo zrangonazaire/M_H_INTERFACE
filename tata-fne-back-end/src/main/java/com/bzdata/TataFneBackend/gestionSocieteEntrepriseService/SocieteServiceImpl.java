@@ -70,5 +70,12 @@ public class SocieteServiceImpl implements SocieteService {
                 .map(SocieteMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public org.springframework.data.domain.Page<SocieteResponseDTO> findAll(int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Societe> societePage = societeRepository.findAll(pageable);
+        return societePage.map(SocieteMapper::toResponse);
+    }
 }
 

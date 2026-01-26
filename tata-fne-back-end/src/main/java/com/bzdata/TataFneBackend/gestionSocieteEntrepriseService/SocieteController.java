@@ -20,6 +20,22 @@ import static org.springframework.http.HttpStatus.OK;
 @Slf4j
 public class SocieteController {
 
+    @PostMapping("/societe/save")
+    public ResponseEntity<HttpResponse> saveSociete(@RequestBody SocieteRequestDTO request) {
+        log.info("We are going to save a new societe via singular endpoint {}", request.toString());
+        var saved = societeService.create(request);
+
+        log.info("We have saved a new societe via singular endpoint {}", saved);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("societe saved successfully")
+                        .statusCode(OK.value())
+                        .data(Map.of("societe", saved))
+                        .build()
+        );
+    }
+
     private final SocieteService societeService;
 
     @PostMapping("/create")
@@ -37,6 +53,22 @@ public class SocieteController {
                         .build()
         );
     }
+
+    @PostMapping("/save")
+    public ResponseEntity<HttpResponse> save(@RequestBody SocieteRequestDTO request) {
+        log.info("We are going to save a new societe {}", request.toString());
+        var saved = societeService.create(request);
+
+        log.info("We have saved a new societe {}", saved);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("societe saved successfully")
+                        .statusCode(OK.value())
+                        .data(Map.of("societe", saved))
+                        .build()
+        );
+    }
     @GetMapping
     public ResponseEntity<HttpResponse> findAll() {
         log.info("Fetching all societes...");
@@ -47,7 +79,29 @@ public class SocieteController {
                         .message("Societes retrieved successfully")
                         .statusCode(HttpStatus.OK.value())
                         .httpStatus(HttpStatus.OK)
-                        .data(Map.of("lsitOfSocietes", allSocietes))
+                        .data(Map.of("societies", allSocietes))
+                        .build()
+        );
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<HttpResponse> findAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Fetching paginated societes - page: {}, size: {}", page, size);
+        var societePage = societeService.findAll(page, size);
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Societes retrieved successfully with pagination")
+                        .statusCode(HttpStatus.OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .data(Map.of(
+                                "societies", societePage.getContent(),
+                                "currentPage", societePage.getNumber(),
+                                "totalItems", societePage.getTotalElements(),
+                                "totalPages", societePage.getTotalPages()
+                        ))
                         .build()
         );
     }

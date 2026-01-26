@@ -39,6 +39,8 @@ public class Societe {
     private String email;
     private String siteWeb;
     private String dirigeantPrincipal;
+    private String exerciceComptableDebut;
+    private String exerciceComptableFin;
     @OneToMany(mappedBy = "societe")
     private List<Etablissement> etablissements;
 }
