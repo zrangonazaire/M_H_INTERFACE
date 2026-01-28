@@ -1,20 +1,22 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/tata_fne_db
+    url: jdbc:postgresql://postgres:5432/tata_fne_db
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: false
+      ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
   mail:
-    host: localhost
+    host: mail-dev
     port: 1025
     username: michel
     password: michel
@@ -22,28 +24,28 @@ spring:
       mail:
         smtp:
           trust: "*"
-        auth: true
+        auth: false
         starttls:
-          enabled: true
-        connectiontimeout: 5000
-        timeout: 3000
-        writetimeout: 5000
+          enabled: false
+
+server:
+  port: 8089
 
 application:
   security:
     jwt:
       secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      expiration: 86400000 # a day
+      expiration: 86400000
       refresh-token:
-        expiration: 604800000 # 7 days
+        expiration: 604800000
+
   mailing:
     frontend:
-      activation-url: http://localhost:4200/activate-account
+      activation-url: http://57.129.119.224/activate-account
+
   file:
     uploads:
       photos-output-path: ./uploads
-server:
-  port: 8089
 
 fne:
   base-url: http://54.247.95.108/ws

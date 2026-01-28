@@ -173,6 +173,7 @@
                         <td>
                           <button class="btn-secondary btn-sm">Modifier</button>
                           <button class="btn-danger btn-sm">Supprimer</button>
+                          <button class="btn-primary btn-sm" (click)="loadUsersForDepartment(dept.id)">Gérer les utilisateurs</button>
                         </td>
                       </tr>
                     }
@@ -182,6 +183,80 @@
             }
           </div>
         </div>
+
+        <!-- Department-User Management -->
+        @if (selectedDepartmentForUsers()) {
+          <div class="card mt-4">
+            <div class="card-header">
+              <h4>Gestion des Utilisateurs pour le Département</h4>
+              <p>Département: {{ getDepartmentName(selectedDepartmentForUsers()!) }}</p>
+            </div>
+            <div class="card-body">
+              <!-- Add Users to Department -->
+              <div class="user-assignment-section">
+                <h5>Ajouter des utilisateurs au département</h5>
+                <div class="user-selection">
+                  @for (user of users(); track user.id) {
+                    @if (!isUserInDepartment(user.id)) {
+                      <div class="user-checkbox">
+                        <input type="checkbox" [id]="'user-' + user.id"
+                               [checked]="selectedUsersToAdd().includes(user.id)"
+                               (change)="toggleUserSelection(user.id)">
+                        <label [for]="'user-' + user.id">
+                          {{ user.firstname }} {{ user.lastname }} ({{ user.email }})
+                        </label>
+                      </div>
+                    }
+                  }
+                </div>
+                @if (selectedUsersToAdd().length > 0) {
+                  <button class="btn-primary mt-2" (click)="addUsersToDepartment()" [disabled]="loading()">
+                    @if (loading()) {
+                      <span class="spinner-small"></span> Ajout...
+                    } @else {
+                      Ajouter les utilisateurs sélectionnés
+                    }
+                  </button>
+                }
+              </div>
+
+              <!-- Users in Department -->
+              <div class="department-users-list mt-4">
+                <h5>Utilisateurs dans ce département ({{ usersForDepartment().length }})</h5>
+                @if (usersForDepartment().length === 0) {
+                  <p class="empty-state">Aucun utilisateur dans ce département.</p>
+                } @else {
+                  <div class="table-responsive">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Nom Complet</th>
+                          <th>Email</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (user of usersForDepartment(); track user.id) {
+                          <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.firstname }} {{ user.lastname }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                              <button class="btn-danger btn-sm" (click)="removeUserFromDepartment(selectedDepartmentForUsers()!, user.id)">
+                                Retirer du département
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
       </div>
     }
 

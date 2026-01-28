@@ -90,9 +90,9 @@ public class DepartmentController {
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .message("ServiceUnit created successfully")
+                        .message("Users retrieved successfully")
                         .statusCode(OK.value())
-                        .data(Map.of("ServiceUnit", allusersByservices))
+                        .data(Map.of("users", allusersByservices))
                         .build()
         );
     }

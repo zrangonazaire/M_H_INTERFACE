@@ -53,7 +53,7 @@ export class UserService {
       .pipe(map((response) => response.data.users));
   }
 
-  // Get user by ID (would need to be implemented in backend)
+  // Get user by ID
   getUserById(id: number): Observable<User> {
     return this.http
       .get<ApiResponse<{ user: User }>>(`${this.baseUrl}/users/${id}`)

@@ -117,6 +117,11 @@ export class ParametresComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal<string | null>(null);
 
+  // Department-User Management State
+  selectedDepartmentForUsers = signal<number | null>(null);
+  usersForDepartment = signal<any[]>([]);
+  selectedUsersToAdd = signal<number[]>([]);
+
   constructor(
     private readonly auth: AuthenticationService,
     private readonly router: Router,
@@ -226,6 +231,62 @@ export class ParametresComponent implements OnInit {
       },
       error: (err) => this.handleError('Failed to create department')
     }).add(() => this.loading.set(false));
+  }
+
+  // Department-User Management
+  loadUsersForDepartment(departmentId: number): void {
+    this.loading.set(true);
+    this.selectedDepartmentForUsers.set(departmentId);
+    this.departmentService.getUsersByDepartment(departmentId).subscribe({
+      next: (users) => {
+        this.usersForDepartment.set(users);
+      },
+      error: (err) => this.handleError('Failed to load users for department')
+    }).add(() => this.loading.set(false));
+  }
+
+  addUsersToDepartment(): void {
+    if (!this.selectedDepartmentForUsers()) return;
+
+    this.loading.set(true);
+    this.departmentService.addUsersToDepartment(this.selectedDepartmentForUsers()!, this.selectedUsersToAdd()).subscribe({
+      next: () => {
+        this.showSuccess('Users added to department successfully');
+        this.loadUsersForDepartment(this.selectedDepartmentForUsers()!);
+        this.selectedUsersToAdd.set([]);
+      },
+      error: (err) => this.handleError('Failed to add users to department')
+    }).add(() => this.loading.set(false));
+  }
+
+  removeUserFromDepartment(departmentId: number, userId: number): void {
+    this.loading.set(true);
+    this.departmentService.removeUserFromDepartment(departmentId, userId).subscribe({
+      next: () => {
+        this.showSuccess('User removed from department successfully');
+        this.loadUsersForDepartment(departmentId);
+      },
+      error: (err) => this.handleError('Failed to remove user from department')
+    }).add(() => this.loading.set(false));
+  }
+
+  toggleUserSelection(userId: number): void {
+    const currentSelection = this.selectedUsersToAdd();
+    if (currentSelection.includes(userId)) {
+      this.selectedUsersToAdd.set(currentSelection.filter(id => id !== userId));
+    } else {
+      this.selectedUsersToAdd.set([...currentSelection, userId]);
+    }
+  }
+
+  // Helper methods for template
+  getDepartmentName(departmentId: number): string {
+    const dept = this.departments().find(d => d.id === departmentId);
+    return dept ? dept.nom : 'Département inconnu';
+  }
+
+  isUserInDepartment(userId: number): boolean {
+    return this.usersForDepartment().some(u => u.id === userId);
   }
 
   // Functionality Management

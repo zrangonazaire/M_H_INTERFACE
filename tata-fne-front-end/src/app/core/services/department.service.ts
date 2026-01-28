@@ -84,7 +84,7 @@ export class DepartmentService {
 
   getUsersByDepartment(departmentId: number): Observable<any[]> {
     return this.http
-      .get<ApiResponse<{ ServiceUnit: any[] }>>(`${this.baseUrl}/departments/${departmentId}/utilisateurs`)
-      .pipe(map((response) => response.data.ServiceUnit));
+      .get<ApiResponse<{ users: any[] }>>(`${this.baseUrl}/departments/${departmentId}/utilisateurs`)
+      .pipe(map((response) => response.data.users));
   }
 }
