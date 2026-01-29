@@ -66,7 +66,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: false
     properties:
       hibernate:
@@ -74,10 +74,10 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   mail:
-    host: localhost
-    port: 1025
-    username: michel
-    password: michel
+    host: smtp-fr.securemail.pro
+    port: 587
+    username: info@molibetycenter.com
+    password: 2024@Seve2024
     properties:
       mail:
         smtp:
