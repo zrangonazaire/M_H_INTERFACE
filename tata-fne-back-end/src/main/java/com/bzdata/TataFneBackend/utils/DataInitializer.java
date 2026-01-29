@@ -268,7 +268,7 @@ public class DataInitializer {
             User admin = User.builder()
                     .firstname("Michel")
                     .lastname("Bossoh")
-                    .email("admin@cinema.ci")
+                    .email("bossohpaulin@gmail.com")
                     .password(passwordEncoder.encode("admin123"))
                     .agence("AGENCE CENTRALE")
                     .dateOfBirth(LocalDate.of(1990, 1, 1))

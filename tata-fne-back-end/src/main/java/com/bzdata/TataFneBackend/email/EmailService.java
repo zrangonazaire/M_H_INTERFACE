@@ -52,7 +52,8 @@ public class EmailService {
         Context context = new Context();
         context.setVariables(properties);
 
-        helper.setFrom("contact@bzdata.com");
+        helper.setFrom("info@molibetycenter.com");
+        //message.setFrom(new InternetAddress("info@molibetycenter.com"));
         helper.setTo(to);
         helper.setSubject(subject);
 
