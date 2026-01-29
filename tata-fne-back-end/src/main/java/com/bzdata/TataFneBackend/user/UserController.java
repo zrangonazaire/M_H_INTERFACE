@@ -1,16 +1,11 @@
 package com.bzdata.TataFneBackend.user;
 
 import com.bzdata.TataFneBackend.common.HttpResponse;
-import com.bzdata.TataFneBackend.user.User;
-import com.bzdata.TataFneBackend.user.UserRepository;
-import com.bzdata.TataFneBackend.user.UserService;
-import com.bzdata.TataFneBackend.user.UserDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +17,6 @@ import static java.time.LocalDateTime.now;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
-
     @GetMapping
     public ResponseEntity<HttpResponse> getAllUsers() {
         List<UserDTO> users = userService.getAllUsers();

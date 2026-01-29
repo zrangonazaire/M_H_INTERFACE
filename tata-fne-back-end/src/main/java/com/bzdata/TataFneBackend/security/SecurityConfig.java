@@ -17,8 +17,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
-
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -32,21 +30,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            
-            .headers(headers -> headers
-                .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                .contentSecurityPolicy(csp -> csp.policyDirectives(
-                    "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                    "style-src 'self' 'unsafe-inline'; " +
-                    "img-src 'self' data:;"
-                ))
-            )
-            
-            .authorizeHttpRequests(req -> req
+           http .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .csrf(AbstractHttpConfigurer::disable) .authorizeHttpRequests(req -> req
                 // 🔥 AUTORISER OPTIONS POUR TOUS (CORS PREFLIGHT)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 
@@ -74,7 +59,10 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/register",
                     "/auth/authenticate",
-                    "/auth/activate-account"
+                    "/auth/activate-account",
+                    "/auth/forgot-password",
+                    "/auth/change-password",
+                    "/auth/reset-password"
                 ).permitAll()
                 
                 // 🔓 ENDPOINTS ROLES ET PERMISSIONS
@@ -117,71 +105,88 @@ public class SecurityConfig {
 
         return http.build();
     }
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    
+    // 🔥 ORIGINES AUTORISÉES - Ajoutez toutes ces combinaisons
+    configuration.setAllowedOrigins(Arrays.asList(
+        // Adresses de production
+        "http://57.129.119.224",
+        "http://57.129.119.224:80",
+        "http://57.129.119.224:8089",
+        "http://57.129.119.224:4200",
+        
+        // localhost
+        "http://localhost",
+        "http://localhost:80",
+        "http://localhost:4200",
+        "http://localhost:8080",
+        "http://localhost:8089",
+        
+        // 127.0.0.1
+        "http://127.0.0.1",
+        "http://127.0.0.1:80",
+        "http://127.0.0.1:4200",  // Vous avez celui-ci
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:8089",
+        
+        // IPv6 localhost
+        "http://[::1]",
+        "http://[::1]:4200",
+        "http://[::1]:8080",
+        "http://[::1]:8089",
+        
+        // Adresse réseau locale (si vous y accédez par IP)
+        "http://192.168.1.*", // Remplacez * par vos adresses réseau
+        "http://0.0.0.0:4200"
+    ));
+    
+    // 🔥 MÉTHODES HTTP AUTORISÉES
+    configuration.setAllowedMethods(Arrays.asList(
+        "OPTIONS",
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD"
+    ));
+    
+    // 🔥 HEADERS AUTORISÉS
+    configuration.setAllowedHeaders(Arrays.asList(
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "X-XSRF-TOKEN",
+        "X-CSRF-TOKEN",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+        "Cache-Control",
+        "Pragma"
+    ));
+    
+    // 🔥 HEADERS EXPOSÉS AU FRONTEND
+    configuration.setExposedHeaders(Arrays.asList(
+        "Authorization",
+        "Content-Type",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Credentials",
+        "Content-Disposition"
+    ));
+    
+    // 🔥 AUTORISER LES CREDENTIALS (COOKIES, SESSIONS)
+    configuration.setAllowCredentials(true);
+    
+    // 🔥 TEMPS DE CACHE PREFILGHT (1 HEURE)
+    configuration.setMaxAge(3600L);
+    
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    
+    return source;
+}
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // 🔥 ORIGINES AUTORISÉES
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://57.129.119.224",
-            "http://57.129.119.224:80",
-            "http://57.129.119.224:8089",
-            "http://57.129.119.224:4200",
-            "http://localhost",
-            "http://localhost:80",
-            "http://localhost:4200",
-            "http://localhost:8080",
-            "http://localhost:8089",
-            "http://127.0.0.1:4200",
-            "http://127.0.0.1:8080",
-            "http://127.0.0.1:8089"
-        ));
-        
-        // 🔥 MÉTHODES HTTP AUTORISÉES
-        configuration.setAllowedMethods(Arrays.asList(
-            "OPTIONS",
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "PATCH",
-            "HEAD"
-        ));
-        
-        // 🔥 HEADERS AUTORISÉS
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "Accept",
-            "Origin",
-            "X-Requested-With",
-            "X-XSRF-TOKEN",
-            "X-CSRF-TOKEN",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-            "Cache-Control",
-            "Pragma"
-        ));
-        
-        // 🔥 HEADERS EXPOSÉS AU FRONTEND
-        configuration.setExposedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials",
-            "Content-Disposition"
-        ));
-        
-        // 🔥 AUTORISER LES CREDENTIALS (COOKIES, SESSIONS)
-        configuration.setAllowCredentials(true);
-        
-        // 🔥 TEMPS DE CACHE PREFILGHT (1 HEURE)
-        configuration.setMaxAge(3600L);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        
-        return source;
-    }
 }

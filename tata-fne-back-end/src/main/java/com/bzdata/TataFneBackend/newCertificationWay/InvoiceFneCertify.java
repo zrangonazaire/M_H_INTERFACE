@@ -21,6 +21,7 @@ public class InvoiceFneCertify {
     @Id
     @Column(length = 36)
     private String id; // UUID venant de l'API
+    private String invoiceType;
 //TODO ajouter le rendre unique
    private String numeroFacture;
 

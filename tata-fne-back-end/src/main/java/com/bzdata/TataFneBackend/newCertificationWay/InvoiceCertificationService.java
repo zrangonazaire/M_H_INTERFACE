@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 public interface InvoiceCertificationService {
-JsonNode certifyInvoice(InvoiceSignRequest request);
-InvoiceMainResponse certifyInvoicePropre(InvoiceSignRequest request) ;
+    JsonNode certifyInvoice(InvoiceSignRequest request);
 
-InvoiceMainResponse saveFromJson(JsonNode json);
-void saveFromJsonToDataba(JsonNode json);
-    void saveFromJsonToDatabaWithNumFacture(JsonNode json,String numFacture,String utiliseur);
+    InvoiceMainResponse certifyInvoicePropre(InvoiceSignRequest request);
+
+    InvoiceMainResponse saveFromJson(JsonNode json);
+
+    void saveFromJsonToDataba(JsonNode json);
+
+    void saveFromJsonToDatabaWithNumFacture(JsonNode json, String numFacture, String utiliseur);
 
     Long countByNumeroFacture(String numeroFacture);
 

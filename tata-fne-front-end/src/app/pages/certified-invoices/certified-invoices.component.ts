@@ -70,6 +70,7 @@ export class CertifiedInvoicesComponent implements OnInit {
     this.error.set(null);
     this.invoiceService.getCertifiedInvoices().subscribe({
       next: (data) => {
+        console.log('Données reçues du backend:', data);
         this.invoices.set(data);
         this.loading.set(false);
       },
@@ -101,5 +102,26 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  protected createCreditNote(invoice: CertifiedInvoice): void {
+    // Navigate to the credit note page with the invoice ID
+    this.router.navigate(['/factures-certifiees', invoice.id, 'avoir']);
+  }
+
+  protected getByNumero(numeroFacture: string): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.invoiceService.getByNumero(numeroFacture).subscribe({
+      next: (data) => {
+        this.invoices.set(data);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        const message = err?.error?.message ?? 'Impossible de charger les factures pour ce numéro.';
+        this.error.set(message);
+        this.loading.set(false);
+      }
+    });
   }
 }

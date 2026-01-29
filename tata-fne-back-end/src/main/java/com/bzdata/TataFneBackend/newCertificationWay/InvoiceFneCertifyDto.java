@@ -1,10 +1,13 @@
 package com.bzdata.TataFneBackend.newCertificationWay;
 
 import java.time.OffsetDateTime;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
 public class InvoiceFneCertifyDto {
+    private String invoiceType;
     private String id;
     private String numeroFactureInterne;
     private String utilisateurCreateur;
@@ -17,4 +20,5 @@ public class InvoiceFneCertifyDto {
     private Long totalTaxes;
 
     private String token;
+    private List<ItemDto> items;
 }

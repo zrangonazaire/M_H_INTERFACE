@@ -45,7 +45,8 @@ export class LoginComponent {
 
     const { email, password } = this.loginForm.value;
     this.submitting.set(true);
-
+console.log('Submitting login for', email);
+console.log('passe word:', password);
     this.authService
       .login({ email, password })
       .pipe(
@@ -61,5 +62,9 @@ export class LoginComponent {
         // redirect to default page once authenticated
         this.router.navigate(['/dashboard']);
       });
+  }
+
+  protected navigateToForgotPassword(): void {
+    this.router.navigate(['/forgot-password']);
   }
 }

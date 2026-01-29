@@ -88,6 +88,7 @@ private final ObjectMapper objectMapper;
         }
 
         InvoiceFneCertify invoice = new InvoiceFneCertify();
+        invoice.setInvoiceType(text(invoiceNode, "invoiceType"));
         invoice.setId(text(invoiceNode, "id"));
         invoice.setParentId(textOrNull(invoiceNode, "parentId"));
         invoice.setParentReference(textOrNull(invoiceNode, "parentReference"));
@@ -224,6 +225,7 @@ private final ObjectMapper objectMapper;
         main.setToken(text(json, "token"));
         main.setWarning(bool(json, "warning"));
         main.setBalanceFunds(intVal(json, "balance_funds"));
+       
 
         // on sauve main maintenant (sans invoice lié pour l’instant)
         mainRepo.save(main);
@@ -235,6 +237,7 @@ private final ObjectMapper objectMapper;
         }
 
         InvoiceFneCertify invoice = new InvoiceFneCertify();
+        invoice.setInvoiceType("sale");
         invoice.setId(text(invoiceNode, "id"));
         invoice.setNumeroFacture(numFacture);
         invoice.setUtilisateurCreateur(utiliseur);
@@ -382,9 +385,17 @@ private final ObjectMapper objectMapper;
     private InvoiceFneCertifyDto toDto(InvoiceFneCertify invoice) {
         InvoiceFneCertifyDto dto = new InvoiceFneCertifyDto();
         InvoiceMainResponse mainResp = mainRepo.findByInvoice(invoice);
+        dto.setInvoiceType(invoice.getInvoiceType());
         dto.setId(invoice.getId());
         dto.setNumeroFactureInterne(invoice.getNumeroFacture());
         dto.setUtilisateurCreateur(invoice.getUtilisateurCreateur());
+        
+        // Convertir les items en ItemDto
+        if (invoice.getItems() != null) {
+            dto.setItems(invoice.getItems().stream()
+                .map(this::toItemDto)
+                .toList());
+        }
 
         dto.setReference(invoice.getReference());
         dto.setDate(invoice.getDate());
@@ -393,6 +404,22 @@ private final ObjectMapper objectMapper;
         dto.setTotalHorsTaxes(invoice.getTotalBeforeTaxes());
         dto.setTotalTaxes(invoice.getTotalTaxes());      
         dto.setToken(mainResp.getToken());
+        return dto;
+    }
+    
+    private ItemDto toItemDto(Item item) {
+        ItemDto dto = new ItemDto();
+        dto.setId(item.getId());
+        dto.setQuantity(item.getQuantity());
+        dto.setReference(item.getReference());
+        dto.setDescription(item.getDescription());
+        dto.setAmount(item.getAmount());
+        dto.setDiscount(item.getDiscount());
+        dto.setMeasurementUnit(item.getMeasurementUnit());
+        dto.setCreatedAt(item.getCreatedAt());
+        dto.setUpdatedAt(item.getUpdatedAt());
+        dto.setInvoiceId(item.getInvoiceId());
+        dto.setParentId(item.getParentId());
         return dto;
     }
 

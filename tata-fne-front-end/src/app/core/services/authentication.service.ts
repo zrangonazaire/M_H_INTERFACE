@@ -6,8 +6,10 @@ import { environment } from '../../../environments/environment';
 import {
   AuthenticationResponse,
   ChangePasswordRequest,
+  ForgotPasswordRequest,
   LoginRequest,
-  RegistrationRequest
+  RegistrationRequest,
+  ResetPasswordRequest
 } from '../models/auth';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +24,14 @@ export class AuthenticationService {
     return this.http
       .post<AuthenticationResponse>(`${this.baseUrl}/authenticate`, payload)
       .pipe(tap((res) => this.setToken(res.token)));
+  }
+
+  forgotPassword(request: ForgotPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/forgot-password`, request);
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/reset-password`, request);
   }
 
   register(payload: RegistrationRequest): Observable<void> {

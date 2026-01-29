@@ -100,6 +100,7 @@
           <table>
             <thead>
               <tr>
+                <th>Type de facture</th>
                 <th>Numéro interne</th>
                 <th>Référence</th>
                 <th>Utilisateur</th>
@@ -108,11 +109,17 @@
                 <th>Total Taxes</th>
                 <th>Total TTC</th>
                 <th>Token</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               @for (invoice of filtered(); track trackById($index, invoice)) {
                 <tr>
+                  <td>
+                    <span [class]="(invoice.invoiceType || '').toLowerCase() === 'sale' ? 'badge badge-success' : 'badge badge-warning'">
+                      {{ (invoice.invoiceType || '').toLowerCase() === 'sale' ? 'Vente' : 'Avoir' }}
+                    </span>
+                  </td>
                   <td>
                     <div class="fw-semibold">{{ invoice.numeroFactureInterne || '-' }}</div>
                     <small class="muted">ID: {{ invoice.id }}</small>
@@ -130,10 +137,13 @@
                       -
                     }
                   </td>
+                  <td>
+                    <button class="btn btn-primary" (click)="createCreditNote(invoice)">Faire un avoir</button>
+                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="empty">Aucune facture certifiée trouvée.</td>
+                  <td colspan="10" class="empty">Aucune facture certifiée trouvée.</td>
                 </tr>
               }
             </tbody>

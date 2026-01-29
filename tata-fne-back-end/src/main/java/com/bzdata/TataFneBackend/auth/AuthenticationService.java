@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.bzdata.TataFneBackend.email.EmailService;
 import com.bzdata.TataFneBackend.email.EmailTemplateName;
 import com.bzdata.TataFneBackend.role.RoleRepository;
@@ -153,5 +152,44 @@ public class AuthenticationService {
         }
 
         return codeBuilder.toString();
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException {
+        var user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.getEmail()));
+
+        if (!user.isEnabled()) {
+            throw new IllegalStateException("User account is not activated");
+        }
+
+        var token = generateAndSaveActivationToken(user);
+        emailService.sendEmail(
+                user.getEmail(),
+                user.getFullName(),
+                EmailTemplateName.FORGOT_PASSWORD,
+                activationUrl,
+                token,
+                "Password Reset Request"
+        );
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+        var token = tokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (LocalDateTime.now().isAfter(token.getExpiresAt())) {
+            throw new RuntimeException("Token has expired");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
+        var user = token.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        token.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(token);
     }
 }
