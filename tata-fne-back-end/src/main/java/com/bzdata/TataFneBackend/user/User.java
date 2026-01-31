@@ -45,6 +45,9 @@ public class User  implements UserDetails, Principal {
     @Column(unique = true)
     private String email;
     private String agence;
+    private  String pdvFne;
+    private  String etablisssementFne;
+
     private String imageUrl;
     private String password;
     private boolean accountLocked;

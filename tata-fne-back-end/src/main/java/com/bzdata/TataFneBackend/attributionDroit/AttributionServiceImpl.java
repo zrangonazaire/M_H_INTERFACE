@@ -105,4 +105,21 @@ public class AttributionServiceImpl implements AttributionService {
                 .toList();
     }
 
+    @Override
+    public boolean checkRoleExist(int userId, int roleId) {
+        // Vérifier si l'utilisateur a des attributions pour des fonctionnalités associées au rôle
+        List<RoleFunctionality> roleFunctionalities = roleFunctionalityRepository.findByRole_Id(roleId);
+
+        if (roleFunctionalities.isEmpty()) {
+            return false;
+        }
+
+        // Extraire les ids des fonctionnalités
+        List<Integer> functionalityIds = roleFunctionalities.stream()
+                .map(rf -> rf.getFunctionality().getIdFunctionality())
+                .toList();
+
+        // Vérifier si l'utilisateur a des attributions pour au moins une de ces fonctionnalités
+        return repository.existsByUser_IdAndFunctionality_IdFunctionalityIn(userId, functionalityIds);
+    }
 }

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CertifiedInvoice, ItemDto } from '../../core/models/certified-invoice';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
+import { AttributionService } from '../../core/services/attribution.service';
 
 @Component({
   selector: 'app-facture-avoir',
@@ -23,7 +24,8 @@ export class FactureAvoirComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly invoiceService: FneInvoiceService,
-    private readonly authService: AuthenticationService
+    private readonly authService: AuthenticationService,
+    private readonly attributionService: AttributionService
   ) {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
   }
@@ -170,5 +172,29 @@ export class FactureAvoirComponent implements OnInit {
   protected logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  protected async checkParametresAccess(): Promise<void> {
+    try {
+      const userId = this.authService.getCurrentId();
+      const roleId = this.authService.getCurrentIdRole();
+      
+      if (!userId || !roleId) {
+        alert('Informations utilisateur manquantes');
+        return;
+      }
+
+      const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
+      
+      if (!hasAccess) {
+        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        return;
+      }
+
+      this.router.navigate(['/parametres']);
+    } catch (error) {
+      console.error('Erreur lors de la vérification des droits:', error);
+      alert('Erreur lors de la vérification des droits');
+    }
   }
 }

@@ -93,6 +93,7 @@ public class SecurityConfig {
                     "/etablissements/**",
                     "/departments/**",
                     "/services/**"
+                        ,"/users/**"
                 ).permitAll()
                 
                 // 🔐 TOUS LES AUTRES ENDPOINTS NÉCESSITENT UNE AUTHENTIFICATION

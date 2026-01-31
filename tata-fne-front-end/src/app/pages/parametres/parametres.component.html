@@ -24,7 +24,7 @@
         <span class="icon">F</span>
         Factures Certifiées
       </a>
-      <a class="menu-item" routerLink="/parametres" routerLinkActive="active">
+      <a class="menu-item" (click)="checkParametresAccess()" routerLinkActive="active">
         <span class="icon">P</span>
         Paramètres
       </a>
@@ -776,8 +776,62 @@
       <div class="api-section">
         <h3>Gestion des Attributions</h3>
 
-        <!-- Attributions List -->
+        <!-- Attribution Creation Form -->
         <div class="card">
+          <div class="card-header">
+            <h4>Créer une Nouvelle Attribution</h4>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="createAttribution()" class="api-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="attributionUser">Utilisateur</label>
+                  <select id="attributionUser" [(ngModel)]="selectedUserId" name="userId" required
+                          class="form-control">
+                    <option value="" disabled>Sélectionnez un utilisateur</option>
+                    @for (user of users(); track user.id) {
+                      <option [value]="user.id">{{ user.firstname }} {{ user.lastname }} ({{ user.email }})</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="attributionFunctionality">Fonctionnalité</label>
+                  <select id="attributionFunctionality" [(ngModel)]="selectedFunctionalityId" name="functionalityId" required
+                          class="form-control">
+                    <option value="" disabled>Sélectionnez une fonctionnalité</option>
+                    @for (func of functionalities(); track func.idFunctionality) {
+                      <option [value]="func.idFunctionality">{{ func.nom }} ({{ func.code }})</option>
+                    }
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Droits de l'utilisateur</label>
+                <div class="rights-checkboxes">
+                  @for (right of availableRights(); track right) {
+                    <div class="right-checkbox">
+                      <input type="checkbox" [id]="'right-' + right"
+                             [checked]="isRightSelected(right)"
+                             (change)="toggleRight(right)">
+                      <label [for]="'right-' + right">{{ right | titlecase }}</label>
+                    </div>
+                  }
+                </div>
+              </div>
+              <button type="submit" class="btn-primary" [disabled]="loading() || !selectedUserId() || !selectedFunctionalityId()">
+                @if (loading()) {
+                  <span class="spinner-small"></span> Création...
+                } @else {
+                  Créer Attribution
+                }
+              </button>
+              <button type="button" class="btn-secondary" (click)="resetAttributionForm()">Réinitialiser</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Attributions List -->
+        <div class="card mt-4">
           <div class="card-header">
             <h4>Liste des Attributions ({{ attributions().length }})</h4>
           </div>
@@ -790,11 +844,14 @@
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Utilisateur ID</th>
-                      <th>Rôle ID</th>
-                      <th>Société ID</th>
-                      <th>Établissement ID</th>
-                      <th>Statut</th>
+                      <th>Utilisateur</th>
+                      <th>Fonctionnalité</th>
+                      <th>Lecture</th>
+                      <th>Écriture</th>
+                      <th>Modification</th>
+                      <th>Suppression</th>
+                      <th>Impression</th>
+                      <th>Validation</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -802,14 +859,17 @@
                     @for (attr of attributions(); track attr.id) {
                       <tr>
                         <td>{{ attr.id }}</td>
-                        <td>{{ attr.userId }}</td>
-                        <td>{{ attr.roleId }}</td>
-                        <td>{{ attr.societyId }}</td>
-                        <td>{{ attr.etablissementId }}</td>
-                        <td>{{ attr.isActive ? 'Active' : 'Inactive' }}</td>
+                        <td>{{ getUserName(attr.userId) }}</td>
+                        <td>{{ getFunctionalityName(attr.functionalityId) }}</td>
+                        <td>{{ attr.lecture ? 'Vrai' : 'Faux' }}</td>
+                        <td>{{ attr.writing ? 'Vrai' : 'Faux' }}</td>
+                        <td>{{ attr.modification ? 'Vrai' : 'Faux' }}</td>
+                        <td>{{ attr.deletion ? 'Vrai' : 'Faux' }}</td>
+                        <td>{{ attr.impression ? 'Vrai' : 'Faux' }}</td>
+                        <td>{{ attr.validation ? 'Vrai' : 'Faux' }}</td>
                         <td>
-                          <button class="btn-secondary btn-sm">Modifier</button>
-                          <button class="btn-danger btn-sm">Supprimer</button>
+                          <button class="btn-secondary btn-sm" (click)="updateAttribution(attr.id)">Modifier</button>
+                          <button class="btn-danger btn-sm" (click)="deleteAttribution(attr.id)">Supprimer</button>
                         </td>
                       </tr>
                     }

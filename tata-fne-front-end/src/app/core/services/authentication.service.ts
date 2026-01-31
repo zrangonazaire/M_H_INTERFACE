@@ -17,6 +17,10 @@ export class AuthenticationService {
   private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
   private readonly tokenKey = 'tata_fne_token';
   private readonly userEmailKey = 'tata_fne_user_email';
+  private readonly userIdroleKey = 'tata_fne_user_idrole';
+  private readonly userPdvFne='tata_fne_UserPdvFne';
+  private readonly userEtabFbe='tata_fne_UserEtab'
+  private readonly userIdKey='tata_fne_user_id';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -54,10 +58,26 @@ export class AuthenticationService {
   setCurrentUserEmail(email: string): void {
     localStorage.setItem(this.userEmailKey, email);
   }
+  setCurrentIdRole(IdRole: string): void {
+    localStorage.setItem(this.userIdroleKey, IdRole);
+  } 
+  setCurrentId(Id: string): void {  
+    localStorage.setItem(this.userIdKey, Id);
+  }
+  setCurrentPdv(PdvFNE: string): void {
+    localStorage.setItem(this.userPdvFne, PdvFNE);
+  }
+  setCurrentEtabFNE(EtabFNE: string): void {
+    localStorage.setItem(this.userEtabFbe, EtabFNE);
+  }
 
   clearToken(): void {
     localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userEmailKey);
+    localStorage.removeItem(this.userEmailKey);   
+    
+    localStorage.removeItem(this.userPdvFne);
+    localStorage.removeItem(this.userIdroleKey);
+    localStorage.removeItem(this.userEtabFbe);
   }
 
   getToken(): string | null {
@@ -67,8 +87,66 @@ export class AuthenticationService {
   getCurrentUserEmail(): string | null {
     return localStorage.getItem(this.userEmailKey);
   }
-
+  
+  getCurrentIdRole(): string | null {
+     console.log('Getting current full name from token'+this.getToken());
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      return payload?.roles ?? null;
+    } catch {
+      return null;
+    } 
+  }
+   getCurrentId(): string | null {
+     console.log('Getting current full name from token'+this.getToken());
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      return payload?.idUtilisateur ?? null;
+    } catch {
+      return null;
+    } 
+  }
+ getCurrentPdv(): string | null {
+     console.log('Getting current pdv name from token'+this.getToken());
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      return payload?.pdv ?? null;
+    } catch {
+      return null;
+    } 
+  }
+ getCurrentEtabFNE(): string | null {
+    
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      return payload?.etablissementUser ?? null;
+    } catch {
+      return null;
+    } 
+  }
+  
   getCurrentFullName(): string | null {
+    console.log('Getting current full name from token'+this.getToken());
     const token = this.getToken();
     if (!token) return null;
     try {

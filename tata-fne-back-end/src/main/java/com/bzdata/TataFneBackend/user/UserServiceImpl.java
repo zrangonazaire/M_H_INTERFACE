@@ -1,5 +1,9 @@
 package com.bzdata.TataFneBackend.user;
 
+import com.bzdata.TataFneBackend.exception.ResourceNonFoundException;
+import com.bzdata.TataFneBackend.role.RoleDTO;
+import com.bzdata.TataFneBackend.role.RoleMapper;
+import com.bzdata.TataFneBackend.role.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +16,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
+    private final RoleMapper roleMapper;
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -50,5 +56,20 @@ public class UserServiceImpl implements UserService {
             return userMapper.toDTO(updatedUser);
         }
         throw new RuntimeException("User not found with id: " + id);
+    }
+
+    @Override
+    public RoleDTO getUserRole(Integer idUser) {
+        return roleRepository.findAllByUser_Id(idUser).stream()
+                .findFirst()
+                .map(roleMapper::mapToDTO)
+                .orElseThrow(() ->
+                        new ResourceNonFoundException("Rôle principal non trouvé")
+                );
+    }
+
+    @Override
+    public boolean getUserByIdAndIdRole(Integer idUser, Integer idRole) {
+        return userRepository.existsByIdAndRoles_Id(idUser, idRole);
     }
 }

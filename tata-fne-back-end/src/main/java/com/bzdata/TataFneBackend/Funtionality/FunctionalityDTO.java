@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class FunctionalityDTO {
+    private int idFunctionality;
 
     @NotBlank(message = "Le code est obligatoire")
     private String code;

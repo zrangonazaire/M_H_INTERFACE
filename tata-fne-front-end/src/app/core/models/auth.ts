@@ -8,12 +8,14 @@ export interface RegistrationRequest {
   lastname: string;
   email: string;
   password: string;
+  pdvFne?: string;
+  etablisssementFne?: string;
 }
 
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
-  confirmPassword: string;
+  confirmationPassword: string;
 }
 
 export interface ForgotPasswordRequest {

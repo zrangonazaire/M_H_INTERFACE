@@ -8,12 +8,13 @@ import { ApiResponse } from '../models/api-response';
 export interface Attribution {
   id: number;
   userId: number;
-  roleId: number;
-  societyId: number;
-  etablissementId: number;
-  startDate: string;
-  endDate?: string;
-  isActive: boolean;
+  functionalityId: number;
+  lecture: boolean;
+  writing: boolean;
+  modification: boolean;
+  deletion: boolean;
+  impression: boolean;
+  validation: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -26,31 +27,45 @@ export class AttributionService {
 
   getAttributions(): Observable<Attribution[]> {
     return this.http
-      .get<ApiResponse<{ attributions: Attribution[] }>>(`${this.baseUrl}/attribution`)
+      .get<ApiResponse<{ attributions: Attribution[] }>>(`${this.baseUrl}/attributions`)
       .pipe(map((response) => response.data.attributions));
+  }
+
+  getAttributionsPaginated(page: number, size: number): Observable<{ attributions: Attribution[], currentPage: number, totalItems: number, totalPages: number }> {
+    return this.http
+      .get<ApiResponse<{ attributions: Attribution[], currentPage: number, totalItems: number, totalPages: number }>>(
+        `${this.baseUrl}/attributions/paginated?page=${page}&size=${size}`
+      )
+      .pipe(map((response) => response.data));
   }
 
   getAttributionById(id: number): Observable<Attribution> {
     return this.http
-      .get<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attribution/${id}`)
+      .get<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attributions/${id}`)
       .pipe(map((response) => response.data.attribution));
   }
 
   createAttribution(attribution: Omit<Attribution, 'id'>): Observable<Attribution> {
     return this.http
-      .post<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attribution/save`, attribution)
+      .post<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attributions`, attribution)
       .pipe(map((response) => response.data.attribution));
   }
 
   updateAttribution(id: number, attribution: Partial<Attribution>): Observable<Attribution> {
     return this.http
-      .put<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attribution/${id}`, attribution)
+      .put<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attributions/${id}`, attribution)
       .pipe(map((response) => response.data.attribution));
   }
 
   deleteAttribution(id: number): Observable<void> {
     return this.http
-      .delete<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attribution/${id}`)
+      .delete<ApiResponse<{ attribution: Attribution }>>(`${this.baseUrl}/attributions/${id}`)
       .pipe(map(() => {}));
+  }
+
+  checkRoleExist(userId: number, roleId: number): Observable<boolean> {
+    return this.http
+      .get<ApiResponse<{ exists: boolean }>>(`${this.baseUrl}/users/${userId}/roles/${roleId}/checkroleexist`)
+      .pipe(map((response) => response.data.exists));
   }
 }

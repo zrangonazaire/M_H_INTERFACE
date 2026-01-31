@@ -87,4 +87,12 @@ export class UserService {
       .put<ApiResponse<{ user: User }>>(`${this.baseUrl}/users/${userId}/status`, { enabled: enabled })
       .pipe(map((response) => response.data.user));
   }
+   getIfRoleExiteByIdUser(idUser: number,idRole: number): Observable<boolean> {
+    //http://localhost:8089/api/v1/users/11/roles/1/checkroleexist
+    return this.http
+      .get<boolean>(`${this.baseUrl}/users/${idUser}/roles/${idRole}/checkroleexist`);
+      /* 
+return this.http.get<boolean>(
+      `${this.API_URL}/${idUser}/roles/${idRole}/checkroleexist` */
+  }
 }
