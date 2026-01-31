@@ -8,6 +8,7 @@ public class SocieteRequestDTO {
     private String raisonSociale;
     @NotBlank(message = "Le sigle de la société est obligatoire")
     private String sigle;
+    private String ncc;
     private String formeJuridique;
     private String objetSocial;
     private String numeroRccm;

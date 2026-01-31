@@ -12,6 +12,7 @@ public class SocieteResponseDTO {
     private String formeJuridique;
     private String numeroRccm;
     private String numeroIfu;
+    private String ncc;
     private String ville;
     private String pays;
     private String email;

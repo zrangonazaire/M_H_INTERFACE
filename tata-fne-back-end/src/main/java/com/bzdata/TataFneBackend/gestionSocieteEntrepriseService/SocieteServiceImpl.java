@@ -28,6 +28,7 @@ public class SocieteServiceImpl implements SocieteService {
         // Mise à jour des champs depuis le DTO
         existing.setRaisonSociale(societeRequestDTO.getRaisonSociale());
         existing.setSigle(societeRequestDTO.getSigle());
+        existing.setSigle(societeRequestDTO.getNcc());
         existing.setFormeJuridique(societeRequestDTO.getFormeJuridique());
         existing.setObjetSocial(societeRequestDTO.getObjetSocial());
         existing.setNumeroRccm(societeRequestDTO.getNumeroRccm());

@@ -20,7 +20,7 @@ import static org.springframework.http.HttpStatus.OK;
 @Slf4j
 public class SocieteController {
 
-    @PostMapping("/societe/save")
+    @PostMapping("/save")
     public ResponseEntity<HttpResponse> saveSociete(@RequestBody SocieteRequestDTO request) {
         log.info("We are going to save a new societe via singular endpoint {}", request.toString());
         var saved = societeService.create(request);

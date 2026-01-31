@@ -9,6 +9,7 @@ public class SocieteMapper {
         return Societe.builder()
                 .raisonSociale(dto.getRaisonSociale())
                 .sigle(dto.getSigle())
+                .ncc(dto.getNcc())
                 .formeJuridique(dto.getFormeJuridique())
                 .objetSocial(dto.getObjetSocial())
                 .numeroRccm(dto.getNumeroRccm())
@@ -38,6 +39,7 @@ public class SocieteMapper {
         dto.setVille(entity.getVille());
         dto.setPays(entity.getPays());
         dto.setEmail(entity.getEmail());
+        dto.setNcc(entity.getNcc());
         dto.setTelephone(entity.getTelephone());
 
         if (entity.getEtablissements() != null) {

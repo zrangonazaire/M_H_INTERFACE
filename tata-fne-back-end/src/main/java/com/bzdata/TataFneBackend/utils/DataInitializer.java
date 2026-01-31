@@ -50,6 +50,8 @@ public class DataInitializer {
             }
             if (roleRepository.findByName("USER").isEmpty()) {
                 roleRepository.save(Role.builder().name("USER").code("USER").build());
+            }if (roleRepository.findByName("FACTURIER").isEmpty()) {
+                roleRepository.save(Role.builder().name("FACTURIER").code("FACT").build());
             }
 
             // --- 2️⃣ Création de sociétés
@@ -74,6 +76,7 @@ public class DataInitializer {
                     String adresse = faker.address().fullAddress();
                     String telephone = faker.phoneNumber().phoneNumber();
                     String email = faker.internet().emailAddress();
+
                     String siteWeb = "www." + sigle.toLowerCase() + ".com";
                     String dirigeantPrincipal = faker.name().fullName();
 
