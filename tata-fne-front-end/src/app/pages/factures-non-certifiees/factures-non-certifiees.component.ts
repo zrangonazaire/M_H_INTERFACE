@@ -10,6 +10,7 @@ import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { NonCertifiedInvoice } from '../../core/models/non-certified-invoice';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { InvoiceSignRequest } from '../../core/models/invoice-sign-request';
+import { AttributionService } from '../../core/services/attribution.service';
 
 type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inconnu';
 
@@ -47,7 +48,8 @@ export class FacturesNonCertifieesComponent {
     private readonly excelService: FneExcelService,
     private readonly invoiceService: FneInvoiceService,
     private readonly authService: AuthenticationService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly attributionService: AttributionService
   ) {
     this.loadInvoices();
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
@@ -527,6 +529,30 @@ export class FacturesNonCertifieesComponent {
     if (raw.includes('attente')) return 'en_attente';
     if (raw.includes('a certifier')) return 'a_certifier';
     return 'inconnu';
+  }
+
+  protected async checkParametresAccess(): Promise<void> {
+    try {
+      const userId = this.authService.getCurrentId();
+      const roleId = this.authService.getCurrentIdRole();
+      
+      if (!userId || !roleId) {
+        alert('Informations utilisateur manquantes');
+        return;
+      }
+
+      const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
+      
+      if (!hasAccess) {
+        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        return;
+      }
+
+      this.router.navigate(['/parametres']);
+    } catch (error) {
+      console.error('Erreur lors de la vérification des droits:', error);
+      alert('Erreur lors de la vérification des droits');
+    }
   }
 
   private mapReadRowsToInvoices(rows: Array<Record<string, string>>): NonCertifiedInvoice[] {

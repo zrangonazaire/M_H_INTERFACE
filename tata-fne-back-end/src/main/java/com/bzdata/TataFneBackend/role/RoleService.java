@@ -7,5 +7,6 @@ public interface RoleService {
     RoleDTO update(int id, RoleDTO dto);
     void delete(int id);
     RoleDTO getById(int id);
+
     List<RoleDTO> getAll();
 }

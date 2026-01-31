@@ -37,6 +37,7 @@ export class LoginComponent {
   }
 
   protected submit(): void {
+    debugger
     this.errorMessage.set(null);
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
@@ -45,8 +46,7 @@ export class LoginComponent {
 
     const { email, password } = this.loginForm.value;
     this.submitting.set(true);
-console.log('Submitting login for', email);
-console.log('passe word:', password);
+
     this.authService
       .login({ email, password })
       .pipe(
@@ -58,7 +58,14 @@ console.log('passe word:', password);
       )
       .subscribe((res) => {
         if (!res) return;
+        console.log('Login successful, token:', this.authService.getCurrentPdv());
         this.authService.setCurrentUserEmail(email);
+        this.authService.setCurrentPdv(this.authService.getCurrentPdv()??"");
+        this.authService.setCurrentEtabFNE(this.authService.getCurrentEtabFNE()??"");
+         this.authService.setCurrentIdRole(this.authService.getCurrentIdRole()??"");
+        this.authService.setCurrentId(this.authService.getCurrentId()??"");
+        
+       
         // redirect to default page once authenticated
         this.router.navigate(['/dashboard']);
       });

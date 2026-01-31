@@ -123,4 +123,23 @@ public class AttributionController {
                         .build()
         );
     }
+
+    // ✅ Vérifier si un utilisateur a un rôle donné
+    @GetMapping("/{userId}/roles/{roleId}/checkroleexist")
+    public ResponseEntity<HttpResponse> checkRoleExist(
+            @PathVariable int userId,
+            @PathVariable int roleId) {
+        log.info("Checking if userId {} has roleId {}", userId, roleId);
+        boolean hasRole = service.checkRoleExist(userId, roleId);
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Role existence checked successfully")
+                        .statusCode(HttpStatus.OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .data(Map.of("hasRole", hasRole))
+                        .build()
+        );
+    }
 }

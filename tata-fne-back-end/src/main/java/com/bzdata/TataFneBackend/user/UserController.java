@@ -16,6 +16,15 @@ import static java.time.LocalDateTime.now;
 @RequiredArgsConstructor
 public class UserController {
 
+    @GetMapping("/{idUser}/roles/{idRole}/checkroleexist")
+    public ResponseEntity<Boolean> userHasRole(
+            @PathVariable Integer idUser,
+            @PathVariable Integer idRole
+    ) {
+        boolean exists = userService.getUserByIdAndIdRole(idUser, idRole);
+        return ResponseEntity.ok(exists);
+    }
+
     private final UserService userService;
     @GetMapping
     public ResponseEntity<HttpResponse> getAllUsers() {

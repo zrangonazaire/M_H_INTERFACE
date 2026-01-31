@@ -10,6 +10,7 @@ public class FunctionalityMapper {
         dto.setCode(f.getCodeFunctionality());
         dto.setNom(f.getNameFunctionality());
         dto.setDescription(f.getDescriptionFunctionality());
+        dto.setIdFunctionality(f.getIdFunctionality());
         return dto;
     }
 }

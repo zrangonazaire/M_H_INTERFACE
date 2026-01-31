@@ -69,6 +69,8 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountLocked(false)
                 .enabled(false)
+                .pdvFne(request.getPdvFne())
+                .etablisssementFne(request.getEtablisssementFne())
                 .roles(List.of(userRole))
                 .build();
         userRepository.save(user);
@@ -87,6 +89,12 @@ public class AuthenticationService {
         var user = ((User) auth.getPrincipal());
         claims.put("fullName", user.getFullName());
         claims.put("agence", user.getAgence());
+        claims.put("roles", user.getRoles().get(0).getId());
+        claims.put("idUtilisateur", user.getId());
+        claims.put("email", user.getEmail());
+        claims.put("pdv", user.getPdvFne());
+        claims.put("etablissementUser",user.getEtablisssementFne());
+
 
         var jwtToken = jwtService.generateToken(claims, (User) auth.getPrincipal());
         return AuthenticationResponse.builder()

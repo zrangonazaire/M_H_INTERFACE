@@ -1,3 +1,4 @@
+
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -10,7 +11,8 @@ import { EtablissementService } from '../../core/services/etablissement.service'
 import { SocietyService } from '../../core/services/society.service';
 import { DepartmentService, DepartmentResponse } from '../../core/services/department.service';
 import { AttributionService } from '../../core/services/attribution.service';
-import { UserService, RegistrationRequest, ChangePasswordRequest } from '../../core/services/user.service';
+import { UserService } from '../../core/services/user.service';
+import { RegistrationRequest, ChangePasswordRequest } from '../../core/models/auth';
 
 @Component({
   selector: 'app-parametres',
@@ -34,6 +36,19 @@ export class ParametresComponent implements OnInit {
 
   // Pagination State
   pagination = signal<{
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  }>({
+    currentPage: 0,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 1
+  });
+
+  // Attribution Pagination State
+  attributionPagination = signal<{
     currentPage: number;
     pageSize: number;
     totalItems: number;
@@ -102,7 +117,9 @@ export class ParametresComponent implements OnInit {
     firstname: '',
     lastname: '',
     email: '',
-    password: ''
+    password: '',
+    pdvFne: '',
+    etablisssementFne: ''
   });
 
   changePassword = signal<ChangePasswordRequest>({
@@ -121,6 +138,12 @@ export class ParametresComponent implements OnInit {
   selectedDepartmentForUsers = signal<number | null>(null);
   usersForDepartment = signal<any[]>([]);
   selectedUsersToAdd = signal<number[]>([]);
+
+  // Attribution Management State
+  selectedUserId = signal<number | null>(null);
+  selectedFunctionalityId = signal<number | null>(null);
+  selectedRights = signal<string[]>([]);
+  availableRights = signal<string[]>(['lecture', 'writing', 'modification', 'deletion', 'impression', 'validation']);
 
   constructor(
     private readonly auth: AuthenticationService,
@@ -142,6 +165,7 @@ export class ParametresComponent implements OnInit {
   }
 
   loadAllData(): void {
+     debugger;
     this.loading.set(true);
     this.error.set(null);
 
@@ -153,6 +177,7 @@ export class ParametresComponent implements OnInit {
       });
 
       this.functionalityService.getFunctionalities().subscribe({
+       
         next: (functionalities) => this.functionalities.set(functionalities),
         error: (err) => this.handleError('Failed to load functionalities')
       });
@@ -462,6 +487,47 @@ export class ParametresComponent implements OnInit {
     }).add(() => this.loading.set(false));
   }
 
+  // Attribution Pagination Methods
+  loadAttributionsPage(page: number): void {
+    this.loading.set(true);
+    this.attributionPagination.update(p => ({ ...p, currentPage: page }));
+
+    this.attributionService.getAttributionsPaginated(page, this.attributionPagination().pageSize).subscribe({
+      next: (result) => {
+        this.attributions.set(result.attributions);
+        this.attributionPagination.update(p => ({
+          ...p,
+          currentPage: result.currentPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages
+        }));
+      },
+      error: (err) => this.handleError('Failed to load attributions')
+    }).add(() => this.loading.set(false));
+  }
+
+  getAttributionPaginationEndIndex(): number {
+    return Math.min((this.attributionPagination().currentPage + 1) * this.attributionPagination().pageSize, this.attributionPagination().totalItems);
+  }
+
+  changeAttributionPageSize(size: number): void {
+    this.loading.set(true);
+    this.attributionPagination.update(p => ({ ...p, pageSize: size, currentPage: 0 }));
+
+    this.attributionService.getAttributionsPaginated(0, size).subscribe({
+      next: (result) => {
+        this.attributions.set(result.attributions);
+        this.attributionPagination.update(p => ({
+          ...p,
+          currentPage: result.currentPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages
+        }));
+      },
+      error: (err) => this.handleError('Failed to load attributions')
+    }).add(() => this.loading.set(false));
+  }
+
   // UI Helpers
   setActiveTab(tab: string): void {
     this.activeTab.set(tab);
@@ -483,5 +549,165 @@ export class ParametresComponent implements OnInit {
   protected logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  protected async checkParametresAccess(): Promise<void> {
+    try {
+      const userId = this.auth.getCurrentId();
+      const roleId = this.auth.getCurrentIdRole();
+      
+      if (!userId || !roleId) {
+        alert('Informations utilisateur manquantes');
+        return;
+      }
+
+      const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
+      
+      if (!hasAccess) {
+        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        return;
+      }
+
+      this.router.navigate(['/parametres']);
+    } catch (error) {
+      console.error('Erreur lors de la vérification des droits:', error);
+      alert('Erreur lors de la vérification des droits');
+    }
+  }
+
+  // Attribution Management Methods
+  createAttribution(): void {
+    if (!this.selectedUserId() || !this.selectedFunctionalityId()) {
+      this.error.set('Veuillez sélectionner un utilisateur et une fonctionnalité');
+      return;
+    }
+
+    this.loading.set(true);
+    const userId = this.selectedUserId();
+    const functionalityId = this.selectedFunctionalityId();
+
+    // Ensure IDs are valid numbers
+    if (userId === null || functionalityId === null) {
+      this.error.set('Les IDs utilisateur et fonctionnalité ne peuvent pas être nuls');
+      this.loading.set(false);
+      return;
+    }
+
+    const attribution: any = {
+      userId: Number(userId),
+      functionalityId: Number(functionalityId),
+      lecture: this.selectedRights().includes('lecture'),
+      writing: this.selectedRights().includes('writing'),
+      modification: this.selectedRights().includes('modification'),
+      deletion: this.selectedRights().includes('deletion'),
+      impression: this.selectedRights().includes('impression'),
+      validation: this.selectedRights().includes('validation')
+    };
+
+    // Vérifier que les IDs sont des nombres valides
+    if (isNaN(attribution.userId) || isNaN(attribution.functionalityId)) {
+      this.error.set('Les IDs utilisateur et fonctionnalité doivent être des nombres valides');
+      this.loading.set(false);
+      return;
+    }
+
+    // Afficher les données envoyées dans la console pour débogage
+    console.log('***************s pour l\'attribution:', attribution);
+
+    this.attributionService.createAttribution(attribution).subscribe({
+      next: (newAttribution) => {
+        console.log('Attribution créée avec succès:', newAttribution);
+        this.attributions.update(attrs => [...attrs, newAttribution]);
+        this.showSuccess('Attribution créée avec succès');
+        this.resetAttributionForm();
+      },
+      error: (err) => this.handleError('Failed to create attribution')
+    }).add(() => this.loading.set(false));
+  }
+
+  updateAttribution(attributionId: number): void {
+    this.loading.set(true);
+    const attribution = {
+      lecture: true,
+      writing: true,
+      modification: false,
+      deletion: false,
+      impression: true,
+      validation: true
+    };
+
+    this.attributionService.updateAttribution(attributionId, attribution).subscribe({
+      next: (updatedAttribution) => {
+        this.attributions.update(attrs =>
+          attrs.map(attr => attr.id === updatedAttribution.id ? updatedAttribution : attr)
+        );
+        this.showSuccess('Attribution mise à jour avec succès');
+      },
+      error: (err) => this.handleError('Failed to update attribution')
+    }).add(() => this.loading.set(false));
+  }
+
+  deleteAttribution(attributionId: number): void {
+    this.loading.set(true);
+    this.attributionService.deleteAttribution(attributionId).subscribe({
+      next: () => {
+        this.attributions.update(attrs => attrs.filter(attr => attr.id !== attributionId));
+        this.showSuccess('Attribution supprimée avec succès');
+      },
+      error: (err) => this.handleError('Failed to delete attribution')
+    }).add(() => this.loading.set(false));
+  }
+
+  resetAttributionForm(): void {
+    this.selectedUserId.set(null);
+    this.selectedFunctionalityId.set(null);
+    this.selectedRights.set([]);
+  }
+
+  toggleRight(right: string): void {
+    const currentRights = this.selectedRights();
+    if (currentRights.includes(right)) {
+      this.selectedRights.set(currentRights.filter(r => r !== right));
+    } else {
+      this.selectedRights.set([...currentRights, right]);
+    }
+  }
+
+  isRightSelected(right: string): boolean {
+    return this.selectedRights().includes(right);
+  }
+
+  getUserName(userId: number): string {
+    const user = this.users().find(u => u.id === userId);
+    return user ? `${user.firstname} ${user.lastname}` : 'Utilisateur inconnu';
+  }
+
+  getRoleName(roleId: number): string {
+    const role = this.roles().find(r => r.id === roleId);
+    return role ? role.nom : 'Rôle inconnu';
+  }
+
+  getSocietyName(societyId: number): string {
+    const society = this.societies().find(s => s.id === societyId);
+    return society ? society.raisonSociale : 'Société inconnue';
+  }
+
+  getEtablissementName(etablissementId: number): string {
+    const etab = this.etablissements().find(e => e.id === etablissementId);
+    return etab ? etab.nom : 'Établissement inconnu';
+  }
+
+  getFunctionalityName(functionalityId: number): string {
+    const func = this.functionalities().find(f => f.id === functionalityId);
+    return func ? func.nom : 'Fonctionnalité inconnue';
+  }
+
+  // Get connected user information
+  getConnectedUserFullName(): string {
+    return this.auth.getCurrentUserEmail() || 'Utilisateur inconnu';
+  }
+
+  getConnectedUserEmail(): string {
+    return this.auth.getCurrentUserEmail() || 'Email inconnu';
   }
 }

@@ -17,8 +17,8 @@ public class AttributionMapper {
         entity.setWriting(dto.isWriting());
         entity.setModification(dto.isModification());
         entity.setDeletion(dto.isDeletion());
+        entity.setImpression(dto.isImpression());
         entity.setValidation(dto.isValidation());
-        // Note : dto contient "impression" mais ton entity ne l'a pas, donc on l'ignore
         return entity;
     }
 
@@ -32,8 +32,8 @@ public class AttributionMapper {
         dto.setWriting(entity.isWriting());
         dto.setModification(entity.isModification());
         dto.setDeletion(entity.isDeletion());
+        dto.setImpression(entity.isImpression());
         dto.setValidation(entity.isValidation());
-        // Note : entity ne contient pas "impression", on le laisse par défaut false
         return dto;
     }
 }

@@ -1,17 +1,24 @@
 package com.bzdata.TataFneBackend.gestionSocieteEntrepriseService;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static java.time.LocalTime.now;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.OK;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.bzdata.TataFneBackend.common.HttpResponse;
 
-import java.util.Map;
-import static java.time.LocalTime.now;
-import static org.springframework.http.HttpStatus.OK;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/societes")
@@ -20,30 +27,14 @@ import static org.springframework.http.HttpStatus.OK;
 @Slf4j
 public class SocieteController {
 
-    @PostMapping("/save")
-    public ResponseEntity<HttpResponse> saveSociete(@RequestBody SocieteRequestDTO request) {
-        log.info("We are going to save a new societe via singular endpoint {}", request.toString());
-        var saved = societeService.create(request);
-
-        log.info("We have saved a new societe via singular endpoint {}", saved);
-        return ResponseEntity.ok().body(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .message("societe saved successfully")
-                        .statusCode(OK.value())
-                        .data(Map.of("societe", saved))
-                        .build()
-        );
-    }
-
     private final SocieteService societeService;
 
     @PostMapping("/create")
     public ResponseEntity<HttpResponse> create(@RequestBody SocieteRequestDTO request) {
-        log.info("We are going to create a new role {}", request.toString());
+        log.info("We are going to create a new societe {}", request.toString());
         var saved = societeService.create(request);
 
-        log.info("We are created a new user{}", saved);
+        log.info("We have created a new societe {}", saved);
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
@@ -69,10 +60,11 @@ public class SocieteController {
                         .build()
         );
     }
+
     @GetMapping
     public ResponseEntity<HttpResponse> findAll() {
         log.info("Fetching all societes...");
-     var allSocietes = societeService.findAll();
+        var allSocietes = societeService.findAll();
         return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
@@ -108,8 +100,8 @@ public class SocieteController {
 
     @GetMapping("/{id}")
     public ResponseEntity<HttpResponse> findById(@PathVariable int id) {
-       log.info("Fetching societe with id {}", id);
-      var getSociete=  societeService.findById(id);
+        log.info("Fetching societe with id {}", id);
+        var getSociete = societeService.findById(id);
         return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timeStamp(now().toString())

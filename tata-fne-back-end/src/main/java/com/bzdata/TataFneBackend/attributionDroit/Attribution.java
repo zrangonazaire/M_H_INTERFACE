@@ -30,6 +30,7 @@ public class Attribution {
     private boolean writing;
     private boolean modification;
     private boolean deletion;
+    private boolean impression;
     private boolean validation;
     @CreatedDate
     @Column(nullable = false, updatable = false)

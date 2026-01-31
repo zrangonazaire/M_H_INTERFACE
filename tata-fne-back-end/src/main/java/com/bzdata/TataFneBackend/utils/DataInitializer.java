@@ -248,7 +248,7 @@ public class DataInitializer {
                         .agence(agences.get(random.nextInt(agences.size())))
                         .dateOfBirth(LocalDate.now().minusYears(random.nextInt(20, 50)))
                         .imageUrl("https://i.pravatar.cc/150?u=" + email)
-                        .password(passwordEncoder.encode("123456"))
+                        .password(passwordEncoder.encode("admin123"))
                         .accountLocked(false)
                         .enabled(true)
                         .roles(List.of(userRole))
