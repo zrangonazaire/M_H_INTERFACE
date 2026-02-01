@@ -918,6 +918,18 @@
                          class="form-control" placeholder="Mot de passe">
                 </div>
               </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="userPdvFne">PDV FNE</label>
+                  <input type="text" id="userPdvFne" [(ngModel)]="newUser().pdvFne" name="pdvFne"
+                         class="form-control" placeholder="Point de vente FNE">
+                </div>
+                <div class="form-group">
+                  <label for="userEtablissementFne">Établissement FNE</label>
+                  <input type="text" id="userEtablissementFne" [(ngModel)]="newUser().etablisssementFne" name="etablisssementFne"
+                         class="form-control" placeholder="Établissement FNE">
+                </div>
+              </div>
               <button type="submit" class="btn-primary" [disabled]="loading()">
                 @if (loading()) {
                   <span class="spinner-small"></span> Création...
@@ -980,6 +992,8 @@
                       <th>ID</th>
                       <th>Nom Complet</th>
                       <th>Email</th>
+                      <th>PDV FNE</th>
+                      <th>Établissement FNE</th>
                       <th>Rôles</th>
                       <th>Compte Verrouillé</th>
                       <th>Actif</th>
@@ -992,6 +1006,8 @@
                         <td>{{ user.id }}</td>
                         <td>{{ user.firstname }} {{ user.lastname }}</td>
                         <td>{{ user.email }}</td>
+                        <td>{{ user.pdvFne || '-' }}</td>
+                        <td>{{ user.etablisssementFne || '-' }}</td>
                         <td>{{ user.roles.join(', ') }}</td>
                         <td>
                           <span class="status-badge" [class.locked]="user.accountLocked" [class.unlocked]="!user.accountLocked">
