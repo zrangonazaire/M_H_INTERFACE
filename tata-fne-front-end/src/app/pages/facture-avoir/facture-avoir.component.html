@@ -69,6 +69,7 @@
             <p><strong>Date:</strong> {{ formatDate(invoice()!.date) }}</p>
             <p><strong>Utilisateur:</strong> {{ invoice()!.utilisateurCreateur }}</p>
             <p><strong>Total TTC:</strong> {{ formatMoney(invoice()!.totalTTC) }}</p>
+            <p><strong>Facture de vente:</strong> <a href="/api/invoices/{{ invoice()!.id }}/download?token={{ invoice()!.token }}" target="_blank" rel="noopener noreferrer" class="download-link">Télécharger la facture</a></p>
           </div>
         </div>
 
@@ -79,11 +80,9 @@
                 <th>ID Produit</th>
                 <th>Produit</th>
                 <th>Référence</th>
-                <th>Quantité initiale</th>
-                <th>Quantité à avoir</th>
+                <th>Quantité</th>
                 <th>Prix unitaire</th>
                 <th>Montant</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -93,21 +92,8 @@
                   <td>{{ item.description || 'Produit sans description' }}</td>
                   <td>{{ item.reference || '-' }}</td>
                   <td>{{ item.quantity || 0 }}</td>
-                  <td>
-                    <input 
-                      type="number" 
-                      [value]="item.quantity || 0"
-                      (input)="updateCreditQuantity(item, $any($event.target).value)"
-                      min="0"
-                      [max]="item.quantity || 0"
-                      class="quantity-input"
-                    />
-                  </td>
                   <td>{{ formatMoney(item.amount / (item.quantity || 1)) }}</td>
                   <td>{{ formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)) }}</td>
-                  <td>
-                    <button class="btn btn-primary" (click)="createCreditNoteForItem(item)">Valider l'avoir</button>
-                  </td>
                 </tr>
               }
             </tbody>
@@ -123,7 +109,6 @@
 
         <div class="actions">
           <button class="btn btn-primary" (click)="createCreditNote()">Créer l'avoir</button>
-          <button class="btn btn-secondary" (click)="resetQuantities()">Réinitialiser</button>
         </div>
       </section>
     } @else {

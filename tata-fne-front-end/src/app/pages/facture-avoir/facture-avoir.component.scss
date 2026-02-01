@@ -318,6 +318,17 @@ tbody tr:hover {
   justify-content: flex-end;
 }
 
+.download-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+  
+  &:hover {
+    text-decoration: underline;
+    color: #0056b3;
+  }
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;

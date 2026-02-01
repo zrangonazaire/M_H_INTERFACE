@@ -3,6 +3,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CertifiedInvoice, ItemDto } from '../../core/models/certified-invoice';
+import { RefundInvoiceDTO, RefundItemDTO } from '../../core/models/refund-invoice.dto';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
@@ -102,22 +103,41 @@ export class FactureAvoirComponent implements OnInit {
 
   protected createCreditNote(): void {
     const invoice = this.invoice();
-    if (!invoice) return;
+    if (!invoice || !invoice.items) return;
 
-    // Logique de création de l'avoir
-    console.log('Création de l\'avoir pour la facture:', invoice.reference);
-    console.log('Détails de l\'avoir:', {
+    // Créer le DTO pour l'appel API
+    const refundDto: RefundInvoiceDTO = {
       invoiceId: invoice.id,
-      items: invoice.items?.map(item => ({
+      items: invoice.items.map(item => ({
         id: item.id,
-        quantity: item.creditQuantity,
-        amount: (item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)
+        quantity: item.creditQuantity || 0
+      }))
+    };
+
+    // Afficher les valeurs envoyées dans la console
+    console.log('Données envoyées à l\'API:', {
+      invoiceId: refundDto.invoiceId,
+      items: refundDto.items.map(item => ({
+        id: item.id,
+        quantity: item.quantity
       })),
-      total: this.creditTotal()
+      totalAmount: this.creditTotal()
     });
 
-    // Pour l'instant, on affiche un message de confirmation
-    alert('Avoir créé avec succès pour un montant de ' + this.formatMoney(this.creditTotal()));
+    // Appeler l'API backend
+    this.invoiceService.createRefund(refundDto).subscribe({
+      next: (response) => {
+        console.log('Avoir créé avec succès:', response);
+        alert('Avoir créé avec succès pour un montant de ' + this.formatMoney(this.creditTotal()));
+        // Optionnel : rediriger vers la liste des factures après succès
+        this.router.navigate(['/factures-certifiees']);
+      },
+      error: (err) => {
+        console.error('Erreur lors de la création de l\'avoir:', err);
+        const errorMessage = err?.error?.message || 'Erreur lors de la création de l\'avoir';
+        alert(errorMessage);
+      }
+    });
   }
 
   protected createCreditNoteForItem(item: ItemDto): void {

@@ -7,6 +7,8 @@ import { InvoiceCertificationResponse } from '../models/invoice-certification-re
 import { NonCertifiedInvoice } from '../models/non-certified-invoice';
 import { CertifiedInvoice } from '../models/certified-invoice';
 import { InvoiceSignRequest } from '../models/invoice-sign-request';
+import { RefundInvoiceDTO } from '../models/refund-invoice.dto';
+import { VerificationRefundResponse } from '../models/verification-refund-response';
 
 @Injectable({ providedIn: 'root' })
 export class FneInvoiceService {
@@ -63,5 +65,17 @@ export class FneInvoiceService {
     } catch (e) {
       return `/fr/verification/${encodeURIComponent(token)}`;
     }
+  }
+
+  createRefund(refundDto: RefundInvoiceDTO): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/new-invoices/refund-invoice`, refundDto);
+  }
+
+  getRefunds(): Observable<VerificationRefundResponse[]> {
+    return this.http.get<VerificationRefundResponse[]>(`${this.baseUrl}/new-invoices/list-facture-avoir`);
+  }
+
+  getRefundsByInvoice(invoiceId: string): Observable<VerificationRefundResponse[]> {
+    return this.http.get<VerificationRefundResponse[]>(`${this.baseUrl}/new-invoices/invoice/${invoiceId}`);
   }
 }

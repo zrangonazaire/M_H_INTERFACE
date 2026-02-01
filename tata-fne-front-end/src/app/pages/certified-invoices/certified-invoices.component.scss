@@ -141,6 +141,32 @@
   gap: 0.75rem;
 }
 
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d9e2ef;
+  background: #fff;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    background: #f7f9fc;
+  }
+  
+  &.active {
+    background: #0c3c74;
+    color: #fff;
+    border-color: #0c3c74;
+  }
+}
+
 .eyebrow {
   margin: 0;
   font-weight: 800;

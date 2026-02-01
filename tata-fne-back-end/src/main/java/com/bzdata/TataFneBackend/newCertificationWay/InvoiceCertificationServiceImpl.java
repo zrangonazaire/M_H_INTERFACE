@@ -591,6 +591,23 @@ public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto) {
     return saved;
 }
 
+ @Override
+ public List<VerificationRefundResponse> getAllRefundInvoiceList() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'getAllRefundInvoiceList'");
+ }
+
+@Override
+public List<VerificationRefundResponse> getAllRefunds() {
+    return verificationRefundResponseRepo.findAllByOrderByCreatedAtDesc();
+}
+
+@Override
+public List<VerificationRefundResponse> getRefundsByInvoiceId(String invoiceId) {
+    return verificationRefundResponseRepo.findByInvoiceIdOrderByCreatedAtDesc(invoiceId);
+}
+
+
     
 //     private VerificationRefundResponse toRefundEntity(
 //         VerificationRefundResponseDto dto,

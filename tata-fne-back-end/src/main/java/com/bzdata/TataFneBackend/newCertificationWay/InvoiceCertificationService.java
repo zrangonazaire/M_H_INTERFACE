@@ -7,7 +7,8 @@ import java.util.List;
 public interface InvoiceCertificationService {
     JsonNode certifyInvoice(InvoiceSignRequest request);
 
-public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto);
+    VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto);
+    List<VerificationRefundResponse> getAllRefundInvoiceList();
 
     InvoiceMainResponse certifyInvoicePropre(InvoiceSignRequest request);
 
@@ -22,5 +23,10 @@ public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto);
     List<InvoiceFneCertifyDto> getAll();
 
     List<InvoiceFneCertifyDto> getByNumeroFacture(String numeroFacture);
+    
+
+    List<VerificationRefundResponse> getAllRefunds();
+
+    List<VerificationRefundResponse> getRefundsByInvoiceId(String invoiceId);
 
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
 import { CertifiedInvoice } from '../../core/models/certified-invoice';
+import { VerificationRefundResponse } from '../../core/models/verification-refund-response';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
@@ -22,8 +23,10 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected readonly creatorFilter = signal('all');
 
   protected readonly invoices = signal<CertifiedInvoice[]>([]);
+  protected readonly refunds = signal<VerificationRefundResponse[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly currentTab = signal<'sales' | 'refunds'>('sales');
 
   protected readonly creators = computed(() => {
     const set = new Set(this.invoices().map((i) => i.utilisateurCreateur).filter(Boolean));
@@ -33,15 +36,40 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected readonly filtered = computed(() => {
     const q = this.search().toLowerCase().trim();
     const creator = this.creatorFilter();
-    return this.invoices().filter((invoice) => {
-      const matchesQuery =
-        !q ||
-        invoice.numeroFactureInterne?.toLowerCase().includes(q) ||
-        invoice.reference?.toLowerCase().includes(q) ||
-        invoice.token?.toLowerCase().includes(q);
-      const matchesCreator = creator === 'all' || invoice.utilisateurCreateur === creator;
-      return matchesQuery && matchesCreator;
-    });
+    const tab = this.currentTab();
+    
+    if (tab === 'sales') {
+      return this.invoices().filter((invoice) => {
+        // Filter by tab
+        const matchesTab = (invoice.invoiceType || '').toLowerCase() === 'sale';
+        
+        // Filter by search query
+        const matchesQuery =
+          !q ||
+          invoice.numeroFactureInterne?.toLowerCase().includes(q) ||
+          invoice.reference?.toLowerCase().includes(q) ||
+          invoice.token?.toLowerCase().includes(q);
+        
+        // Filter by creator
+        const matchesCreator = creator === 'all' || invoice.utilisateurCreateur === creator;
+        
+        return matchesTab && matchesQuery && matchesCreator;
+      });
+    } else {
+      return this.refunds().filter((refund) => {
+        // Filter by search query
+        const matchesQuery =
+          !q ||
+          refund.numeroFactureInterne?.toLowerCase().includes(q) ||
+          refund.reference?.toLowerCase().includes(q) ||
+          refund.token?.toLowerCase().includes(q);
+        
+        // Filter by creator
+        const matchesCreator = creator === 'all' || refund.utilisateurCreateur === creator;
+        
+        return matchesQuery && matchesCreator;
+      });
+    }
   });
 
   protected readonly totals = computed(() => {
@@ -70,11 +98,26 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected load(): void {
     this.loading.set(true);
     this.error.set(null);
+    
+    // Charger les factures de vente
     this.invoiceService.getCertifiedInvoices().subscribe({
       next: (data) => {
         console.log('Données reçues du backend:', data);
         this.invoices.set(data);
-        this.loading.set(false);
+        
+        // Charger les factures d'avoir
+        this.invoiceService.getRefunds().subscribe({
+          next: (refundData) => {
+            console.log('Avoirs reçus du backend:', refundData);
+            this.refunds.set(refundData);
+            this.loading.set(false);
+          },
+          error: (err) => {
+            console.error('Erreur lors du chargement des avoirs:', err);
+            // Continuer même si les avoirs ne chargent pas
+            this.loading.set(false);
+          }
+        });
       },
       error: (err) => {
         const message = err?.error?.message ?? 'Impossible de charger les factures certifiées.';
@@ -109,6 +152,11 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected createCreditNote(invoice: CertifiedInvoice): void {
     // Navigate to the credit note page with the invoice ID
     this.router.navigate(['/factures-certifiees', invoice.id, 'avoir']);
+  }
+
+  protected shouldShowCreateCreditNoteButton(invoice: CertifiedInvoice): boolean {
+    // Check if there are any refunds for this invoice
+    return this.refunds().filter(refund => refund.invoiceId === invoice.id).length === 0;
   }
 
   protected getByNumero(numeroFacture: string): void {

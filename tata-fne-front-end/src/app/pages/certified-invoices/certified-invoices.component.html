@@ -47,6 +47,22 @@
 
     <section class="page-heading">
       <p class="eyebrow">Factures certifiées</p>
+      <div class="tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="currentTab() === 'sales'"
+          (click)="currentTab.set('sales')"
+        >
+          Ventes
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="currentTab() === 'refunds'"
+          (click)="currentTab.set('refunds')"
+        >
+          Avoirs
+        </button>
+      </div>
       <div class="heading-actions">
         <input
           type="search"
@@ -138,7 +154,11 @@
                     }
                   </td>
                   <td>
-                    <button class="btn btn-primary" (click)="createCreditNote(invoice)">Faire un avoir</button>
+                    @if (shouldShowCreateCreditNoteButton(invoice)) {
+                      <button class="btn btn-primary" (click)="createCreditNote(invoice)">Faire un avoir</button>
+                    } @else {
+                      <span class="muted">Avoir existant</span>
+                    }
                   </td>
                 </tr>
               } @empty {

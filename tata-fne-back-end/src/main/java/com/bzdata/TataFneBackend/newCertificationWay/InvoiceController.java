@@ -62,4 +62,19 @@ public class InvoiceController {
     ) {
         return service.refundInvoice(refundDto);
     }
+
+     @GetMapping("/list-facture-avoir")
+    public List<VerificationRefundResponse> getAllRefunds() {
+        return service.getAllRefunds();
+    }
+
+    /**
+     * 🔹 Liste des refunds par facture
+     */
+    @GetMapping("/invoice/{invoiceId}")
+    public List<VerificationRefundResponse> getRefundsByInvoice(
+            @PathVariable String invoiceId
+    ) {
+        return service.getRefundsByInvoiceId(invoiceId);
+    }
 }
