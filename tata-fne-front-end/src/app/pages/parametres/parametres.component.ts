@@ -12,7 +12,7 @@ import { SocietyService } from '../../core/services/society.service';
 import { DepartmentService, DepartmentResponse } from '../../core/services/department.service';
 import { AttributionService } from '../../core/services/attribution.service';
 import { UserService } from '../../core/services/user.service';
-import { RegistrationRequest, ChangePasswordRequest } from '../../core/models/auth';
+import { RegistrationRequest, ChangePasswordRequest, UserDTO } from '../../core/models/auth';
 
 @Component({
   selector: 'app-parametres',
@@ -32,7 +32,7 @@ export class ParametresComponent implements OnInit {
   etablissements = signal<any[]>([]);
   societies = signal<any[]>([]);
   attributions = signal<any[]>([]);
-  users = signal<any[]>([]);
+  users = signal<UserDTO[]>([]);
 
   // Pagination State
   pagination = signal<{
@@ -49,6 +49,19 @@ export class ParametresComponent implements OnInit {
 
   // Attribution Pagination State
   attributionPagination = signal<{
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  }>({
+    currentPage: 0,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 1
+  });
+
+  // Users Pagination State
+  usersPagination = signal<{
     currentPage: number;
     pageSize: number;
     totalItems: number;
@@ -215,10 +228,13 @@ export class ParametresComponent implements OnInit {
         error: (err) => this.handleError('Failed to load attributions')
       });
 
-      // Load users
+      // Load users with pagination
+      this.loadUsersPage(0);
+      
+      // Also load all users for dropdowns and department management
       this.userService.getUsers().subscribe({
         next: (users) => this.users.set(users),
-        error: (err) => this.handleError('Failed to load users')
+        error: (err) => this.handleError('Failed to load users for dropdowns')
       });
 
     } catch (err) {
@@ -526,6 +542,90 @@ export class ParametresComponent implements OnInit {
       },
       error: (err) => this.handleError('Failed to load attributions')
     }).add(() => this.loading.set(false));
+  }
+
+  // Users Pagination Methods
+  loadUsersPage(page: number): void {
+    this.loading.set(true);
+    this.usersPagination.update(p => ({ ...p, currentPage: page }));
+
+    this.userService.getUsersPaginated(page, this.usersPagination().pageSize).subscribe({
+      next: (result) => {
+        this.users.set(result.users);
+        this.usersPagination.update(p => ({
+          ...p,
+          currentPage: result.currentPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages
+        }));
+      },
+      error: (err) => this.handleError('Failed to load users')
+    }).add(() => this.loading.set(false));
+  }
+
+  getUsersPaginationEndIndex(): number {
+    return Math.min((this.usersPagination().currentPage + 1) * this.usersPagination().pageSize, this.usersPagination().totalItems);
+  }
+
+  changeUsersPageSize(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    if (!target || !target.value) return;
+    
+    const size = Number(target.value);
+    this.loading.set(true);
+    this.usersPagination.update(p => ({ ...p, pageSize: size, currentPage: 0 }));
+
+    this.userService.getUsersPaginated(0, size).subscribe({
+      next: (result) => {
+        this.users.set(result.users);
+        this.usersPagination.update(p => ({
+          ...p,
+          currentPage: result.currentPage,
+          totalItems: result.totalItems,
+          totalPages: result.totalPages
+        }));
+      },
+      error: (err) => this.handleError('Failed to load users')
+    }).add(() => this.loading.set(false));
+  }
+
+  getVisiblePages(): number[] {
+    const pages: number[] = [];
+    const totalPages = this.usersPagination().totalPages;
+    const currentPage = this.usersPagination().currentPage;
+
+    if (totalPages <= 7) {
+      // Show all pages if total pages is 7 or less
+      for (let i = 0; i < totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show first page
+      pages.push(0);
+
+      // Show pages around current page
+      const start = Math.max(1, currentPage - 1);
+      const end = Math.min(totalPages - 2, currentPage + 1);
+
+      if (start > 1) {
+        pages.push(-1); // Placeholder for ellipsis
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages - 2) {
+        pages.push(-1); // Placeholder for ellipsis
+      }
+
+      // Show last page
+      if (totalPages > 1) {
+        pages.push(totalPages - 1);
+      }
+    }
+
+    return pages.filter(page => page !== -1);
   }
 
   // UI Helpers

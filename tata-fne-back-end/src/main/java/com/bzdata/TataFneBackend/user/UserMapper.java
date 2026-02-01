@@ -23,6 +23,8 @@ public class UserMapper {
         dto.setImageUrl(user.getImageUrl());
         dto.setAccountLocked(user.isAccountLocked());
         dto.setEnabled(user.isEnabled());
+        dto.setPdvFne(user.getPdvFne());
+        dto.setEtablisssementFne(user.getEtablisssementFne());
 
         // Convert roles to list of role names
         if (user.getRoles() != null) {

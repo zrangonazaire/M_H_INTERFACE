@@ -882,7 +882,7 @@
       </div>
     }
 
-    <!-- Users Management Tab -->
+        <!-- Users Management Tab -->
     @if (activeTab() === 'users') {
       <div class="api-section">
         <h3>Gestion des Utilisateurs</h3>
@@ -941,45 +941,18 @@
           </div>
         </div>
 
-        <!-- Change Password Form -->
+        <!-- Users List with Pagination -->
         <div class="card mt-4">
-          <div class="card-header">
-            <h4>Changer le Mot de Passe</h4>
-          </div>
-          <div class="card-body">
-            <form (ngSubmit)="changeUserPassword()" class="api-form">
-              <div class="form-group">
-                <label for="currentPassword">Mot de passe actuel</label>
-                <input type="password" id="currentPassword" [(ngModel)]="changePassword().currentPassword" name="currentPassword" required
-                       class="form-control" placeholder="Mot de passe actuel">
-              </div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label for="newPassword">Nouveau mot de passe</label>
-                  <input type="password" id="newPassword" [(ngModel)]="changePassword().newPassword" name="newPassword" required
-                         class="form-control" placeholder="Nouveau mot de passe">
-                </div>
-                <div class="form-group">
-                  <label for="confirmPassword">Confirmer le mot de passe</label>
-                  <input type="password" id="confirmPassword" [(ngModel)]="changePassword().confirmationPassword" name="confirmationPassword" required
-                         class="form-control" placeholder="Confirmer le mot de passe">
-                </div>
-              </div>
-              <button type="submit" class="btn-primary" [disabled]="loading()">
-                @if (loading()) {
-                  <span class="spinner-small"></span> Changement...
-                } @else {
-                  Changer le Mot de Passe
-                }
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <!-- Users List -->
-        <div class="card mt-4">
-          <div class="card-header">
+          <div class="card-header d-flex justify-content-between align-items-center">
             <h4>Liste des Utilisateurs ({{ users().length }})</h4>
+              <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" style="width: auto;" (change)="changeUsersPageSize($event)">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
           </div>
           <div class="card-body">
             @if (users().length === 0) {
@@ -1006,8 +979,8 @@
                         <td>{{ user.id }}</td>
                         <td>{{ user.firstname }} {{ user.lastname }}</td>
                         <td>{{ user.email }}</td>
-                        <td>{{ user.pdvFne || '-' }}</td>
-                        <td>{{ user.etablisssementFne || '-' }}</td>
+                        <td>{{ user.pdvFne || 'Non spécifié' }}</td>
+                        <td>{{ user.etablisssementFne || 'Non spécifié' }}</td>
                         <td>{{ user.roles.join(', ') }}</td>
                         <td>
                           <span class="status-badge" [class.locked]="user.accountLocked" [class.unlocked]="!user.accountLocked">
@@ -1032,6 +1005,53 @@
                   </tbody>
                 </table>
               </div>
+
+              <!-- Pagination Controls -->
+              <nav aria-label="Users pagination" class="mt-3">
+                <ul class="pagination justify-content-center">
+                  <li class="page-item" [class.disabled]="usersPagination().currentPage === 0">
+                    <button class="page-link" (click)="loadUsersPage(usersPagination().currentPage - 1)" aria-label="Previous">
+                      <span aria-hidden="true">&laquo;</span>
+                    </button>
+                  </li>
+                  
+                  <!-- Show first page -->
+                  <li class="page-item" [class.active]="usersPagination().currentPage === 0">
+                    <button class="page-link" (click)="loadUsersPage(0)">1</button>
+                  </li>
+                  
+                  <!-- Show ellipsis if needed -->
+                  <li class="page-item disabled" *ngIf="usersPagination().currentPage > 3">
+                    <span class="page-link">...</span>
+                  </li>
+                  
+                  <!-- Show current page and neighbors -->
+                  <li class="page-item" *ngFor="let page of getVisiblePages()" [class.active]="usersPagination().currentPage === page">
+                    <button class="page-link" (click)="loadUsersPage(page)">{{ page + 1 }}</button>
+                  </li>
+                  
+                  <!-- Show ellipsis if needed -->
+                  <li class="page-item disabled" *ngIf="usersPagination().currentPage < usersPagination().totalPages - 4">
+                    <span class="page-link">...</span>
+                  </li>
+                  
+                  <!-- Show last page if there are multiple pages -->
+                  <li class="page-item" *ngIf="usersPagination().totalPages > 1" [class.active]="usersPagination().currentPage === usersPagination().totalPages - 1">
+                    <button class="page-link" (click)="loadUsersPage(usersPagination().totalPages - 1)">{{ usersPagination().totalPages }}</button>
+                  </li>
+                  
+                  <li class="page-item" [class.disabled]="usersPagination().currentPage >= usersPagination().totalPages - 1">
+                    <button class="page-link" (click)="loadUsersPage(usersPagination().currentPage + 1)" aria-label="Next">
+                      <span aria-hidden="true">&raquo;</span>
+                    </button>
+                  </li>
+                </ul>
+                
+                <!-- Page Info -->
+                <div class="text-center text-muted">
+                  Affichage de {{ getUsersPaginationEndIndex() - usersPagination().pageSize + 1 }} à {{ getUsersPaginationEndIndex() }} sur {{ usersPagination().totalItems }} utilisateurs
+                </div>
+              </nav>
             }
           </div>
         </div>

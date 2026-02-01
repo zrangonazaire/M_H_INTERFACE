@@ -53,6 +53,12 @@ export class UserService {
       .pipe(map((response) => response.data.users));
   }
 
+  getUsersPaginated(page: number, size: number): Observable<{ users: User[], currentPage: number, totalItems: number, totalPages: number }> {
+    return this.http.get<{ users: User[], currentPage: number, totalItems: number, totalPages: number }>(
+      `${this.baseUrl}/users/paginated?page=${page}&size=${size}`
+    );
+  }
+
   // Get user by ID
   getUserById(id: number): Observable<User> {
     return this.http

@@ -18,4 +18,7 @@ public class UserDTO {
     private List<String> roles;
     private String createdDate;
     private String lastModifiedDate;
+    private String pdvFne;
+    private String etablisssementFne;
+
 }

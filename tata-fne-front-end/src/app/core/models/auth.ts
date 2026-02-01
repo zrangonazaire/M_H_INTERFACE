@@ -12,6 +12,23 @@ export interface RegistrationRequest {
   etablisssementFne?: string;
 }
 
+export interface UserDTO {
+  id: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+  dateOfBirth?: string;
+  agence?: string;
+  imageUrl?: string;
+  accountLocked: boolean;
+  enabled: boolean;
+  roles: string[];
+  createdDate?: string;
+  lastModifiedDate?: string;
+  pdvFne?: string;
+  etablisssementFne?: string;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
