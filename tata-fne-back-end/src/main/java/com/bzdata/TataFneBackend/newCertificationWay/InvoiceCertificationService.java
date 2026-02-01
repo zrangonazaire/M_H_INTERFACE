@@ -7,6 +7,8 @@ import java.util.List;
 public interface InvoiceCertificationService {
     JsonNode certifyInvoice(InvoiceSignRequest request);
 
+public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto);
+
     InvoiceMainResponse certifyInvoicePropre(InvoiceSignRequest request);
 
     InvoiceMainResponse saveFromJson(JsonNode json);

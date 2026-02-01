@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,13 +23,15 @@ import java.util.List;
 @Transactional
 @Slf4j
 public class InvoiceCertificationServiceImpl implements InvoiceCertificationService {
-private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     private final InvoiceMainResponseRepository mainRepo;
     private final WebClient invoiceWebClient;
     private final InvoiceApiProperties props;
     private final InvoiceFneCertifyRepository invoiceRepo;
     private final ItemRepository itemRepo;
     private final InvoiceCertifierCustomTaxRepository invoiceCustomTaxRepo;
+    private final VerificationResponseRepository verificationRefundResponseRepo;
+
     @Override
     public JsonNode certifyInvoice(InvoiceSignRequest request) {
 
@@ -48,17 +51,18 @@ private final ObjectMapper objectMapper;
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+
     @Override
     public InvoiceMainResponse certifyInvoicePropre(InvoiceSignRequest request) {
-       return invoiceWebClient.post()
-            .uri(props.getSignPath())
-            .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
-            .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(request)
-            .retrieve()
-            .bodyToMono(InvoiceMainResponse.class)
-            .block();
+        return invoiceWebClient.post()
+                .uri(props.getSignPath())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(InvoiceMainResponse.class)
+                .block();
     }
 
     @Override
@@ -143,7 +147,8 @@ private final ObjectMapper objectMapper;
         // sauver invoice
         invoiceRepo.save(invoice);
 
-        // ===== 3) Lier main -> invoice (sans cascade, on met juste la FK et on resave main) =====
+        // ===== 3) Lier main -> invoice (sans cascade, on met juste la FK et on resave
+        // main) =====
         main.setInvoice(invoice);
         mainRepo.save(main);
 
@@ -173,22 +178,22 @@ private final ObjectMapper objectMapper;
                 // ===== 5) Taxes de l’item (si tu veux) =====
                 // JsonNode taxesNode = itemNode.path("taxes");
                 // if (taxesNode.isArray()) {
-                //   for (JsonNode taxNode : taxesNode) {
-                //     ItemTax tax = new ItemTax();
-                //     tax.set... // mapping
-                //     tax.setItem(item);
-                //     itemTaxRepo.save(tax);
-                //   }
+                // for (JsonNode taxNode : taxesNode) {
+                // ItemTax tax = new ItemTax();
+                // tax.set... // mapping
+                // tax.setItem(item);
+                // itemTaxRepo.save(tax);
+                // }
                 // }
 
                 // JsonNode itemCustomTaxesNode = itemNode.path("customTaxes");
                 // if (itemCustomTaxesNode.isArray()) {
-                //   for (JsonNode ctNode : itemCustomTaxesNode) {
-                //     ItemCustomTax ct = new ItemCustomTax();
-                //     ct.set... // mapping
-                //     ct.setItem(item);
-                //     itemCustomTaxRepo.save(ct);
-                //   }
+                // for (JsonNode ctNode : itemCustomTaxesNode) {
+                // ItemCustomTax ct = new ItemCustomTax();
+                // ct.set... // mapping
+                // ct.setItem(item);
+                // itemCustomTaxRepo.save(ct);
+                // }
                 // }
             }
         }
@@ -212,11 +217,10 @@ private final ObjectMapper objectMapper;
     }
 
     @Override
-    public void saveFromJsonToDatabaWithNumFacture(JsonNode json, String numFacture,String utiliseur) {
+    public void saveFromJsonToDatabaWithNumFacture(JsonNode json, String numFacture, String utiliseur) {
         if (invoiceRepo.existsByNumeroFacture(numFacture)) {
             throw new ResourceNonFoundException(
-                    "La facture " + numFacture + " est déjà certifiée et ne peut plus être traitée."
-            );
+                    "La facture " + numFacture + " est déjà certifiée et ne peut plus être traitée.");
         }
         // ===== 1) MAIN RESPONSE =====
         InvoiceMainResponse main = new InvoiceMainResponse();
@@ -225,7 +229,6 @@ private final ObjectMapper objectMapper;
         main.setToken(text(json, "token"));
         main.setWarning(bool(json, "warning"));
         main.setBalanceFunds(intVal(json, "balance_funds"));
-       
 
         // on sauve main maintenant (sans invoice lié pour l’instant)
         mainRepo.save(main);
@@ -294,7 +297,8 @@ private final ObjectMapper objectMapper;
         // sauver invoice
         invoiceRepo.save(invoice);
 
-        // ===== 3) Lier main -> invoice (sans cascade, on met juste la FK et on resave main) =====
+        // ===== 3) Lier main -> invoice (sans cascade, on met juste la FK et on resave
+        // main) =====
         main.setInvoice(invoice);
         mainRepo.save(main);
 
@@ -324,22 +328,22 @@ private final ObjectMapper objectMapper;
                 // ===== 5) Taxes de l’item (si tu veux) =====
                 // JsonNode taxesNode = itemNode.path("taxes");
                 // if (taxesNode.isArray()) {
-                //   for (JsonNode taxNode : taxesNode) {
-                //     ItemTax tax = new ItemTax();
-                //     tax.set... // mapping
-                //     tax.setItem(item);
-                //     itemTaxRepo.save(tax);
-                //   }
+                // for (JsonNode taxNode : taxesNode) {
+                // ItemTax tax = new ItemTax();
+                // tax.set... // mapping
+                // tax.setItem(item);
+                // itemTaxRepo.save(tax);
+                // }
                 // }
 
                 // JsonNode itemCustomTaxesNode = itemNode.path("customTaxes");
                 // if (itemCustomTaxesNode.isArray()) {
-                //   for (JsonNode ctNode : itemCustomTaxesNode) {
-                //     ItemCustomTax ct = new ItemCustomTax();
-                //     ct.set... // mapping
-                //     ct.setItem(item);
-                //     itemCustomTaxRepo.save(ct);
-                //   }
+                // for (JsonNode ctNode : itemCustomTaxesNode) {
+                // ItemCustomTax ct = new ItemCustomTax();
+                // ct.set... // mapping
+                // ct.setItem(item);
+                // itemCustomTaxRepo.save(ct);
+                // }
                 // }
             }
         }
@@ -382,6 +386,7 @@ private final ObjectMapper objectMapper;
                 .map(this::toDto)
                 .toList();
     }
+
     private InvoiceFneCertifyDto toDto(InvoiceFneCertify invoice) {
         InvoiceFneCertifyDto dto = new InvoiceFneCertifyDto();
         InvoiceMainResponse mainResp = mainRepo.findByInvoice(invoice);
@@ -389,12 +394,12 @@ private final ObjectMapper objectMapper;
         dto.setId(invoice.getId());
         dto.setNumeroFactureInterne(invoice.getNumeroFacture());
         dto.setUtilisateurCreateur(invoice.getUtilisateurCreateur());
-        
+
         // Convertir les items en ItemDto
         if (invoice.getItems() != null) {
             dto.setItems(invoice.getItems().stream()
-                .map(this::toItemDto)
-                .toList());
+                    .map(this::toItemDto)
+                    .toList());
         }
 
         dto.setReference(invoice.getReference());
@@ -402,11 +407,11 @@ private final ObjectMapper objectMapper;
 
         dto.setTotalTTC(invoice.getTotalAfterTaxes());
         dto.setTotalHorsTaxes(invoice.getTotalBeforeTaxes());
-        dto.setTotalTaxes(invoice.getTotalTaxes());      
+        dto.setTotalTaxes(invoice.getTotalTaxes());
         dto.setToken(mainResp.getToken());
         return dto;
     }
-    
+
     private ItemDto toItemDto(Item item) {
         ItemDto dto = new ItemDto();
         dto.setId(item.getId());
@@ -424,7 +429,8 @@ private final ObjectMapper objectMapper;
     }
 
     private void linkRelations(InvoiceMainResponse main) {
-        if (main == null || main.getInvoice() == null) return;
+        if (main == null || main.getInvoice() == null)
+            return;
 
         InvoiceFneCertify inv = main.getInvoice();
 
@@ -456,6 +462,7 @@ private final ObjectMapper objectMapper;
             }
         }
     }
+
     private static String text(JsonNode node, String field) {
         JsonNode v = node.path(field);
         return (v.isMissingNode() || v.isNull()) ? null : v.asText();
@@ -493,4 +500,111 @@ private final ObjectMapper objectMapper;
         String s = text(node, field);
         return (s == null || s.isBlank()) ? null : OffsetDateTime.parse(s);
     }
+
+ @Override
+@Transactional
+public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto) {
+
+    // ===== 1) LOG =====
+    try {
+        log.info(
+                "Calling FNE REFUND API | invoiceId={} | payload={}",
+                refundDto.getInvoiceId(),
+                objectMapper.writeValueAsString(refundDto)
+        );
+    } catch (Exception e) {
+        log.warn("Unable to serialize RefundInvoiceDTO for logging", e);
+    }
+
+    // ===== 2) APPEL API FNE =====
+    VerificationRefundResponseDto response;
+    try {
+        log.info("Url  is {}",props.getBaseUrl());
+        // return invoiceWebClient.post()
+        //         .uri(props.getSignPath() + "ws/external/invoices/{id}/refund", refundDto.getInvoiceId())
+        //         .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
+        //         .contentType(MediaType.APPLICATION_JSON)
+        //         .accept(MediaType.APPLICATION_JSON)
+        //         .bodyValue(refundDto)
+        //         .retrieve()
+        //         .bodyToMono(JsonNode.class)
+        //         .block();
+        response = invoiceWebClient
+                .post()
+               
+                .uri(props.getBaseUrl() + "/ws/external/invoices/{id}/refund", refundDto.getInvoiceId())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+
+                // ⬅️ BODY = DTO (invoiceId ignoré par Jackson)
+                .bodyValue(refundDto)
+
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, res ->
+                        res.bodyToMono(String.class)
+                                .map(body -> {
+                                    log.error("FNE REFUND 4xx error: {}", body);
+                                    return new RuntimeException(body);
+                                })
+                )
+                .onStatus(HttpStatusCode::is5xxServerError, res ->
+                        res.bodyToMono(String.class)
+                                .map(body -> {
+                                    log.error("FNE REFUND 5xx error: {}", body);
+                                    return new RuntimeException(body);
+                                })
+                )
+                .bodyToMono(VerificationRefundResponseDto.class)
+                .block();
+
+    } catch (Exception e) {
+        log.error("Exception while calling FNE REFUND API", e);
+        throw new RuntimeException("Impossible de contacter l’API FNE (refund)", e);
+    }
+
+    if (response == null) {
+        throw new RuntimeException("Réponse FNE refund vide");
+    }
+
+    // ===== 3) MAPPING DTO → ENTITY =====
+    VerificationRefundResponse entity = VerificationRefundResponse.builder()
+            .reference(response.getReference())
+            .ncc(response.getNcc())
+            .token(response.getToken())
+            .warning(response.isWarning())
+            .balanceSticker(response.getBalanceSticker())
+            .invoiceId(refundDto.getInvoiceId())
+            .createdAt(OffsetDateTime.now())
+            .build();
+
+    // ===== 4) SAUVEGARDE DB =====
+    VerificationRefundResponse saved =
+            verificationRefundResponseRepo.save(entity);
+
+    log.info(
+            "Refund saved successfully | reference={} | invoiceId={}",
+            saved.getReference(),
+            saved.getInvoiceId()
+    );
+
+    return saved;
+}
+
+    
+//     private VerificationRefundResponse toRefundEntity(
+//         VerificationRefundResponseDto dto,
+//         String invoiceId
+// ) {
+//     return VerificationRefundResponse.builder()
+//             .reference(dto.getReference())
+//             .ncc(dto.getNcc())
+//             .token(dto.getToken())
+//             .warning(dto.isWarning())
+//             .balanceSticker(dto.getBalanceSticker())
+//             .invoiceId(invoiceId)
+//             .createdAt(OffsetDateTime.now())
+//             .build();
+// }
+
 }
