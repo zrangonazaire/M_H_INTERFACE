@@ -584,6 +584,7 @@ export class ParametresComponent implements OnInit {
           totalItems: result.totalItems,
           totalPages: result.totalPages
         }));
+        this.showSuccess(`Page size changed to ${size} users per page`);
       },
       error: (err) => this.handleError('Failed to load users')
     }).add(() => this.loading.set(false));
