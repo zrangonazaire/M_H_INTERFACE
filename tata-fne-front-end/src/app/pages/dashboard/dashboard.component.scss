@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #eef2f7;
+  background: #fff5f5;
   color: #0a1b2e;
   font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -13,7 +13,7 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #0c3c74 0%, #0b2f5a 100%);
+  background: linear-gradient(180deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -128,7 +128,7 @@
 }
 
 .top-actions .link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: none;
   font-weight: 700;
 }
@@ -140,11 +140,11 @@
 }
 
 .company-card {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: #fff;
   border-radius: 14px;
   padding: 1.5rem;
-  box-shadow: 0 18px 40px rgba(12, 60, 116, 0.18);
+  box-shadow: 0 18px 40px rgba(211, 47, 47, 0.18);
 }
 
 .company-name {
@@ -175,7 +175,7 @@
 }
 
 .pill {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: #fff;
   border-radius: 999px;
   padding: 0.5rem 0.9rem;
@@ -214,7 +214,7 @@
 .card-value {
   font-size: 2rem;
   font-weight: 800;
-  color: #0c3c74;
+  color: var(--primary-red);
 }
 
 .meta {

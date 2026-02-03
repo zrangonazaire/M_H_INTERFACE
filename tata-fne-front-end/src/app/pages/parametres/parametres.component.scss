@@ -13,7 +13,7 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #0c3c74 0%, #0b2f5a 100%);
+  background: linear-gradient(180deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -128,7 +128,7 @@
 }
 
 .top-actions .link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: none;
   font-weight: 700;
 }
@@ -161,13 +161,13 @@
 }
 
 .tab-button:hover {
-  color: #0c3c74;
-  background: rgba(12, 60, 116, 0.05);
+  color: var(--primary-red);
+  background: rgba(211, 47, 47, 0.05);
 }
 
 .tab-button.active {
-  color: #0c3c74;
-  border-bottom-color: #0c3c74;
+  color: var(--primary-red);
+  border-bottom-color: var(--primary-red);
 }
 
 .api-section {
@@ -176,7 +176,7 @@
 }
 
 .api-section h3 {
-  color: #0c3c74;
+  color: var(--primary-red);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
@@ -246,12 +246,12 @@
 
 .form-control:focus {
   outline: none;
-  border-color: #0c3c74;
-  box-shadow: 0 0 0 2px rgba(12, 60, 116, 0.1);
+  border-color: var(--primary-red);
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
 }
 
 .btn-primary {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -266,7 +266,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0b2f5a;
+  background: var(--primary-red-dark);
 }
 
 .btn-primary:disabled {
@@ -328,7 +328,7 @@
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #0c3c74;
+  border-top: 4px solid var(--primary-red);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -434,6 +434,158 @@
   margin-top: 1.5rem;
 }
 
+.company-card {
+  background: var(--primary-red);
+  color: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 18px 40px rgba(211, 47, 47, 0.18);
+}
+
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.75rem;
+}
+
+.company-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.company-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 0.25rem;
+}
+
+.company-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.company-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.company-info .label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+}
+
+.company-info .value {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.pill {
+  background: var(--primary-red);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+.pill-admin {
+  background: linear-gradient(135deg, var(--primary-red) 0%, #d32f2f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pill-system {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pill-full {
+  background: linear-gradient(135deg, #ff8a80 0%, #ff5252 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0a1b2e;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  
+  &:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.25);
+  }
+  
+  &.active {
+    background: linear-gradient(135deg, var(--primary-red) 0%, #d32f2f 100%);
+    color: #fff;
+    box-shadow: 
+      0 8px 25px rgba(211, 47, 47, 0.35),
+      0 2px 8px rgba(211, 47, 47, 0.25);
+    transform: translateY(-2px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+      border-radius: 2px;
+    }
+  }
+  
+  &:not(.active):hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+  }
+}
+
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
@@ -446,5 +598,17 @@
   .api-tabs {
     overflow-x: auto;
     padding-bottom: 0.5rem;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
   }
 }

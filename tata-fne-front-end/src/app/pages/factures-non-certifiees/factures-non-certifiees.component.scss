@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #eef2f7;
+  background: #fff5f5;
   color: #0a1b2e;
   font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -13,7 +13,7 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #0c3c74 0%, #0b2f5a 100%);
+  background: linear-gradient(180deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -128,7 +128,7 @@
 }
 
 .top-actions .link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: none;
   font-weight: 700;
 }
@@ -174,18 +174,18 @@
 
 .ghost {
   background: transparent;
-  border-color: #d9e2ef;
-  color: #0c3c74;
+  border-color: #ffe0e0;
+  color: var(--primary-red);
 }
 
 .secondary {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: #fff;
   border: none;
 }
 
 .primary {
-  background: linear-gradient(135deg, #0fa0db, #0c78b8);
+  background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
   color: #fff;
   border: none;
 }
@@ -209,7 +209,7 @@
 }
 
 .summary-card.accent {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: #fff;
 }
 
@@ -359,14 +359,14 @@ tbody tr:hover {
 }
 
 .expand-btn:hover {
-  background: #e5f3ff;
-  border-color: #0c3c74;
+  background: #ffe6e6;
+  border-color: var(--primary-red);
 }
 
 .expand-icon {
   display: inline-block;
   transition: transform 0.2s ease;
-  color: #0c3c74;
+  color: var(--primary-red);
   font-weight: 700;
   font-size: 1rem;
 
@@ -384,33 +384,33 @@ tbody tr:hover {
 }
 
 .invoice-group-header {
-  background: linear-gradient(90deg, #f7fbff 0%, #eef6ff 100%);
+  background: linear-gradient(90deg, #ffe6e6 0%, #ffe0e0 100%);
   font-weight: 700;
-  border-top: 2px solid #0c3c74;
-  border-bottom: 1px solid #d9e2ef;
+  border-top: 2px solid var(--primary-red);
+  border-bottom: 1px solid #ffe0e0;
 }
 
 .invoice-group-header:hover {
-  background: linear-gradient(90deg, #eef6ff 0%, #e6f0ff 100%);
+  background: linear-gradient(90deg, #ffe0e0 0%, #ffd6d6 100%);
 }
 
 .invoice-item-row {
-  background: #fafbfc;
-  border-bottom: 1px solid #eef2f7;
+  background: #fff3f3;
+  border-bottom: 1px solid #ffe0e0;
   font-size: 0.95rem;
 }
 
 .invoice-item-row:hover {
-  background: #f3f7fc;
+  background: #ffe6e6;
 }
 
 .products-header {
-  background: #f0f5fa;
-  border-top: 1px solid #d9e2ef;
-  border-bottom: 2px solid #0c3c74;
+  background: #ffe0e0;
+  border-top: 1px solid #ffe0e0;
+  border-bottom: 2px solid var(--primary-red);
   font-weight: 700;
   font-size: 0.9rem;
-  color: #0c3c74;
+  color: var(--primary-red);
 
   td {
     padding: 0.6rem 0.75rem;
@@ -420,7 +420,7 @@ tbody tr:hover {
 
 .header-label {
   font-weight: 700;
-  color: #0c3c74;
+  color: var(--primary-red);
   text-transform: uppercase;
   font-size: 0.8rem;
   letter-spacing: 0.02em;
@@ -432,7 +432,7 @@ tbody tr:hover {
 }
 
 .product-indicator {
-  color: #0c3c74;
+  color: var(--primary-red);
   font-weight: 700;
   opacity: 0.6;
   margin-right: 0.5rem;
@@ -440,11 +440,11 @@ tbody tr:hover {
 
 .product-count {
   display: inline-block;
-  background: #e5f3ff;
-  color: #0c3c74;
+  background: #ffe6e6;
+  color: var(--primary-red);
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   border: 1px solid rgba(12, 60, 116, 0.2);
 }

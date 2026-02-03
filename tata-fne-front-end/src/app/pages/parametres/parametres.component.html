@@ -49,30 +49,98 @@
       <p class="eyebrow">Gestion des Paramètres Système</p>
     </section>
 
-    <!-- Navigation Tabs -->
-    <div class="api-tabs">
-      <button class="tab-button" [class.active]="activeTab() === 'departments'" (click)="setActiveTab('departments')">
-        Gestion des Départements
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'roles'" (click)="setActiveTab('roles')">
-        Gestion des Rôles
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'functionalities'" (click)="setActiveTab('functionalities')">
-        Fonctionnalités
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'etablissements'" (click)="setActiveTab('etablissements')">
-        Établissements
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'societies'" (click)="setActiveTab('societies')">
-        Sociétés
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'attributions'" (click)="setActiveTab('attributions')">
-        Attributions
-      </button>
-      <button class="tab-button" [class.active]="activeTab() === 'users'" (click)="setActiveTab('users')">
-        Gestion des Utilisateurs
-      </button>
-    </div>
+    <section class="company-card">
+      <div class="company-header">
+        <div class="company-name">Tata Africa CI SARL</div>
+        <div class="company-subtitle">Paramètres Système - Gestion Complète</div>
+      </div>
+      <div class="company-grid">
+        <div class="company-info">
+          <span class="label">Régime d'imposition :</span>
+          <span class="value">RNI</span>
+        </div>
+        <div class="company-info">
+          <span class="label">Secteur d'activité :</span>
+          <span class="value">Commerce de véhicules automobiles neufs</span>
+        </div>
+        <div class="company-info">
+          <span class="label">IDU :</span>
+          <span class="value">CI20120000178D</span>
+        </div>
+        <div class="company-info">
+          <span class="label">NCC :</span>
+          <span class="value">1218049R</span>
+        </div>
+        <div class="company-info">
+          <span class="label">Direction de rattachement :</span>
+          <span class="value">DRAS II</span>
+        </div>
+        <div class="company-info">
+          <span class="label">Centre d'impôts / Poste comptable :</span>
+          <span class="value">809 Impôts de Marcory I</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="filters">
+      <div class="pill pill-admin">Accès administrateur</div>
+      <div class="pill pill-system">Paramètres système</div>
+      <div class="pill pill-full">Gestion complète</div>
+    </section>
+
+    <section class="tabs-section">
+      <div class="tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'departments'"
+          (click)="setActiveTab('departments')"
+        >
+          Départements
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'roles'"
+          (click)="setActiveTab('roles')"
+        >
+          Rôles
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'functionalities'"
+          (click)="setActiveTab('functionalities')"
+        >
+          Fonctionnalités
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'etablissements'"
+          (click)="setActiveTab('etablissements')"
+        >
+          Établissements
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'societies'"
+          (click)="setActiveTab('societies')"
+        >
+          Sociétés
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'attributions'"
+          (click)="setActiveTab('attributions')"
+        >
+          Attributions
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'users'"
+          (click)="setActiveTab('users')"
+        >
+          Utilisateurs
+        </button>
+      </div>
+    </section>
 
     <!-- Loading State -->
     @if (loading()) {

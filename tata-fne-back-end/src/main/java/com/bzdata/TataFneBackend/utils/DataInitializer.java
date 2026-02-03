@@ -218,13 +218,13 @@ public class DataInitializer {
             }
 
             System.out.println("🚀 Génération de données utilisateurs...");
-
+   Role adminRole = roleRepository.findByName("ADMIN")
+                    .orElseGet(() -> roleRepository.save(Role.builder().name("ADMIN").code("ADMIN").build()));
             // 🔹 Récupération des rôles existants
             Role userRole = roleRepository.findByName("USER")
                     .orElseGet(() -> roleRepository.save(Role.builder().name("USER").code("USER").build()));
 
-            Role adminRole = roleRepository.findByName("ADMIN")
-                    .orElseGet(() -> roleRepository.save(Role.builder().name("ADMIN").code("ADMIN").build()));
+         
 
             // 🔹 Liste d’agences factices
             List<String> agences = List.of("AGENCE ABIDJAN", "AGENCE YAMOUSSOUKRO", "AGENCE BOUAKÉ", "AGENCE DALOAS", "AGENCE SAN PEDRO");

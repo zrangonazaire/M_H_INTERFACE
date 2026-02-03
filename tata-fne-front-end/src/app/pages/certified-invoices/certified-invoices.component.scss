@@ -13,7 +13,7 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #0c3c74 0%, #0b2f5a 100%);
+  background: linear-gradient(180deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -29,10 +29,11 @@
   width: 118px;
   height: 118px;
   margin: 0 auto 0.5rem;
-  border-radius: 16px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 .brand-logo img {
@@ -128,7 +129,7 @@
 }
 
 .top-actions .link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: none;
   font-weight: 700;
 }
@@ -161,9 +162,9 @@
   }
   
   &.active {
-    background: #0c3c74;
+    background: var(--primary-red);
     color: #fff;
-    border-color: #0c3c74;
+    border-color: var(--primary-red);
   }
 }
 
@@ -188,7 +189,7 @@
 }
 
 .heading-actions .refresh {
-  background: #0c3c74;
+  background: var(--primary-red);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -239,7 +240,7 @@
 .summary-card h2 {
   margin: 0;
   font-size: 1.75rem;
-  color: #0c3c74;
+  color: var(--primary-red);
 }
 
 .card {
@@ -291,12 +292,12 @@ tbody tr:hover {
 .token {
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
-  color: #0c3c74;
+  color: var(--primary-red);
   word-break: break-all;
 }
 
 .token-link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
@@ -328,6 +329,111 @@ tbody tr:hover {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fde68a;
+}
+
+.company-card {
+  background: var(--primary-red);
+  color: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 18px 40px rgba(211, 47, 47, 0.18);
+}
+
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.75rem;
+}
+
+.company-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.company-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 0.25rem;
+}
+
+.company-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.company-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.company-info .label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+}
+
+.company-info .value {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.pill {
+  background: var(--primary-red);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+.pill-certified {
+  background: linear-gradient(135deg, var(--primary-red) 0%, #d32f2f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pill-sales {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pill-management {
+  background: linear-gradient(135deg, #ff8a80 0%, #ff5252 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tabs-section {
+  margin-bottom: 1.5rem;
 }
 
 @media (max-width: 960px) {
