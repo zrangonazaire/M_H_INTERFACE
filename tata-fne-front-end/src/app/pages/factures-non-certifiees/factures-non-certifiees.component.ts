@@ -43,6 +43,51 @@ export class FacturesNonCertifieesComponent {
   readonly userFullName = signal('Compte');
   readonly certificationSuccessMessage = signal<string | null>(null);
   readonly certificationDownloadUrl = signal<string | null>(null);
+  readonly newInvoiceLabel = 'Facture Odoo';
+  readonly odooFileUrl = 'doc/MODEL IMPORTATION ODOO.xlsx';
+
+  loadOdooFile(): void {
+    // Create a hidden file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xls,.xlsx';
+    input.style.display = 'none';
+    
+    // Add event listener to handle file selection
+    input.addEventListener('change', (event) => {
+      const file = (event.target as HTMLInputElement)?.files?.[0];
+      if (file) {
+        this.processOdooFile(file);
+      }
+    });
+    
+    // Trigger file selection dialog
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  }
+
+  private processOdooFile(file: File): void {
+    this.readState.set('loading');
+    this.readError.set(null);
+    this.readResult.set(null);
+
+    this.excelService
+      .readExcel(file)
+      .subscribe({
+        next: (result) => {
+          this.readResult.set(result);
+          this.readState.set('success');
+          this.invoices.set(this.mapReadRowsToInvoices(result.rows));
+          this.selected.set(new Set());
+        },
+        error: (error: unknown) => {
+          const message = error instanceof Error ? error.message : 'Lecture impossible.';
+          this.readError.set(message);
+          this.readState.set('error');
+        }
+      });
+  }
 
   constructor(
     private readonly excelService: FneExcelService,
@@ -558,16 +603,28 @@ export class FacturesNonCertifieesComponent {
   private mapReadRowsToInvoices(rows: Array<Record<string, string>>): NonCertifiedInvoice[] {
     return rows.map((row, index) => {
       const normalized = this.normalizeRow(row);
-      const invoiceNumber = this.getFirstValue(normalized, this.invoiceNumberKeys);
+      
+      // Extraire les 23 premiers caractères de la colonne "Lignes de facture" (colonne C)
+      const lignesFacture = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || '';
+      const invoiceNumber = lignesFacture.length > 23 
+        ? lignesFacture.substring(0, 23) 
+        : lignesFacture;
+
       const invoiceType = this.getFirstValue(normalized, this.invoiceTypeKeys);
-      const paymentMethod = this.getFirstValue(normalized, this.paymentMethodKeys);
+      // Mode Paiement: deferred si Comptabilisé dans colonne M, sinon transfer
+      const statutEnCoursDePaiement = this.getFirstValue(normalized, ['statutencourdepaiement', 'statutencourdepaiement', 'statutencoursdepaiement', 'statutencourdepaiment']) || '';
+      const paymentMethod = statutEnCoursDePaiement.trim().toLowerCase() === 'comptabilisé' ? 'deferred' : 'transfer';
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      const clientCompanyName = this.getFirstValue(normalized, this.clientCompanyNameKeys);
+      // Client contient la colonne B
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture', 'nomdaffichagedupartenaire', 'client', 'raisonsociale', 'societe']) || '';
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys);
       const status = this.getFirstValue(normalized, this.statusKeys);
       const invoiceDate = this.getFirstValue(normalized, this.invoiceDateKeys);
 
-      const typeClient = this.getFirstValue(normalized, this.typeClientKeys);
+      // Type Client: si la colonne A est remplie, mettre B2B, sinon B2C
+      const colonneA = this.getFirstValue(normalized, ['ncc', 'nccclient', 'clientncc', 'clientnif', 'nif']) || '';
+      const typeClient = colonneA.trim() ? 'B2B' : 'B2C';
+      
       const codeClient = this.getFirstValue(normalized, this.codeClientKeys);
       const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys);
       const emailClient = this.getFirstValue(normalized, this.emailClientKeys);
@@ -581,12 +638,13 @@ export class FacturesNonCertifieesComponent {
       const modePaiement = this.getFirstValue(normalized, this.modePaiementKeys);
       const devise = this.getFirstValue(normalized, this.deviseKeys);
       const tauxChange = this.getFirstValue(normalized, this.tauxChangeKeys);
-      const commentaire = this.getFirstValue(normalized, this.commentaireKeys);
+      // Commentaire reçoit "non defini"
+      const commentaire = 'non defini';
       const clientSellerName = this.getFirstValue(normalized, this.clientSellerNameKeys);
 
       return {
         id: index + 1,
-        invoiceNumber: invoiceNumber ?? '',
+        invoiceNumber: invoiceNumber,
         invoiceDate: invoiceDate ?? null,
         clientCompanyName: clientCompanyName ?? clientNameAlt ?? null,
         clientNcc: clientNcc ?? null,
@@ -595,7 +653,7 @@ export class FacturesNonCertifieesComponent {
         factureCertifStatus: status ?? 'En attente',
         dateDeModification: null,
         source: 'excel',
-        typeClient: typeClient ?? null,
+        typeClient: typeClient,
         codeClient: codeClient ?? null,
         nomClient: clientNameAlt ?? null,
         telephoneClient: telephoneClient ?? null,

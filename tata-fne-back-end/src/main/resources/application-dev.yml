@@ -50,11 +50,11 @@ server:
 fne:
   base-url: http://54.247.95.108/ws
   sign-path: /external/invoices/sign
-  bearer-token: NZrZKVylaPzf2APARYi6bEYn40oXCNqE
+  bearer-token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
 
 invoice:
   api:
     base-url: http://54.247.95.108
     sign-path: /ws/external/invoices/sign
     
-    token: NZrZKVylaPzf2APARYi6bEYn40oXCNqE
+    token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv

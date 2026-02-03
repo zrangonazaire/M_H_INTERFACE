@@ -54,7 +54,7 @@
         <button class="ghost">Télécharger le modèle</button>
         <input #excelInput type="file" accept=".xls,.xlsx" class="hidden-input" (change)="onFileSelected($event)" />
         <button class="secondary" (click)="excelInput.click()">Lire Excel</button>
-        <button class="primary" type="button">Nouvelle facture</button>
+        <button class="primary" type="button" (click)="loadOdooFile()">Ouvrir fichier Odoo</button>
       </div>
     </section>
 
