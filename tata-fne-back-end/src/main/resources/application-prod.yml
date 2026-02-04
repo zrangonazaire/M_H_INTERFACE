@@ -1,62 +1,63 @@
-# spring:
-#   datasource:
-#     url: jdbc:postgresql://postgres:5432/tata_fne_db
-#     username: username
-#     password: password
-#     driver-class-name: org.postgresql.Driver
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/modern_hygiene_db
 
-#   jpa:
-#     hibernate:
-#       ddl-auto: update
-#     show-sql: true
-#     properties:
-#       hibernate:
-#         format_sql: true
-#     database: postgresql
-#     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    username: username
+    password: password
+    driver-class-name: org.postgresql.Driver
 
-#   mail:
-#     host: smtp-fr.securemail.pro
-#     port: 587
-#     username: info@molibetycenter.com
-#     password: 2024@Seve2024
-#     properties:
-#       mail:
-#         smtp:
-#           trust: "*"
-#         auth: true
-#         starttls:
-#           enabled: true
-#         connectiontimeout: 5000
-#         timeout: 3000
-#         writetimeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-# server:
-#   port: 8089
+  mail:
+    host: smtp-fr.securemail.pro
+    port: 587
+    username: info@molibetycenter.com
+    password: 2024@Seve2024
+    properties:
+      mail:
+        smtp:
+          trust: "*"
+        auth: true
+        starttls:
+          enabled: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
 
-# application:
-#   security:
-#     jwt:
-#       secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-#       expiration: 86400000
-#       refresh-token:
-#         expiration: 604800000
+server:
+  port: 8089
 
-#   mailing:
-#     frontend:
-#       activation-url: http://57.129.119.224/activate-account
+application:
+  security:
+    jwt:
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000
+      refresh-token:
+        expiration: 604800000
 
-#   file:
-#     uploads:
-#       photos-output-path: ./uploads
+  mailing:
+    frontend:
+      activation-url: http://51.75.69.139/activate-account
 
-# fne:
-#   base-url: http://54.247.95.108/ws
-#   sign-path: /external/invoices/sign
-#   bearer-token: NZrZKVylaPzf2APARYi6bEYn40oXCNqE
+  file:
+    uploads:
+      photos-output-path: ./uploads
 
-# invoice:
-#   api:
-#     base-url: http://54.247.95.108
-#     sign-path: /ws/external/invoices/sign
-#     token: NZrZKVylaPzf2APARYi6bEYn40oXCNqE
+fne:
+  base-url: http://54.247.95.108/ws
+  sign-path: /external/invoices/sign
+  bearer-token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
+
+invoice:
+  api:
+    base-url: http://54.247.95.108
+    sign-path: /ws/external/invoices/sign
+    token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv

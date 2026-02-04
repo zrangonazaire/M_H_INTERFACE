@@ -1,145 +1,53 @@
-# # services:
-# #   postgres:
-# #     container_name: postgres-sql-tata-fne
-# #     image: postgres
-# #     environment:
-# #       POSTGRES_USER: username
-# #       POSTGRES_PASSWORD: password
-# #       PGDATA: /var/lib/postgresql/data
-# #       POSTGRES_DB: tata_fne_db
-# #     volumes:
-# #       - postgres:/data/postgres
-# #     ports:
-# #       - 5432:5432
-# #     networks:
-# #       - spring-demo
-# #     restart: unless-stopped
-# # #  pgadmin:
-# # #    container_name: pgadmin4-cinema
-# # #    image: dpage/pgadmin4
-# # #    environment:
-# # #      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-# # #      PGADMIN_DEFAULT_PASSWORD: admin
-# # #    ports:
-# # #      - 8081:80
-# # #    depends_on:
-# # #      - postgres
-# # #    networks:
-# # #      - spring-demo
-# # #    restart: unless-stopped
-# #   mail-dev:
-# #     container_name: mail-dev-tata-fne
-# #     image: maildev/maildev
-# #     ports:
-# #       - 1080:1080
-# #       - 1025:1025
-
-# # networks:
-# #   spring-demo:
-# #     driver: bridge
-
-# # volumes:
-# #   postgres:
-# #     driver: local
-# version: "3.8"
-
-# services:
-
-#   postgres:
-#     image: postgres:15
-#     container_name: postgres-sql-tata-fne
-#     environment:
-#       POSTGRES_USER: username
-#       POSTGRES_PASSWORD: password
-#       POSTGRES_DB: tata_fne_db
-#     volumes:
-#       - postgres:/var/lib/postgresql/data
-#     networks:
-#       - tata-fne-network
-#     restart: unless-stopped
-
-#   springboot:
-#     image: astairenazaire/tata-fne-backend:1.6
-#     container_name: springboot-tata-fne
-#     environment:
-#       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tata_fne_db
-#       SPRING_DATASOURCE_USERNAME: username
-#       SPRING_DATASOURCE_PASSWORD: password
-#       SERVER_PORT: 8089
-#     ports:
-#       - "8089:8089"
-#     depends_on:
-#       - postgres
-#     networks:
-#       - tata-fne-network
-#     restart: unless-stopped
-
-#   frontend:
-#     image: astairenazaire/tata-fne-frontend:1.5
-#     container_name: angular-tata-fne
-#     ports:
-#       - "80:80"
-#     depends_on:
-#       - springboot
-#     networks:
-#       - tata-fne-network
-#     restart: unless-stopped
-
-#   mail-dev:
-#     image: maildev/maildev
-#     container_name: mail-dev-tata-fne
-#     ports:
-#       - "1080:1080"
-#       - "1025:1025"
-#     networks:
-#       - tata-fne-network
-#     restart: unless-stopped
-
-# networks:
-#   tata-fne-network:
-#     driver: bridge
-
-# volumes:
-#   postgres:
-#     driver: local
 services:
+
   postgres:
-    container_name: postgres-sql-modern-hygiene
-    image: postgres
+    image: postgres:15
+    container_name: postgres-sql-modern-fne
     environment:
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
-      PGDATA: /var/lib/postgresql/data
       POSTGRES_DB: modern_hygiene_db
     volumes:
-      - postgres:/data/postgres
-    ports:
-      - 5432:5432
+      - postgres:/var/lib/postgresql/data
     networks:
-      - spring-demo
+      - modern-hygiene-fne-network
     restart: unless-stopped
-#  pgadmin:
-#    container_name: pgadmin4-cinema
-#    image: dpage/pgadmin4
-#    environment:
-#      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-#      PGADMIN_DEFAULT_PASSWORD: admin
-#    ports:
-#      - 8081:80
-#    depends_on:
-#      - postgres
-#    networks:
-#      - spring-demo
-#    restart: unless-stopped
-  mail-dev:
-    container_name: mail-dev-modern-hygiene
-    image: maildev/maildev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U username -d modern_hygiene_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  springboot:
+    image: astairenazaire/modern-fne-backend:1.8
+    container_name: springboot-modern-hygiene-fne
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/modern_hygiene_db
+      SPRING_DATASOURCE_USERNAME: username
+      SPRING_DATASOURCE_PASSWORD: password
+      SERVER_PORT: 8089
     ports:
-      - 1080:1080
-      - 1025:1025
+      - "8089:8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - modern-hygiene-fne-network
+    restart: unless-stopped
+
+  frontend:
+    image: astairenazaire/modern-fne-frontend:1.8
+    container_name: angular-modern-hygiene-fne
+    ports:
+      - "80:80"
+    depends_on:
+      - springboot
+    networks:
+      - modern-hygiene-fne-network
+    restart: unless-stopped
 
 networks:
-  spring-demo:
+  modern-hygiene-fne-network:
     driver: bridge
 
 volumes:
