@@ -117,6 +117,10 @@ public CorsConfigurationSource corsConfigurationSource() {
         "http://57.129.119.224:80",
         "http://57.129.119.224:8089",
         "http://57.129.119.224:4200",
+        "http://51.75.69.139:8089",
+        "http://51.75.69.139:80",
+        "http://51.75.69.139",
+        
         
         // localhost
         "http://localhost",

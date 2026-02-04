@@ -31,7 +31,39 @@ export class FneInvoiceService {
   }
 
   certifyFinalFacture(numFacture: string, utilisateur: string, payload: InvoiceSignRequest): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/new-invoices/certify-final-facture/${numFacture}/${utilisateur}`, payload);
+    // Nettoyer la payload pour éviter d'envoyer des propriétés undefined/null
+    const cleanedPayload = this.cleanPayload(payload);
+    console.log('Payload before cleaning:', payload);
+    console.log('Payload after cleaning:', cleanedPayload);
+    return this.http.post<void>(`${this.baseUrl}/new-invoices/certify-final-facture/${numFacture}/${utilisateur}`, cleanedPayload);
+  }
+
+  private cleanPayload(obj: any): any {
+    if (obj === null || obj === undefined) return undefined;
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanPayload(item)).filter(item => item !== undefined);
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        // Toujours supprimer customTaxes quelle que soit sa valeur
+        if (key === 'customTaxes') continue;
+        
+        // Toujours supprimer foreignCurrencyRate quelle que soit sa valeur
+        if (key === 'foreignCurrencyRate') continue;
+        
+        const cleanedValue = this.cleanPayload(value);
+        // Garder les chaînes vides (""), ne supprimer que undefined/null
+        if (cleanedValue !== undefined) {
+          cleaned[key] = cleanedValue;
+        }
+      }
+      return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+    }
+    
+    return obj;
   }
 
   // Retourne une URL probable pour télécharger la facture certifiée (backend doit exposer cet endpoint)

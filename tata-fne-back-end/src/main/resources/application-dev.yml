@@ -2,13 +2,13 @@
 ###########################################################
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/modern_hygiene_db
+    url: jdbc:postgresql://postgresql:5432/modern_hygiene_db
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
