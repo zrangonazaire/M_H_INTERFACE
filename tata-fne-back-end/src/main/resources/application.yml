@@ -5,7 +5,7 @@ spring:
     multipart:
       max-file-size: 50MB
   application:
-    name: TataFneBackend
+    name: ModernHygienFneBackend
 springdoc:
   default-produces-media-type: application/json
 server:
