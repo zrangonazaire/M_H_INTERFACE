@@ -213,6 +213,8 @@ public class InvoiceCertificationServiceImpl implements InvoiceCertificationServ
                 invoiceCustomTaxRepo.save(ct);
             }
         }
+        // Si customTaxes est null, on ne fait rien - cela signifie qu'aucun custom tax n'est présent
+        // et la base de données gérera cela comme un tableau vide par défaut
     }
 
     @Override

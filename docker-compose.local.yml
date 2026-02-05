@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-sql-modern-fne-local
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: modern_hygiene_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U username -d modern_hygiene_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: maildev-modern-fne-local
+    ports:
+      - "1080:1080"   # Interface web
+      - "1025:1025"   # SMTP
+    restart: unless-stopped
+
+volumes:
+  postgres:
+    driver: local
