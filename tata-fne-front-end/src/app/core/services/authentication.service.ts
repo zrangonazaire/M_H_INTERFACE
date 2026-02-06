@@ -78,6 +78,7 @@ export class AuthenticationService {
     localStorage.removeItem(this.userPdvFne);
     localStorage.removeItem(this.userIdroleKey);
     localStorage.removeItem(this.userEtabFbe);
+    localStorage.removeItem(this.userIdKey);
   }
 
   getToken(): string | null {
@@ -163,7 +164,24 @@ export class AuthenticationService {
   }
 
   isAuthenticated(): boolean {
-    return Boolean(this.getToken());
+    const token = this.getToken();
+    if (!token) return false;
+    
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      
+      // Vérifier l'expiration du token
+      const exp = payload.exp;
+      if (!exp) return false;
+      
+      const now = Math.floor(Date.now() / 1000);
+      return exp > now;
+    } catch {
+      return false;
+    }
   }
 
   logout(): void {

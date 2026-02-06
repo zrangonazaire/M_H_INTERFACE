@@ -7,6 +7,7 @@ import { ParametresComponent } from './pages/parametres/parametres.component';
 import { FactureAvoirComponent } from './pages/facture-avoir/facture-avoir.component';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -20,23 +21,28 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: DashboardComponent
+    component: DashboardComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'factures-certifiees',
-    component: CertifiedInvoicesComponent
+    component: CertifiedInvoicesComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'factures-certifiees/:id/avoir',
-    component: FactureAvoirComponent
+    component: FactureAvoirComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'factures-non-certifiees',
-    component: FacturesNonCertifieesComponent
+    component: FacturesNonCertifieesComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'parametres',
-    component: ParametresComponent
+    component: ParametresComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'forgot-password',
