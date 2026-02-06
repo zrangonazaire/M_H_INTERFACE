@@ -196,6 +196,14 @@
   font-size: 0.9rem;
 }
 
+.primary.tiny:disabled {
+  background: #9ca3af;
+  color: #1f2937;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -294,6 +302,20 @@
   border-radius: 12px;
   box-shadow: 0 10px 24px rgba(12, 60, 116, 0.08);
   padding: 0.75rem;
+}
+
+.table-legend {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff3f3;
+  border-radius: 8px;
+  border: 1px solid #ffe0e0;
+
+  .legend-text {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 600;
+  }
 }
 
 .table-wrapper {

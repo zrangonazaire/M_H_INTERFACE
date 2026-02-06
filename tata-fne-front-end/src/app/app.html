@@ -1,29 +1,3 @@
-@if (!isHeaderless()) {
-  <header class="app-header">
-    <div class="container-fluid">
-      <div class="brand-row">
-        <div class="brand">
-          <div class="brand-mark">FNE</div>
-          <div>
-            <p class="brand-title">Tata FNE</p>
-            <small>Portail de certification</small>
-          </div>
-        </div>
-        <nav class="nav-links">
-          <a class="active">Factures</a>
-          <a>Clients</a>
-          <a>Utilisateurs</a>
-          <a [routerLink]="['/parametres']">Parametres</a>
-        </nav>
-        <div class="profile">
-          <span class="badge bg-light text-dark">Operateur</span>
-          <button class="btn btn-outline-dark btn-sm">Se deconnecter</button>
-        </div>
-      </div>
-    </div>
-  </header>
-}
-
 <main>
   <router-outlet />
 </main>

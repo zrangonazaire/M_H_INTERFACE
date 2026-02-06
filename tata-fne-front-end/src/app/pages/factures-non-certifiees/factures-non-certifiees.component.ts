@@ -228,6 +228,13 @@ console.log('Grouped Invoices:', result);
     return items.length > 0 && items.every((item) => this.selected().has(item.id));
   }
 
+  isRequiredFieldMissing(invoice: any): boolean {
+    return !invoice.invoiceNumber || 
+           !invoice.typeClient || 
+           !invoice.clientCompanyName || 
+           !invoice.paymentMethod;
+  }
+
   getGroupItemIds(items: any[]): number[] {
     return items.map((item) => item.id);
   }
@@ -304,16 +311,16 @@ console.log('Grouped Invoices:', result);
     return amountAfterDiscount + taxAmount;
   }
 
-  // Affiche une valeur monétaire ou '-' si invalide
+  // Affiche une valeur monétaire ou vide si invalide
   displayCurrency(value: string | number | null | undefined): string {
     const num = this.toNumber(value);
-    return num === null ? '-' : this.formatCurrency(num);
+    return num === null ? '' : this.formatCurrency(num);
   }
 
-  // Affiche un pourcentage (ex: '10 %') ou '-' si invalide
+  // Affiche un pourcentage (ex: '10 %') ou vide si invalide
   displayPercentage(value: string | number | null | undefined): string {
     const num = this.toNumber(value);
-    return num === null ? '-' : `${num} %`;
+    return num === null ? '' : `${num} %`;
   }
 
   getTaxRate(taxCode: string | null | undefined): number {

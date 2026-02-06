@@ -16,10 +16,10 @@
         <span class="icon">X</span>
         Certification par fichier Excel
       </a>
-      <a class="menu-item">
+      <!-- <a class="menu-item">
         <span class="icon">A</span>
-        Certification par API SAP
-      </a>
+         u
+      </a> -->
       <a class="menu-item" routerLink="/factures-certifiees" routerLinkActive="active">
         <span class="icon">F</span>
         Factures Certifiées
@@ -155,18 +155,21 @@
     }
 
     <section class="card table-card">
+      <div class="table-legend">
+        <span class="legend-text">Les champs marqués d'un <span class="required">*</span> sont obligatoires</span>
+      </div>
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th class="expand-col"></th>
-              <th>Numéro Facture</th>
-              <th>Type Client</th>
-              <th>Client</th>
+              <th>Numéro Facture <span class="required">*</span></th>
+              <th>Type Client <span class="required">*</span></th>
+              <th>Client <span class="required">*</span></th>
               <th>NCC</th>
               <th>Téléphone</th>
               <th>Email</th>
-              <th>Mode Paiement</th>
+              <th>Mode Paiement <span class="required">*</span></th>
               <th>Devise</th>
               <th>Commentaire</th>
               <th class="text-right">Montant HT</th>
@@ -190,14 +193,14 @@
                     Facture ID: {{ group.mainInvoice.id }} • {{ group.items.length }} produit{{ group.items.length > 1 ? 's' : '' }}
                   </small>
                 </td>
-                <td>{{ group.mainInvoice.typeClient || group.mainInvoice.invoiceType || '-' }}</td>
-                <td>{{ group.mainInvoice.clientCompanyName || '-' }}</td>
-                <td>{{ group.mainInvoice.clientNcc }}</td>
-                <td>{{ group.mainInvoice.telephoneClient || '-' }}</td>
-                <td>{{ group.mainInvoice.emailClient || '-' }}</td>
-                <td>{{ group.mainInvoice.paymentMethod || group.mainInvoice.modePaiement || '-' }}</td>
-                <td>{{ group.mainInvoice.devise || '-' }}</td>
-                <td>{{ group.mainInvoice.commentaire || '-' }}</td>
+                <td>{{ group.mainInvoice.typeClient || group.mainInvoice.invoiceType || '' }}</td>
+                <td>{{ group.mainInvoice.clientCompanyName || '' }}</td>
+                <td>{{ group.mainInvoice.clientNcc || '' }}</td>
+                <td>{{ group.mainInvoice.telephoneClient || '' }}</td>
+                <td>{{ group.mainInvoice.emailClient || '' }}</td>
+                <td>{{ group.mainInvoice.paymentMethod || group.mainInvoice.modePaiement || '' }}</td>
+                <td>{{ group.mainInvoice.devise || '' }}</td>
+                <td>{{ group.mainInvoice.commentaire || '' }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountHT(group.items)) }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountTTC(group.items)) }}</td>
                 <td>
@@ -210,7 +213,7 @@
                   <button
                     class="primary tiny"
                     type="button"
-                    [disabled]="certifyingId() === group.mainInvoice.id"
+                    [disabled]="certifyingId() === group.mainInvoice.id || isRequiredFieldMissing(group.mainInvoice)"
                     (click)="certifyOne(group.mainInvoice)"
                   >
                     {{ certifyingId() === group.mainInvoice.id ? 'Certification...' : 'Certifier' }}
