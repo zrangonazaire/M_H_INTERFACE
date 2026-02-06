@@ -530,6 +530,7 @@ public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto) {
         //         .retrieve()
         //         .bodyToMono(JsonNode.class)
         //         .block();
+        
         response = invoiceWebClient
                 .post()
                
@@ -574,7 +575,7 @@ public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto) {
             .ncc(response.getNcc())
             .token(response.getToken())
             .warning(response.isWarning())
-            .balanceSticker(response.getBalanceSticker())
+            .balanceSticker(response.getBalance_funds())
             .invoiceId(refundDto.getInvoiceId())
             .createdAt(OffsetDateTime.now())
             .build();

@@ -23,6 +23,6 @@ private String ncc;
     @JsonProperty("warning")
     private boolean warning;
 
-    @JsonProperty("balance_sticker")
-    private int balanceSticker;
+    @JsonProperty("balance_funds")
+    private int balance_funds;
 }
