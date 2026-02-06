@@ -79,6 +79,16 @@ ncc: any;
         next: (result) => {
           console.log('Excel read result:', result);
           this.readResult.set(result);
+          
+          // Vérifier si le fichier est vide (aucune ligne de données)
+          if (result.rowCount === 0) {
+            this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
+            this.readState.set('error');
+            // Afficher une alerte à l'utilisateur
+            alert('Le fichier sélectionné ne contient aucune donnée.');
+            return;
+          }
+          
           this.readState.set('success');
           const mappedInvoices = this.mapReadRowsToInvoices(result.rows);
           console.log('Mapped invoices:', mappedInvoices);
@@ -393,6 +403,16 @@ ncc: any;
       .subscribe({
         next: (result) => {
           this.readResult.set(result);
+          
+          // Vérifier si le fichier est vide (aucune ligne de données)
+          if (result.rowCount === 0) {
+            this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
+            this.readState.set('error');
+            // Afficher une alerte à l'utilisateur
+            alert('Le fichier sélectionné ne contient aucune donnée.');
+            return;
+          }
+          
           this.readState.set('success');
           this.invoices.set(this.mapReadRowsToInvoices(result.rows));
           this.selected.set(new Set());

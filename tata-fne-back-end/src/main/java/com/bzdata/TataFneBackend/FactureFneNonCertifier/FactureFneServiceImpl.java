@@ -153,9 +153,12 @@ public class FactureFneServiceImpl implements FactureFneService {
             String invoiceNumber = invoiceNumberRaw.trim();
 
             Optional<FactureNonCertifier> existing = factureFneRepository.findByInvoiceNumber(invoiceNumber);
-            FactureNonCertifier facture = existing.orElseGet(() -> FactureNonCertifier.builder()
-                    .invoiceNumber(invoiceNumber)
-                    .build());
+            FactureNonCertifier facture = existing.orElseGet(() -> {
+                FactureNonCertifier newFacture = FactureNonCertifier.builder()
+                        .invoiceNumber(invoiceNumber)
+                        .build();
+                return newFacture;
+            });
 
             applyRowToEntity(facture, normalizedRow, errors, rowNumber);
 
@@ -178,6 +181,11 @@ public class FactureFneServiceImpl implements FactureFneService {
                     facture.getPaymentMethod()
             );
             rowNumber++;
+        }
+
+        // Check if no rows were processed
+        if (processed == 0) {
+            errors.add("Lecture impossible. (AUCUNE LIGNE A IMPORTER)");
         }
 
         return new ExcelImportResult(processed, inserted, updated, skipped, errors);

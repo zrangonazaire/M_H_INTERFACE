@@ -130,8 +130,11 @@
         <strong>Lecture terminée.</strong>
         {{ readResult()!.rowCount }} lignes chargées.
       </div>
-      <div class="alert error" *ngIf="readState() === 'error'">
-        {{ readError() || 'Une erreur est survenue.' }}
+      <div class="alert error" *ngIf="readState() === 'error' && readError()">
+        {{ readError() }}
+      </div>
+      <div class="alert error" *ngIf="readState() === 'error' && !readError()">
+        Une erreur est survenue lors de la lecture du fichier.
       </div>
       <div class="alert info" *ngIf="certifyState() === 'loading'">
         Certification en masse en cours...
