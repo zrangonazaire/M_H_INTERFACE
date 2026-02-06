@@ -455,6 +455,7 @@ console.log('Grouped Invoices:', result);
   }
 
   certifyOne(invoice: any): void {
+    debugger;
     this.actionError.set(null);
     const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
     const numFacture = invoice.invoiceNumber;
@@ -508,8 +509,9 @@ console.log('Grouped Invoices:', result);
         // réinitialiser l'état de lecture pour remplacer le message "Lecture terminée"
         this.readState.set('idle');
       },
-      error: (error: unknown) => {
-        const message = error instanceof Error ? error.message : 'Certification impossible.';
+      error: (error: any) => {
+        console.error('Erreur lors de la certification:', error);
+        const message = error.error?.message;// instanceof Error ? error.message : 'Certification impossible.';
         this.actionError.set(message);
         this.certifyingId.set(null);
       }
@@ -803,7 +805,7 @@ console.log('Grouped Invoices:', result);
         factureCertifStatus: status ?? 'En attente',
         dateDeModification: null,
         source: 'excel',
-        typeClient: typeClient,
+        typeClient: (clientNcc && clientNcc.trim()) ? typeClient : 'B2C',
         codeClient: codeClient ?? null,
         nomClient: clientNameAlt ?? null,
         telephoneClient: telephoneClient ?? null,

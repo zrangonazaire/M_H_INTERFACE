@@ -146,6 +146,7 @@ export class AuthenticationService {
   }
   
   getCurrentFullName(): string | null {
+  
     console.log('Getting current full name from token'+this.getToken());
     const token = this.getToken();
     if (!token) return null;
@@ -154,6 +155,7 @@ export class AuthenticationService {
       const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
       const decoded = atob(normalized);
       const payload = JSON.parse(decoded);
+      console.log('***** payload ****/ ',payload); 
       return payload?.fullName ?? null;
     } catch {
       return null;
