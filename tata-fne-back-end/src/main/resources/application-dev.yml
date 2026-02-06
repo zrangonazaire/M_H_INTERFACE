@@ -2,7 +2,7 @@
 ###########################################################
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/modern_hygiene_db
+    url: jdbc:postgresql://localhost:5434/modern_hygiene_db
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
