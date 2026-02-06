@@ -558,7 +558,7 @@ console.log('Grouped Invoices:', result);
     const payload: any = {
       invoiceType: 'sale',
       paymentMethod: paymentMethod,
-      template: 'B2B',
+      template: invoice.typeClient || 'B2B',
       clientNcc: invoice.clientNcc || undefined,
       clientCompanyName: invoice.clientCompanyName || invoice.nomClient || undefined,
       clientPhone: invoice.telephoneClient || '',
@@ -700,9 +700,7 @@ console.log('Grouped Invoices:', result);
       const colonneA = this.getFirstValue(normalized, ['ncc']) || '';
       // Extraire la valeur de la colonne A (colonne1) pour le NCC
       const clientNccValue = this.getFirstValue(normalized, ['partenairenumerocc']) || '000000000000';
-      console.log('Client NCC:', clientNccValue);
-      console.log('Colonne A (ncc):', colonneA);
-      console.log('Debug: colonneA value for fallback:', colonneA);
+  
       // Déterminer le type de client en fonction de la présence d'un nom dans la colonne B
       const typeClient = clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C';
       // Extraire le code client (initiales) depuis la première ligne du groupe
@@ -756,7 +754,7 @@ console.log('Grouped Invoices:', result);
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
       const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) ;
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
-      const typeClient = clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C';
+      const typeClient = this.getFirstValue(normalized, this.typeClientKeys) || (clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C');
       // Récupérer le code client depuis la map pour garantir l'unicité par client
       const clientInfo = clientInfoMap.get(invoiceNumber);
       const codeClient = clientInfo?.codeClient;
@@ -863,7 +861,7 @@ console.log('Grouped Invoices:', result);
   private readonly clientNameKeys = ['nomdaffichagedupartenairedelafacture'];
   private readonly statusKeys = ['facturecertifstatus', 'statuscertification', 'statut', 'status'];
   private readonly invoiceDateKeys = ['invoicedate', 'datefacture', 'date'];
-  private readonly typeClientKeys = ['typeclient'];
+  private readonly typeClientKeys = ['typeclient', 'typeclient', 'typeclient'];
   private readonly codeClientKeys = ['codeclient'];
   private readonly telephoneClientKeys = ['telephoneclient', 'telclient', 'phoneclient','partenairetelephone'];
   private readonly emailClientKeys = ['emailclient', 'mailclient','partenaireemail'];
