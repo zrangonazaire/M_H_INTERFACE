@@ -95,6 +95,7 @@ export class UserService {
   }
    getIfRoleExiteByIdUser(idUser: number,idRole: number): Observable<boolean> {
     //http://localhost:8089/api/v1/users/11/roles/1/checkroleexist
+    debugger
     return this.http
       .get<boolean>(`${this.baseUrl}/users/${idUser}/roles/${idRole}/checkroleexist`);
       /* 

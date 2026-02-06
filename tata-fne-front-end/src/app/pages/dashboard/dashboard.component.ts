@@ -34,6 +34,7 @@ export class DashboardComponent {
   }
 
   protected checkParametresAccess(): void {
+    debugger;
     const userId = this.auth.getCurrentId();
     const roleId = 1;//this.auth.getCurrentIdRole();
 
