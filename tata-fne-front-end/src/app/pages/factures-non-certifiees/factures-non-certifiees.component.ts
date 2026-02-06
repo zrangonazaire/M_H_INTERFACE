@@ -183,7 +183,7 @@ ncc: any;
       console.log('Group clientCompanyName:', group.mainInvoice.clientCompanyName);
       console.log('Group clientNcc:', group.mainInvoice.clientNcc);
     });
-
+console.log('Grouped Invoices:', result);
     return result;
   });
 
@@ -412,7 +412,7 @@ ncc: any;
             alert('Le fichier sélectionné ne contient aucune donnée.');
             return;
           }
-          
+          console.log('*********************Excel read result:', result);
           this.readState.set('success');
           this.invoices.set(this.mapReadRowsToInvoices(result.rows));
           this.selected.set(new Set());
@@ -692,12 +692,12 @@ ncc: any;
       console.log('Normalized row for client extraction:', normalized);
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
       // Extraire la valeur de la colonne B (colonne2) pour le nom du client
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) || 'L\'AVENUE HOTEL APARTEMENTS';
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) ;
       console.log('Client Company Name:', clientCompanyName);
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
       const colonneA = this.getFirstValue(normalized, ['ncc']) || '';
       // Extraire la valeur de la colonne A (colonne1) pour le NCC
-      const clientNccValue = this.getFirstValue(normalized, ['ncc']) || '000000000000';
+      const clientNccValue = this.getFirstValue(normalized, ['partenairenumerocc']) || '000000000000';
       console.log('Client NCC:', clientNccValue);
       console.log('Colonne A (ncc):', colonneA);
       console.log('Debug: colonneA value for fallback:', colonneA);
@@ -752,7 +752,7 @@ ncc: any;
 
       // Extraire les informations du client directement depuis la ligne
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) || 'L\'AVENUE HOTEL APARTEMENTS';
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) ;
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
       const typeClient = clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C';
       // Récupérer le code client depuis la map pour garantir l'unicité par client
@@ -856,15 +856,15 @@ ncc: any;
   private readonly invoiceNumberKeys = ['invoicenumber', 'invoiceid', 'numerofacture', 'numfacture', 'numfact', 'facturenumber'];
   private readonly invoiceTypeKeys = ['typeclient', 'invoicetype', 'typefacture', 'type'];
   private readonly paymentMethodKeys = ['paymentmethod', 'modepaiement', 'moyenpaiement', 'paiement'];
-  private readonly clientNccKeys = ['clientncc', 'ncc', 'clientnif', 'nif', 'nccclient'];
+  private readonly clientNccKeys = ['clientncc', 'partenairenumerocc', 'clientnif', 'nif', 'nccclient'];
   private readonly clientCompanyNameKeys = ['clientcompanyname', 'clientcompagnyname', 'client', 'raisonsociale', 'societe', 'nomclient'];
-  private readonly clientNameKeys = ['nomclient'];
+  private readonly clientNameKeys = ['nomdaffichagedupartenairedelafacture'];
   private readonly statusKeys = ['facturecertifstatus', 'statuscertification', 'statut', 'status'];
   private readonly invoiceDateKeys = ['invoicedate', 'datefacture', 'date'];
   private readonly typeClientKeys = ['typeclient'];
   private readonly codeClientKeys = ['codeclient'];
-  private readonly telephoneClientKeys = ['telephoneclient', 'telclient', 'phoneclient'];
-  private readonly emailClientKeys = ['emailclient', 'mailclient'];
+  private readonly telephoneClientKeys = ['telephoneclient', 'telclient', 'phoneclient','partenairetelephone'];
+  private readonly emailClientKeys = ['emailclient', 'mailclient','partenaireemail'];
   private readonly refArticleKeys = ['refarticle', 'referencearticle', 'article'];
   private readonly designationKeys = ['designation', 'designationarticle'];
   private readonly quantiteKeys = ['quantite', 'qty', 'quantity'];
