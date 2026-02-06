@@ -88,7 +88,41 @@ ncc: any;
             alert('Le fichier sélectionné ne contient aucune donnée.');
             return;
           }
+
+          // Vérifier les en-têtes du fichier Excel
+          const expectedHeaders = [
+            'Partenaire/Numéro CC',
+            'Partenaire/E-mail',
+            'Partenaire/Téléphone',
+            'Nom d\'affichage du partenaire de la facture',
+            'Lignes de facture',
+            'Lignes de facture/Taxes',
+            'Lignes de facture/Produit',
+            'Lignes de facture/Prix unitaire',
+            'Lignes de facture/Quantité',
+            'Lignes de facture/Unité',
+            'Lignes de facture/Remise (%)',
+            'Montant hors taxes signé dans la devise',
+            'Taxe',
+            'Total signé en devises',
+            'Statut en cours de paiement',
+            'Lignes de facture/Taxes/Actif',
+            'Lignes de facture/Taxes/Libellé de taxe'
+          ];
+
+          const actualHeaders = result.headers || [];
           
+          // Vérifier si tous les en-têtes attendus sont présents
+          const missingHeaders = expectedHeaders.filter(header => !actualHeaders.includes(header));
+          
+          if (missingHeaders.length > 0) {
+            const errorMessage = `Le fichier Excel est corrompu et ne peut être certifié. En-têtes manquants : ${missingHeaders.join(', ')}`;
+            this.readError.set(errorMessage);
+            this.readState.set('error');
+            alert(errorMessage);
+            return;
+          }
+
           this.readState.set('success');
           const mappedInvoices = this.mapReadRowsToInvoices(result.rows);
           console.log('Mapped invoices:', mappedInvoices);
@@ -560,7 +594,7 @@ console.log('Grouped Invoices:', result);
 
     // Déterminer si la facture provient d'un fichier Excel (bouton "Lire Odoo")
     const isFromExcel = invoice.source === 'excel';
-
+const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
     // Construire l'objet payload de base
     const payload: any = {
       invoiceType: 'sale',
@@ -570,8 +604,9 @@ console.log('Grouped Invoices:', result);
       clientCompanyName: invoice.clientCompanyName || invoice.nomClient || undefined,
       clientPhone: invoice.telephoneClient || '',
       clientEmail: invoice.emailClient || '',
-      pointOfSale: isFromExcel ? 'PDVMH' : 'PDV_TATA_AFRICA_CI',
-      establishment: isFromExcel ? 'MODERNE HYGIENE' : 'TATA AFRICA_CI',
+      clientSellerName:utilisateur,
+      pointOfSale: 'PDVMH' ,
+      establishment: 'MODERNE HYGIENE' ,
       commercialMessage: invoice.commentaire || undefined,
       footer: undefined,
       items: signItems,
