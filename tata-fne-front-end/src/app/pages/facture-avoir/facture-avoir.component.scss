@@ -2,9 +2,12 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #eef2f7;
+  background: #fff5f5;
   color: #0a1b2e;
   font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+}
+.hidden {
+  visibility: hidden;
 }
 
 .layout {
@@ -14,7 +17,7 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #0c3c74 0%, #0b2f5a 100%);
+  background: linear-gradient(180deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -129,7 +132,7 @@
 }
 
 .top-actions .link {
-  color: #0c3c74;
+  color: var(--primary-red);
   text-decoration: none;
   font-weight: 700;
 }
@@ -164,13 +167,15 @@
 }
 
 .btn-primary {
-  background: #0c3c74;
+  background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
   color: #fff;
+  border: none;
 }
 
 .btn-secondary {
-  background: #6b7280;
+  background: var(--primary-red);
   color: #fff;
+  border: none;
 }
 
 .btn:hover {
@@ -213,7 +218,7 @@
 
 .invoice-info h2 {
   margin: 0 0 1rem 0;
-  color: #0c3c74;
+  color: var(--primary-red);
   font-size: 1.5rem;
 }
 

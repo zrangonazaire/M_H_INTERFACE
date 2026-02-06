@@ -72,28 +72,23 @@
             <p><strong>Facture de vente:</strong> <a href="/api/invoices/{{ invoice()!.id }}/download?token={{ invoice()!.token }}" target="_blank" rel="noopener noreferrer" class="download-link">Télécharger la facture</a></p>
           </div>
         </div>
-
-        <div class="table-wrapper">
+ <div class="actions">
+          <button class="btn btn-primary" (click)="createCreditNote()">Créer l'avoir</button>
+        </div>
+        <div class="table-wrapper" class="hidden">
           <table>
             <thead>
               <tr>
                 <th>ID Produit</th>
-                <th>Produit</th>
-                <th>Référence</th>
-                <th>Quantité</th>
-                <th>Prix unitaire</th>
-                <th>Montant</th>
+
               </tr>
             </thead>
             <tbody>
               @for (item of invoice()!.items || []; track $index) {
                 <tr>
-                  <td>{{ item.id }}</td>
-                  <td>{{ item.description || 'Produit sans description' }}</td>
-                  <td>{{ item.reference || '-' }}</td>
-                  <td>{{ item.quantity || 0 }}</td>
-                  <td>{{ formatMoney(item.amount / (item.quantity || 1)) }}</td>
-                  <td>{{ formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)) }}</td>
+                  <td>{{ item.id }}</td>   
+  
+
                 </tr>
               }
             </tbody>
@@ -101,15 +96,13 @@
         </div>
 
         <div class="credit-summary">
-          <div class="summary-row">
+          <!-- <div class="summary-row">
             <span>Total à avoir:</span>
             <span class="total-amount">{{ formatMoney(creditTotal()) }}</span>
-          </div>
+          </div> -->
         </div>
 
-        <div class="actions">
-          <button class="btn btn-primary" (click)="createCreditNote()">Créer l'avoir</button>
-        </div>
+       
       </section>
     } @else {
       <div class="alert error">
