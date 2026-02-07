@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -40,15 +41,29 @@ public class InvoiceCertificationServiceImpl implements InvoiceCertificationServ
             log.warn("Unable to serialize InvoiceSignRequest for logging", e);
         }
 
-        return invoiceWebClient.post()
-                .uri(props.getSignPath())
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .block();
+       return invoiceWebClient.post()
+        .uri(props.getSignPath())
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .bodyValue(request)
+        .retrieve()
+        .onStatus(
+                HttpStatusCode::isError,
+                response -> response.bodyToMono(JsonNode.class)
+                        .flatMap(errorJson -> {
+                            String message = errorJson.has("message")
+                                    ? errorJson.get("message").asText()
+                                    : errorJson.toString();
+
+                            log.error("Erreur API : {}", message);
+
+                            return Mono.error(new RuntimeException(message));
+                        })
+        )
+        .bodyToMono(JsonNode.class)
+        .block();
+
     }
 
     @Override
