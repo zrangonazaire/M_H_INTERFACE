@@ -65,15 +65,15 @@
     <section class="cards-grid large">
       <div class="card">
         <div class="card-title">Factures de vente</div>
-        <div class="card-value">0</div>
-        <div class="meta">Quantité</div>
-        <div class="meta">Montant</div>
+        <div class="card-value">{{ certifiedInvoiceCount() }}</div>
+        <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ totalHT() | cfa }} </strong></div>
+        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ totalTTC() | cfa }} </strong></div>
       </div>
       <div class="card">
         <div class="card-title">Factures d'avoir</div>
-        <div class="card-value">0</div>
-        <div class="meta">Quantité</div>
-        <div class="meta">Montant</div>
+        <div class="card-value">{{ refundInvoiceCount() }}</div>
+        <!-- <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ refundTotalHT() | cfa }}</strong></div>
+        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ refundTotalTTC() | cfa }}</strong></div> -->
       </div>
       <div class="card">
         <div class="card-title">Stickers</div>

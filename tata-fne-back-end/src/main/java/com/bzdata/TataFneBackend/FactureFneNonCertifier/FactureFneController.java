@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bzdata.TataFneBackend.newCertificationWay.InvoiceCertificationService;
+import com.bzdata.TataFneBackend.newCertificationWay.VerificationRefundResponse;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FactureFneController {
     private final FactureFneService factureFneService;
+    private final InvoiceCertificationService invoiceCertificationService;
 
     @GetMapping
     public List<FactureNonCertifierListDTO> getAllInvoices() {
@@ -45,4 +49,8 @@ public class FactureFneController {
         factureFneService.certifyByInvoice(invoiceDTO);
     }
 
+    @GetMapping("/list-facture-avoir")
+    public List<VerificationRefundResponse> getAllRefunds() {
+        return invoiceCertificationService.getAllRefunds();
+    }
 }
