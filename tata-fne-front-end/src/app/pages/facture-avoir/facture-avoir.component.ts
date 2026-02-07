@@ -128,7 +128,7 @@ export class FactureAvoirComponent implements OnInit {
     this.invoiceService.createRefund(refundDto).subscribe({
       next: (response) => {
         console.log('Avoir créé avec succès:', response);
-        alert('Avoir créé avec succès pour un montant de ' + this.formatMoney(this.creditTotal()));
+        alert('Avoir créé avec succès pour un montant de ' + this.formatMoney(this.invoice()!.totalTTC));
         // Optionnel : rediriger vers la liste des factures après succès
         this.router.navigate(['/factures-certifiees']);
       },

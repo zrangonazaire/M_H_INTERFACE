@@ -63,46 +63,88 @@
       <section class="card">
         <div class="invoice-header">
           <div class="invoice-info">
-            <h2>Facture {{ invoice()!.reference }}</h2>
-            <p><strong>ID Facture:</strong> {{ invoice()!.id }}</p>
-            <p><strong>Type:</strong> <span [class]="invoice()!.invoiceType === 'sale' ? 'badge badge-success' : 'badge badge-warning'">{{ invoice()!.invoiceType === 'sale' ? 'Vente' : 'Avoir' }}</span></p>
-            <p><strong>Date:</strong> {{ formatDate(invoice()!.date) }}</p>
-            <p><strong>Utilisateur:</strong> {{ invoice()!.utilisateurCreateur }}</p>
-            <p><strong>Total TTC:</strong> {{ formatMoney(invoice()!.totalTTC) }}</p>
-            <p><strong>Facture de vente:</strong> <a href="/api/invoices/{{ invoice()!.id }}/download?token={{ invoice()!.token }}" target="_blank" rel="noopener noreferrer" class="download-link">Télécharger la facture</a></p>
+            <div class="invoice-main-info">
+              <div class="invoice-title-section">
+                <h1 class="invoice-title">Facture {{ invoice()!.reference }}</h1>
+                <div class="invoice-meta">
+                  <span class="invoice-id">ID: {{ invoice()!.id }}</span>
+                  <span [class]="invoice()!.invoiceType === 'sale' ? 'badge badge-success' : 'badge badge-warning'">
+                    {{ invoice()!.invoiceType === 'sale' ? 'Vente' : 'Avoir' }}
+                  </span>
+                </div>
+              </div>
+              <div class="invoice-details">
+                <div class="detail-row">
+                  <span class="detail-label">Date:</span>
+                  <span class="detail-value">{{ formatDate(invoice()!.date) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Utilisateur:</span>
+                  <span class="detail-value">{{ invoice()!.utilisateurCreateur }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="invoice-total-section">
+              <div class="total-label">Total TTC</div>
+              <div class="total-amount">{{ formatMoney(invoice()!.totalTTC) }}</div>
+              <div class="download-section">
+                @if (invoice()!.token) {
+                  <a [href]="invoice()!.token" 
+                     target="_blank" 
+                     rel="noopener noreferrer" 
+                     class="download-link">
+                    Télécharger la facture Vente
+                  </a>
+                } @else {
+                  <span class="muted">Token non disponible</span>
+                }
+              </div>
+            </div>
           </div>
         </div>
- <div class="actions">
-          <button class="btn btn-primary" (click)="createCreditNote()">Créer l'avoir</button>
-        </div>
-        <div class="table-wrapper" class="hidden">
+
+        <div class="table-wrapper">
           <table>
             <thead>
               <tr>
                 <th>ID Produit</th>
-
+                 <th>Référence</th>
+                <th>Produit</th>
+               
+                <!-- <th>Quantité</th>
+                <th>Prix unitaire</th>
+                <th>Montant HT</th>
+                <th>Montant TTC</th> -->
               </tr>
             </thead>
             <tbody>
               @for (item of invoice()!.items || []; track $index) {
                 <tr>
-                  <td>{{ item.id }}</td>   
-  
-
+                  <td>{{ item.id }}</td>
+                    <td>{{ item.reference || '-' }}</td>
+                  <td>{{ item.description || 'Produit sans description' }}</td>
+                
+                  <!-- <td>{{ item.quantity || 0 }}</td> -->
+                  <!-- <td>{{ formatMoney(item.amount ) }}</td>
+                  <td>{{ formatMoney((item.amount ) * (item.creditQuantity || 0)) }}</td>
+                  <td>{{ formatMoney(item.amount ) }}</td> -->
                 </tr>
               }
             </tbody>
           </table>
         </div>
 
-        <div class="credit-summary">
-          <!-- <div class="summary-row">
+        <!-- <div class="credit-summary">
+          <div class="summary-row">
             <span>Total à avoir:</span>
             <span class="total-amount">{{ formatMoney(creditTotal()) }}</span>
-          </div> -->
-        </div>
+          </div>
+        </div> -->
 
-       
+        <div class="actions">
+          <button class="btn btn-primary" (click)="createCreditNote()">Créer la facture Avoir</button>
+        </div>
       </section>
     } @else {
       <div class="alert error">

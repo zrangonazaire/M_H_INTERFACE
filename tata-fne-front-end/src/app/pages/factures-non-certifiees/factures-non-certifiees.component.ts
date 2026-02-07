@@ -595,6 +595,8 @@ console.log('Grouped Invoices:', result);
     // Déterminer si la facture provient d'un fichier Excel (bouton "Lire Odoo")
     const isFromExcel = invoice.source === 'excel';
 const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
+const pdv = this.authService.getCurrentPdv() ?? 'non defini';
+const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
     // Construire l'objet payload de base
     const payload: any = {
       invoiceType: 'sale',
@@ -605,8 +607,8 @@ const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
       clientPhone: invoice.telephoneClient || '',
       clientEmail: invoice.emailClient || '',
       clientSellerName:utilisateur,
-      pointOfSale: 'PDVMH' ,
-      establishment: 'MODERNE HYGIENE' ,
+      pointOfSale: pdv,
+      establishment: etablissement ,
       commercialMessage: invoice.commentaire || undefined,
       footer: undefined,
       items: signItems,
