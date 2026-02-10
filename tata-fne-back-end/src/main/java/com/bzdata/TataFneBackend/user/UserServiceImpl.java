@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+import com.bzdata.TataFneBackend.role.Role;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -76,5 +78,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean getUserByIdAndRoleName(Integer idUser, String idRole) {
         return userRepository.existsByIdAndRoles_Name(idUser, idRole.toUpperCase());
+    }
+
+    @Override
+    public void addRoleToUser(Integer idUser, String roleName) {
+        Optional<User> userOptional = userRepository.findById(idUser);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Optional<Role> roleOptional = roleRepository.findByName(roleName.toUpperCase());
+            if (roleOptional.isPresent()) {
+                Role role = roleOptional.get();
+                user.getRoles().add(role);
+                userRepository.save(user);
+            } else {
+                throw new RuntimeException("Role not found: " + roleName);
+            }
+        } else {
+            throw new RuntimeException("User not found with id: " + idUser);
+        }
     }
 }

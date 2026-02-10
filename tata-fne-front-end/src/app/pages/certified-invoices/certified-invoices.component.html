@@ -131,6 +131,7 @@
                 <th>Total Taxes</th>
                 <th>Total TTC</th>
                 <th>Token</th>
+                <th class="actions">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -156,6 +157,20 @@
                       <a class="token-link" [href]="invoice.token" target="_blank" rel="noreferrer noopener">{{ invoice.token }}</a>
                     } @else {
                       -
+                    }
+                  </td>
+                  <td>
+                    @if ((invoice.invoiceType || '').toLowerCase() === 'sale') {
+                      @if (shouldShowCreateCreditNoteButton(invoice)) {
+                        <button 
+                          class="btn btn-primary" 
+                          [disabled]="!hasFacturierRole()"
+                          (click)="createCreditNote(invoice)">
+                          Faire un avoir
+                        </button>
+                      } @else {
+                        <span class="muted">Avoir existant</span>
+                      }
                     }
                   </td>
                 </tr>

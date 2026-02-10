@@ -199,4 +199,9 @@ export class CertifiedInvoicesComponent implements OnInit {
       alert('Erreur lors de la vérification des droits');
     }
   }
+
+  protected hasFacturierRole(): boolean {
+    const authorities = this.authService.getCurrentAuthorities();
+    return authorities.includes('FACTURIER');
+  }
 }

@@ -128,7 +128,7 @@ public class DataInitializer {
                 societeRepository.save(societe);
 //
 //                    societeRepository.save(societe);
-                System.out.println("🏢 5 sociétés créées.");
+                //System.out.println("🏢 5 sociétés créées.");
             }
 
             // --- 3️⃣ Création d’établissements
@@ -247,6 +247,8 @@ public class DataInitializer {
 //            // 🔹 Récupération des rôles existants
            Role userRole = roleRepository.findByName("USER")
                    .orElseGet(() -> roleRepository.save(Role.builder().name("USER").code("USER").build()));
+                    Role facturierRole = roleRepository.findByName("FACTURIER")
+                   .orElseGet(() -> roleRepository.save(Role.builder().name("FACTURIER").code("FACTURIER").build()));
 //
 //
 //

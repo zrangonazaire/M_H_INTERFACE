@@ -16,24 +16,32 @@ import static java.time.LocalDateTime.now;
 @RequiredArgsConstructor
 public class UserController {
 
+    private final UserService userService;
+
     @GetMapping("/{idUser}/roles/{idRole}/checkroleexist")
     public ResponseEntity<Boolean> userHasRole(
             @PathVariable Integer idUser,
-            @PathVariable Integer idRole
-    ) {
+            @PathVariable Integer idRole) {
         boolean exists = userService.getUserByIdAndIdRole(idUser, idRole);
         return ResponseEntity.ok(exists);
     }
+
     @GetMapping("/{idUser}/roles/{roleName}/checkrolenameexist")
     public ResponseEntity<Boolean> userHasRoleByName(
             @PathVariable Integer idUser,
-            @PathVariable String roleName
-    ) {
+            @PathVariable String roleName) {
         boolean exists = userService.getUserByIdAndRoleName(idUser, roleName);
         return ResponseEntity.ok(exists);
     }
 
-    private final UserService userService;
+    @PostMapping("/addroletouser/{idUser}/roles/{roleName}")
+    public ResponseEntity<Void> addRoleToUser(
+            @PathVariable Integer idUser,
+            @PathVariable String roleName) {
+        userService.addRoleToUser(idUser, roleName);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping
     public ResponseEntity<HttpResponse> getAllUsers() {
         List<UserDTO> users = userService.getAllUsers();
@@ -44,8 +52,7 @@ public class UserController {
                         .statusCode(HttpStatus.OK.value())
                         .httpStatus(HttpStatus.OK)
                         .data(Map.of("users", users))
-                        .build()
-        );
+                        .build());
     }
 
     @GetMapping("/{id}")
@@ -58,8 +65,7 @@ public class UserController {
                         .statusCode(HttpStatus.OK.value())
                         .httpStatus(HttpStatus.OK)
                         .data(Map.of("user", user))
-                        .build()
-        );
+                        .build());
     }
 
     @PutMapping("/{id}/lock")
@@ -74,8 +80,7 @@ public class UserController {
                         .statusCode(HttpStatus.OK.value())
                         .httpStatus(HttpStatus.OK)
                         .data(Map.of("user", updatedUser))
-                        .build()
-        );
+                        .build());
     }
 
     @PutMapping("/{id}/status")

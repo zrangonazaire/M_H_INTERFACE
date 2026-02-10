@@ -103,6 +103,13 @@
         >
           Utilisateurs
         </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'roleAssignment'"
+          (click)="setActiveTab('roleAssignment')"
+        >
+          Attribution Rôles
+        </button>
       </div>
     </section>
 
@@ -340,7 +347,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
+                      <!-- <th>ID</th> -->
                       <th>Code</th>
                       <th>Nom</th>
                       <th>Actions</th>
@@ -349,13 +356,17 @@
                   <tbody>
                     @for (role of roles(); track role.id) {
                       <tr>
-                        <td>{{ role.id }}</td>
+                        <!-- <td>{{ role.id }}</td> -->
                         <td>{{ role.code }}</td>
                         <td>{{ role.nom }}</td>
                         <td>
                           <button class="btn-secondary btn-sm">Modifier</button>
                           <button class="btn-danger btn-sm">Supprimer</button>
                         </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="4" class="empty">Aucun rôle trouvé.</td>
                       </tr>
                     }
                   </tbody>
@@ -914,7 +925,106 @@
       </div>
     }
 
-        <!-- Users Management Tab -->
+    <!-- Role Assignment Tab -->
+    @if (activeTab() === 'roleAssignment') {
+      <div class="api-section">
+        <h3>Attribution des Rôles aux Utilisateurs</h3>
+
+        <!-- Assign Role to User Form -->
+        <div class="card">
+          <div class="card-header">
+            <h4>Attributer un Rôle à un Utilisateur</h4>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="addRoleToUser()" class="api-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="roleAssignUser">Utilisateur</label>
+                  <select id="roleAssignUser" [(ngModel)]="selectedUserForRole" name="userId" required
+                          class="form-control">
+                    <option value="" disabled>Sélectionnez un utilisateur</option>
+                    @for (user of users(); track user.id) {
+                      <option [value]="user.id">{{ user.firstname }} {{ user.lastname }} ({{ user.email }})</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="roleAssignRole">Rôle</label>
+                  <select id="roleAssignRole" [(ngModel)]="selectedRoleForUser" name="roleName" required
+                          class="form-control">
+                    <option value="" disabled>Sélectionnez un rôle</option>
+                    @for (role of roles(); track role.id) {
+                      <option [value]="role.nom">{{ role.nom }} ({{ role.code }})</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <!-- Role already assigned warning -->
+              @if (selectedUserForRole() && selectedRoleForUser() && userHasRole(selectedUserForRole()!, selectedRoleForUser())) {
+                <div class="alert warning">
+                  <strong>Attention:</strong> Cet utilisateur possède déjà ce rôle.
+                </div>
+              }
+
+              <button type="submit" class="btn-primary"
+                      [disabled]="loading() || !selectedUserForRole() || !selectedRoleForUser() || userHasRole(selectedUserForRole()!, selectedRoleForUser())">
+                @if (loading()) {
+                  <span class="spinner-small"></span> Attribution...
+                } @else {
+                  Attribuer le Rôle
+                }
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Users with Roles List -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h4>Utilisateurs et leurs Rôles</h4>
+          </div>
+          <div class="card-body">
+            @if (users().length === 0) {
+              <p class="empty-state">Aucun utilisateur trouvé.</p>
+            } @else {
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nom Complet</th>
+                      <th>Email</th>
+                      <th>Rôles Actuels</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (user of users(); track user.id) {
+                      <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.firstname }} {{ user.lastname }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                          @if (user.roles && user.roles.length > 0) {
+                            @for (role of user.roles; track role) {
+                              <span class="badge bg-primary me-1">{{ role }}</span>
+                            }
+                          } @else {
+                            <span class="text-muted">Aucun rôle</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Users Management Tab -->
     @if (activeTab() === 'users') {
       <div class="api-section">
         <h3>Gestion des Utilisateurs</h3>

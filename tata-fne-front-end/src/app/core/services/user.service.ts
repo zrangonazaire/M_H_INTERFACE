@@ -102,4 +102,10 @@ export class UserService {
 return this.http.get<boolean>(
       `${this.API_URL}/${idUser}/roles/${idRole}/checkroleexist` */
   }
+
+  // Add role to user
+  addRoleToUser(userId: number, roleName: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/users/addroletouser/${userId}/roles/${roleName}`, {});
+  }
 }

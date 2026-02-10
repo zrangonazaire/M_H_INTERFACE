@@ -11,9 +11,9 @@ import { UserService } from '../../core/services/user.service';
 })
 export class MenuGauche {
   constructor(
-      private readonly auth: AuthenticationService,
+    private readonly auth: AuthenticationService,
     private readonly router: Router,
-  ) {}
+  ) { }
 
   protected hasAdminRole(): boolean {
     const authorities = this.auth.getCurrentAuthorities();
@@ -22,7 +22,7 @@ export class MenuGauche {
 
   protected checkParametresAccess(): void {
     const authorities = this.auth.getCurrentAuthorities();
-    
+
     if (authorities.includes('ADMIN')) {
       this.router.navigate(['/parametres']);
     } else {

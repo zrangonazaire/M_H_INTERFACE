@@ -12,4 +12,5 @@ public interface UserService {
     RoleDTO getUserRole(Integer idUser);
     boolean getUserByIdAndIdRole(Integer idUser, Integer idRole);
     boolean getUserByIdAndRoleName(Integer idUser, String idRole);
+    void addRoleToUser(Integer idUser, String roleName);
 }

@@ -159,6 +159,10 @@ export class ParametresComponent implements OnInit {
   selectedRights = signal<string[]>([]);
   availableRights = signal<string[]>(['lecture', 'writing', 'modification', 'deletion', 'impression', 'validation']);
 
+  // Role-User Management State
+  selectedUserForRole = signal<number | null>(null);
+  selectedRoleForUser = signal<string>('');
+
   constructor(
     private readonly auth: AuthenticationService,
     private readonly router: Router,
@@ -811,5 +815,38 @@ export class ParametresComponent implements OnInit {
 
   getConnectedUserEmail(): string {
     return this.auth.getCurrentUserEmail() || 'Email inconnu';
+  }
+
+  // Role-User Management Methods
+  addRoleToUser(): void {
+    if (!this.selectedUserForRole() || !this.selectedRoleForUser()) {
+      this.error.set('Veuillez sélectionner un utilisateur et un rôle');
+      return;
+    }
+
+    this.loading.set(true);
+    const userId = this.selectedUserForRole()!;
+    const roleName = this.selectedRoleForUser();
+
+    this.userService.addRoleToUser(userId, roleName).subscribe({
+      next: () => {
+        this.showSuccess(`Rôle ${roleName} attribué à l'utilisateur avec succès`);
+        // Refresh user list to show updated roles
+        this.userService.getUsers().subscribe({
+          next: (users) => this.users.set(users),
+          error: (err) => this.handleError('Failed to refresh user list')
+        });
+        // Reset form
+        this.selectedUserForRole.set(null);
+        this.selectedRoleForUser.set('');
+      },
+      error: (err) => this.handleError('Failed to add role to user')
+    }).add(() => this.loading.set(false));
+  }
+
+  // Check if user already has a specific role
+  userHasRole(userId: number, roleName: string): boolean {
+    const user = this.users().find(u => u.id === userId);
+    return user ? user.roles?.includes(roleName) || false : false;
   }
 }

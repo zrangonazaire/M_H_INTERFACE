@@ -83,6 +83,7 @@ export class AuthenticationService {
     localStorage.removeItem(this.userIdroleKey);
     localStorage.removeItem(this.userEtabFbe);
     localStorage.removeItem(this.userIdKey);
+    localStorage.removeItem(this.userAuthorities);
   }
 
   getToken(): string | null {
