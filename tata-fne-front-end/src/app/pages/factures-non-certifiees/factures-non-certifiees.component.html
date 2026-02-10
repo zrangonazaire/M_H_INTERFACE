@@ -170,12 +170,12 @@
               <th>Téléphone</th>
               <th>Email</th>
               <th>Mode Paiement <span class="required">*</span></th>
-              <th>Devise</th>
+              <!-- <th>Devise</th> -->
               <th>Commentaire</th>
               <th class="text-right">Montant HT</th>
               <th class="text-right">Montant TTC</th>
-              <th>Statut</th>
-              <th>Source</th>
+              <!-- <th>Statut</th>
+              <th>Source</th> -->
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -199,16 +199,16 @@
                 <td>{{ group.mainInvoice.telephoneClient || '' }}</td>
                 <td>{{ group.mainInvoice.emailClient || '' }}</td>
                 <td>{{ group.mainInvoice.paymentMethod || group.mainInvoice.modePaiement || '' }}</td>
-                <td>{{ group.mainInvoice.devise || '' }}</td>
+                <!-- <td>{{ group.mainInvoice.devise || '' }}</td> -->
                 <td>{{ group.mainInvoice.commentaire || '' }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountHT(group.items)) }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountTTC(group.items)) }}</td>
-                <td>
+                <!-- <td>
                   <span class="status-badge" [class]="normalizeStatus(group.mainInvoice)">
                     {{ getStatusLabel(normalizeStatus(group.mainInvoice)) }}
                   </span>
-                </td>
-                <td>{{ getEmissionLabel(group.mainInvoice) }}</td>
+                </td> -->
+                <!-- <td>{{ getEmissionLabel(group.mainInvoice) }}</td> -->
                 <td class="text-end">
                   <button
                     class="primary tiny"

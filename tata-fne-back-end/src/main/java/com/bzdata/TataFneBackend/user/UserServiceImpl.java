@@ -72,4 +72,9 @@ public class UserServiceImpl implements UserService {
     public boolean getUserByIdAndIdRole(Integer idUser, Integer idRole) {
         return userRepository.existsByIdAndRoles_Id(idUser, idRole);
     }
+
+    @Override
+    public boolean getUserByIdAndRoleName(Integer idUser, String idRole) {
+        return userRepository.existsByIdAndRoles_Name(idUser, idRole.toUpperCase());
+    }
 }

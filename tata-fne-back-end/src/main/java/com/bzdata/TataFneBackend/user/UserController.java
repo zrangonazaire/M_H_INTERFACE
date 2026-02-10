@@ -24,6 +24,14 @@ public class UserController {
         boolean exists = userService.getUserByIdAndIdRole(idUser, idRole);
         return ResponseEntity.ok(exists);
     }
+    @GetMapping("/{idUser}/roles/{roleName}/checkrolenameexist")
+    public ResponseEntity<Boolean> userHasRoleByName(
+            @PathVariable Integer idUser,
+            @PathVariable String roleName
+    ) {
+        boolean exists = userService.getUserByIdAndRoleName(idUser, roleName);
+        return ResponseEntity.ok(exists);
+    }
 
     private final UserService userService;
     @GetMapping

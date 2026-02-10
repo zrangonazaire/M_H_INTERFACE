@@ -11,4 +11,5 @@ public interface UserService {
     UserDTO toggleAccountStatus(Integer id, boolean enabled);
     RoleDTO getUserRole(Integer idUser);
     boolean getUserByIdAndIdRole(Integer idUser, Integer idRole);
+    boolean getUserByIdAndRoleName(Integer idUser, String idRole);
 }
