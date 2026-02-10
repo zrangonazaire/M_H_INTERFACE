@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
+import { MenuGauche } from './pages/menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule],
+  imports: [RouterOutlet, RouterModule, MenuGauche],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -28,7 +29,8 @@ export class App {
       url.startsWith('/dashboard') ||
       url.startsWith('/factures-certifiees') ||
       url.startsWith('/factures-non-certifiees') ||
-      url.startsWith('/parametres')
+      url.startsWith('/parametres') ||
+      url.startsWith('/facture-avoir')
     );
   }
 }

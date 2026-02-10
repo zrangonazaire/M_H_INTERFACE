@@ -58,13 +58,14 @@ export class LoginComponent {
       )
       .subscribe((res) => {
         if (!res) return;
-        console.log('Login successful, token:', this.authService.getCurrentPdv());
+        
         this.authService.setCurrentUserEmail(email);
         this.authService.setCurrentPdv(this.authService.getCurrentPdv()??"");
         this.authService.setCurrentEtabFNE(this.authService.getCurrentEtabFNE()??"");
          this.authService.setCurrentIdRole(this.authService.getCurrentIdRole()??"");
         this.authService.setCurrentId(this.authService.getCurrentId()??"");
-        
+        this.authService.setCurrentAuthorities(this.authService.getCurrentAuthorities());
+        console.log('Login successful, authorities:', this.authService.getCurrentAuthorities());
        
         // redirect to default page once authenticated
         this.router.navigate(['/dashboard']);

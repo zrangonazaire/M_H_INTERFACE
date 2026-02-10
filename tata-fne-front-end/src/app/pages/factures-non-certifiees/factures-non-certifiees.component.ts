@@ -11,13 +11,14 @@ import { AuthenticationService } from '../../core/services/authentication.servic
 import { InvoiceSignRequest } from '../../core/models/invoice-sign-request';
 import { AttributionService } from '../../core/services/attribution.service';
 import { NonCertifiedInvoice } from '../../core/models/non-certified-invoice';
+import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inconnu';
 
 @Component({
   selector: 'app-factures-non-certifiees',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule,MenuGauche],
   templateUrl: './factures-non-certifiees.component.html',
   styleUrl: './factures-non-certifiees.component.scss'
 })

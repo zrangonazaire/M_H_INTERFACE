@@ -8,11 +8,12 @@ import { VerificationRefundResponse } from '../../core/models/verification-refun
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
+import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-certified-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule,MenuGauche],
   templateUrl: './certified-invoices.component.html',
   styleUrl: './certified-invoices.component.scss'
 })

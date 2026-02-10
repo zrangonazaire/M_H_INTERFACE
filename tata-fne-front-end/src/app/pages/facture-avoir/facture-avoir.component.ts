@@ -7,11 +7,12 @@ import { RefundInvoiceDTO, RefundItemDTO } from '../../core/models/refund-invoic
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
+import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-facture-avoir',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MenuGauche],
   templateUrl: './facture-avoir.component.html',
   styleUrl: './facture-avoir.component.scss'
 })

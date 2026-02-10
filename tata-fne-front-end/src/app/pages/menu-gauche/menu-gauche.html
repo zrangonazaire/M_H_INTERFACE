@@ -1,0 +1,38 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="/logo.png" alt="Logo" />
+      </div>
+      <div class="brand-caption">Facture Normalisée Électronique</div>
+    </div>
+
+    <nav class="menu">
+      <a class="menu-item" routerLink="/dashboard" routerLinkActive="active">
+        <span class="icon">D</span>
+        Tableau de bord
+      </a>
+      <a class="menu-item" routerLink="/factures-non-certifiees" routerLinkActive="active">
+        <span class="icon">X</span>
+        Certification par fichier Excel
+      </a>
+      <!-- <a class="menu-item">
+        <span class="icon">A</span>
+        Certification par API SAP
+      </a> -->
+      <a class="menu-item" routerLink="/factures-certifiees" routerLinkActive="active">
+        <span class="icon">F</span>
+        Factures Certifiées
+      </a>
+      <a class="menu-item" [class.disabled]="!hasAdminRole()" routerLink="/parametres" routerLinkActive="active">
+        <span class="icon">P</span>
+        Paramètres
+      </a>
+    </nav>
+
+    <div class="logout">
+      <button type="button" (click)="logout()">Se déconnecter</button>
+      <small>v1.0.2 (04/11/2025)</small>
+    </div>
+  </aside>
+</div>

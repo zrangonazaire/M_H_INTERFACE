@@ -13,11 +13,12 @@ import { DepartmentService, DepartmentResponse } from '../../core/services/depar
 import { AttributionService } from '../../core/services/attribution.service';
 import { UserService } from '../../core/services/user.service';
 import { RegistrationRequest, ChangePasswordRequest, UserDTO } from '../../core/models/auth';
+import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-parametres',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule,MenuGauche],
   templateUrl: './parametres.component.html',
   styleUrl: './parametres.component.scss'
 })

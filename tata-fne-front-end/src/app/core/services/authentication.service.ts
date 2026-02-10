@@ -18,11 +18,12 @@ export class AuthenticationService {
   private readonly tokenKey = 'tata_fne_token';
   private readonly userEmailKey = 'tata_fne_user_email';
   private readonly userIdroleKey = 'tata_fne_user_idrole';
-  private readonly userPdvFne='tata_fne_UserPdvFne';
-  private readonly userEtabFbe='tata_fne_UserEtab'
-  private readonly userIdKey='tata_fne_user_id';
+  private readonly userPdvFne = 'tata_fne_UserPdvFne';
+  private readonly userEtabFbe = 'tata_fne_UserEtab'
+  private readonly userIdKey = 'tata_fne_user_id';
+  private readonly userAuthorities = 'tata_fne_user_authorities';
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   login(payload: LoginRequest): Observable<AuthenticationResponse> {
     return this.http
@@ -60,8 +61,8 @@ export class AuthenticationService {
   }
   setCurrentIdRole(IdRole: string): void {
     localStorage.setItem(this.userIdroleKey, IdRole);
-  } 
-  setCurrentId(Id: string): void {  
+  }
+  setCurrentId(Id: string): void {
     localStorage.setItem(this.userIdKey, Id);
   }
   setCurrentPdv(PdvFNE: string): void {
@@ -70,11 +71,14 @@ export class AuthenticationService {
   setCurrentEtabFNE(EtabFNE: string): void {
     localStorage.setItem(this.userEtabFbe, EtabFNE);
   }
+  setCurrentAuthorities(Authorities: string[]): void {
+    localStorage.setItem(this.userAuthorities, JSON.stringify(Authorities));
+  }
 
   clearToken(): void {
     localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userEmailKey);   
-    
+    localStorage.removeItem(this.userEmailKey);
+
     localStorage.removeItem(this.userPdvFne);
     localStorage.removeItem(this.userIdroleKey);
     localStorage.removeItem(this.userEtabFbe);
@@ -84,13 +88,28 @@ export class AuthenticationService {
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
+  getCurrentAuthorities(): string[] {
+    const token = this.getToken();
+    if (!token) return [];
+
+    try {
+      const payloadPart = token.split('.')[1];
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = atob(normalized);
+      const payload = JSON.parse(decoded);
+      return payload?.authorities ?? [];
+    } catch (error) {
+      return [];
+    }
+
+  }
 
   getCurrentUserEmail(): string | null {
     return localStorage.getItem(this.userEmailKey);
   }
-  
+
   getCurrentIdRole(): string | null {
-     console.log('Getting current full name from token'+this.getToken());
+
     const token = this.getToken();
     if (!token) return null;
     try {
@@ -101,10 +120,10 @@ export class AuthenticationService {
       return payload?.roles ?? null;
     } catch {
       return null;
-    } 
+    }
   }
-   getCurrentId(): string | null {
-     console.log('Getting current full name from token'+this.getToken());
+  getCurrentId(): string | null {
+    console.log('Getting current full name from token' + this.getToken());
     const token = this.getToken();
     if (!token) return null;
     try {
@@ -115,10 +134,10 @@ export class AuthenticationService {
       return payload?.idUtilisateur ?? null;
     } catch {
       return null;
-    } 
+    }
   }
- getCurrentPdv(): string | null {
-     console.log('Getting current pdv name from token'+this.getToken());
+  getCurrentPdv(): string | null {
+    console.log('Getting current pdv name from token' + this.getToken());
     const token = this.getToken();
     if (!token) return null;
     try {
@@ -129,10 +148,10 @@ export class AuthenticationService {
       return payload?.pdv ?? null;
     } catch {
       return null;
-    } 
+    }
   }
- getCurrentEtabFNE(): string | null {
-    
+  getCurrentEtabFNE(): string | null {
+
     const token = this.getToken();
     if (!token) return null;
     try {
@@ -143,12 +162,12 @@ export class AuthenticationService {
       return payload?.etablissementUser ?? null;
     } catch {
       return null;
-    } 
+    }
   }
-  
+
   getCurrentFullName(): string | null {
-  
-    console.log('Getting current full name from token'+this.getToken());
+
+    console.log('Getting current full name from token' + this.getToken());
     const token = this.getToken();
     if (!token) return null;
     try {
@@ -156,7 +175,7 @@ export class AuthenticationService {
       const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
       const decoded = atob(normalized);
       const payload = JSON.parse(decoded);
-      console.log('***** payload ****/ ',payload); 
+      console.log('***** payload ****/ ', payload);
       return payload?.fullName ?? null;
     } catch {
       return null;
@@ -166,17 +185,17 @@ export class AuthenticationService {
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
-    
+
     try {
       const payloadPart = token.split('.')[1];
       const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
       const decoded = atob(normalized);
       const payload = JSON.parse(decoded);
-      
+
       // Vérifier l'expiration du token
       const exp = payload.exp;
       if (!exp) return false;
-      
+
       const now = Math.floor(Date.now() / 1000);
       return exp > now;
     } catch {
