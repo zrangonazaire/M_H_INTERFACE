@@ -19,6 +19,8 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
 export class DashboardComponent {
 
   protected readonly userFullName = signal('Compte');
+  protected readonly userPdv = signal('Compte');
+  protected readonly userEtab= signal('Compte');
   protected readonly certifiedInvoiceCount = signal(0);
   protected readonly totalHT = signal(0);
   protected readonly totalTTC = signal(0);
@@ -34,6 +36,8 @@ export class DashboardComponent {
     private readonly fneInvoiceService: FneInvoiceService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.auth.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.auth.getCurrentEtabFNE() ?? 'Compte');
     debugger;
     this.auth.getCurrentEtabFNE();
   }

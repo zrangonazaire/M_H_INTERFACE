@@ -19,6 +19,8 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
 })
 export class CertifiedInvoicesComponent implements OnInit {
   protected readonly userFullName = signal('Compte');
+  protected readonly userPdv = signal('Compte');
+  protected readonly userEtab= signal('Compte');
 
   protected readonly search = signal('');
   protected readonly creatorFilter = signal('all');
@@ -90,6 +92,8 @@ export class CertifiedInvoicesComponent implements OnInit {
     private readonly attributionService: AttributionService
   ) {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
   }
 
   ngOnInit(): void {

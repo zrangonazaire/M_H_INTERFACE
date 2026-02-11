@@ -23,6 +23,7 @@ type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inc
   styleUrl: './factures-non-certifiees.component.scss'
 })
 export class FacturesNonCertifieesComponent {
+
   readonly query = signal('');
   readonly statusFilter = signal<'all' | InvoiceStatus>('all');
 
@@ -42,6 +43,8 @@ export class FacturesNonCertifieesComponent {
   readonly certifyingId = signal<number | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly userFullName = signal('Compte');
+  readonly userPdv = signal('Compte');
+  readonly userEtab= signal('Compte');
   readonly certificationSuccessMessage = signal<string | null>(null);
   readonly certificationDownloadUrl = signal<string | null>(null);
   readonly newInvoiceLabel = 'Facture Odoo';
@@ -147,6 +150,8 @@ ncc: any;
   ) {
     this.loadInvoices();
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
   }
 
   readonly filteredInvoices = computed(() => {

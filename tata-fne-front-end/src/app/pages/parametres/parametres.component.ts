@@ -24,6 +24,8 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
 })
 export class ParametresComponent implements OnInit {
   protected readonly userFullName = signal('Compte');
+  protected readonly userPdv = signal('Compte');
+  protected readonly userEtab= signal('Compte');
 
   // API Data
   roles = signal<any[]>([]);
@@ -177,6 +179,8 @@ export class ParametresComponent implements OnInit {
     private readonly notificationService: NotificationService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.auth.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.auth.getCurrentEtabFNE() ?? 'Compte');
   }
 
   ngOnInit(): void {

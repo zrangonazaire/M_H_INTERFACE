@@ -18,6 +18,8 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
 })
 export class FactureAvoirComponent implements OnInit {
   protected readonly userFullName = signal('Compte');
+  protected readonly userPdv = signal('Compte');
+  protected readonly userEtab= signal('Compte');
   protected readonly invoice = signal<CertifiedInvoice | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -30,6 +32,8 @@ export class FactureAvoirComponent implements OnInit {
     private readonly attributionService: AttributionService
   ) {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
   }
 
   ngOnInit(): void {
