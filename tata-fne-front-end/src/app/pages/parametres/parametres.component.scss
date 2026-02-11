@@ -630,3 +630,67 @@
 .btn-remove-role:hover {
   color: #fff;
 }
+
+/* Notyf Confirmation Dialog Styles */
+.notyf-confirm {
+  padding: 10px;
+  min-width: 300px;
+}
+
+.notyf-confirm-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.notyf-confirm-message {
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.notyf-confirm-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.notyf-confirm-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.notyf-confirm-btn--cancel {
+  background: #6b7280;
+  color: white;
+}
+
+.notyf-confirm-btn--cancel:hover {
+  background: #4b5563;
+}
+
+.notyf-confirm-btn--confirm {
+  background: #10b981;
+  color: white;
+}
+
+.notyf-confirm-btn--confirm:hover {
+  background: #059669;
+}
+
+/* Override Notyf toast styles for confirmation */
+.notyf__toast--warning {
+  max-width: 400px !important;
+}
+
+.notyf__toast--warning .notyf__wrapper {
+  padding: 20px !important;
+}

@@ -10,7 +10,7 @@ import { MenuGauche } from './pages/menu-gauche/menu-gauche';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('modern-hygiene-fne-front-end');
+  protected readonly title = signal('tata-fne-front-end');
   protected readonly isHeaderless = signal(false);
 
   constructor(private readonly router: Router) {

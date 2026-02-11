@@ -11,13 +11,14 @@ import { SocietyService } from '../../core/services/society.service';
 import { DepartmentService, DepartmentResponse } from '../../core/services/department.service';
 import { AttributionService } from '../../core/services/attribution.service';
 import { UserService } from '../../core/services/user.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { RegistrationRequest, ChangePasswordRequest, UserDTO } from '../../core/models/auth';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-parametres',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule,MenuGauche],
+  imports: [CommonModule, FormsModule, RouterModule, MenuGauche],
   templateUrl: './parametres.component.html',
   styleUrl: './parametres.component.scss'
 })
@@ -172,7 +173,8 @@ export class ParametresComponent implements OnInit {
     private readonly etablissementService: EtablissementService,
     private readonly societyService: SocietyService,
     private readonly attributionService: AttributionService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly notificationService: NotificationService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
   }
@@ -182,7 +184,7 @@ export class ParametresComponent implements OnInit {
   }
 
   loadAllData(): void {
-     debugger;
+    debugger;
     this.loading.set(true);
     this.error.set(null);
 
@@ -190,28 +192,28 @@ export class ParametresComponent implements OnInit {
       // Load all data in parallel
       this.roleService.getRoles().subscribe({
         next: (roles) => this.roles.set(roles),
-        error: (err) => this.handleError('Failed to load roles')
+        error: (err) => this.handleError('Erreur lors du chargement des rôles')
       });
 
       this.functionalityService.getFunctionalities().subscribe({
-       
+
         next: (functionalities) => this.functionalities.set(functionalities),
-        error: (err) => this.handleError('Failed to load functionalities')
+        error: (err) => this.handleError('Erreur lors du chargement des fonctionnalités')
       });
 
       this.roleFunctionalityService.getRoleFunctionalities().subscribe({
         next: (roleFunctionalities) => this.roleFunctionalities.set(roleFunctionalities),
-        error: (err) => this.handleError('Failed to load role functionalities')
+        error: (err) => this.handleError('Erreur lors du chargement des rôles-fonctionnalités')
       });
 
       this.departmentService.getDepartments().subscribe({
         next: (departments) => this.departments.set(departments),
-        error: (err) => this.handleError('Failed to load departments')
+        error: (err) => this.handleError('Erreur lors du chargement des départements')
       });
 
       this.etablissementService.getEtablissements().subscribe({
         next: (etablissements) => this.etablissements.set(etablissements),
-        error: (err) => this.handleError('Failed to load establishments')
+        error: (err) => this.handleError('Erreur lors du chargement des établissements')
       });
 
       this.societyService.getSocietiesPaginated(this.pagination().currentPage, this.pagination().pageSize).subscribe({
@@ -224,25 +226,25 @@ export class ParametresComponent implements OnInit {
             totalPages: result.totalPages
           }));
         },
-        error: (err) => this.handleError('Failed to load societies')
+        error: (err) => this.handleError('Erreur lors du chargement des sociétés')
       });
 
       this.attributionService.getAttributions().subscribe({
         next: (attributions) => this.attributions.set(attributions),
-        error: (err) => this.handleError('Failed to load attributions')
+        error: (err) => this.handleError('Erreur lors du chargement des attributions')
       });
 
       // Load users with pagination
       this.loadUsersPage(0);
-      
+
       // Also load all users for dropdowns and department management
       this.userService.getUsers().subscribe({
         next: (users) => this.users.set(users),
-        error: (err) => this.handleError('Failed to load users for dropdowns')
+        error: (err) => this.handleError('Erreur lors du chargement des utilisateurs')
       });
 
     } catch (err) {
-      this.handleError('Failed to load data');
+      this.handleError('Erreur lors du chargement des données');
     } finally {
       this.loading.set(false);
     }
@@ -255,9 +257,9 @@ export class ParametresComponent implements OnInit {
       next: (role) => {
         this.roles.update(roles => [...roles, role]);
         this.newRole.set({ code: '', nom: '' });
-        this.showSuccess('Role created successfully');
+        this.showSuccess('Rôle créé avec succès');
       },
-      error: (err) => this.handleError('Failed to create role')
+      error: (err) => this.handleError('Erreur lors de la création du rôle')
     }).add(() => this.loading.set(false));
   }
 
@@ -272,9 +274,9 @@ export class ParametresComponent implements OnInit {
           libelleEtablissement: ''
         }]);
         this.newDepartment.set({ code: '', nom: '', idEtablissement: 1 });
-        this.showSuccess('Department created successfully');
+        this.showSuccess('Département créé avec succès');
       },
-      error: (err) => this.handleError('Failed to create department')
+      error: (err) => this.handleError('Erreur lors de la création du département')
     }).add(() => this.loading.set(false));
   }
 
@@ -286,7 +288,7 @@ export class ParametresComponent implements OnInit {
       next: (users) => {
         this.usersForDepartment.set(users);
       },
-      error: (err) => this.handleError('Failed to load users for department')
+      error: (err) => this.handleError('Erreur lors du chargement des utilisateurs du département')
     }).add(() => this.loading.set(false));
   }
 
@@ -296,11 +298,11 @@ export class ParametresComponent implements OnInit {
     this.loading.set(true);
     this.departmentService.addUsersToDepartment(this.selectedDepartmentForUsers()!, this.selectedUsersToAdd()).subscribe({
       next: () => {
-        this.showSuccess('Users added to department successfully');
+        this.showSuccess('Utilisateurs ajoutés au département avec succès');
         this.loadUsersForDepartment(this.selectedDepartmentForUsers()!);
         this.selectedUsersToAdd.set([]);
       },
-      error: (err) => this.handleError('Failed to add users to department')
+      error: (err) => this.handleError('Erreur lors de l\'ajout des utilisateurs au département')
     }).add(() => this.loading.set(false));
   }
 
@@ -308,10 +310,10 @@ export class ParametresComponent implements OnInit {
     this.loading.set(true);
     this.departmentService.removeUserFromDepartment(departmentId, userId).subscribe({
       next: () => {
-        this.showSuccess('User removed from department successfully');
+        this.showSuccess('Utilisateur retiré du département avec succès');
         this.loadUsersForDepartment(departmentId);
       },
-      error: (err) => this.handleError('Failed to remove user from department')
+      error: (err) => this.handleError('Erreur lors du retrait de l\'utilisateur du département')
     }).add(() => this.loading.set(false));
   }
 
@@ -341,9 +343,9 @@ export class ParametresComponent implements OnInit {
       next: (functionality) => {
         this.functionalities.update(funcs => [...funcs, functionality]);
         this.newFunctionality.set({ nom: '', description: '', code: '' });
-        this.showSuccess('Functionality created successfully');
+        this.showSuccess('Fonctionnalité créée avec succès');
       },
-      error: (err) => this.handleError('Failed to create functionality')
+      error: (err) => this.handleError('Erreur lors de la création de la fonctionnalité')
     }).add(() => this.loading.set(false));
   }
 
@@ -366,9 +368,9 @@ export class ParametresComponent implements OnInit {
           activitePrincipale: '',
           idSociete: 1
         });
-        this.showSuccess('Establishment created successfully');
+        this.showSuccess('Établissement créé avec succès');
       },
-      error: (err) => this.handleError('Failed to create establishment')
+      error: (err) => this.handleError('Erreur lors de la création de l\'établissement')
     }).add(() => this.loading.set(false));
   }
 
@@ -408,7 +410,7 @@ export class ParametresComponent implements OnInit {
     this.loading.set(true);
     this.userService.registerUser(this.newUser()).subscribe({
       next: () => {
-        this.showSuccess('User registered successfully. Please check email for activation.');
+        this.showSuccess('Utilisateur enregistré avec succès. Veuillez vérifier votre email pour l\'activation.');
         this.newUser.set({
           firstname: '',
           lastname: '',
@@ -418,10 +420,10 @@ export class ParametresComponent implements OnInit {
         // Refresh user list
         this.userService.getUsers().subscribe({
           next: (users) => this.users.set(users),
-          error: (err) => this.handleError('Failed to refresh user list')
+          error: (err) => this.handleError('Erreur lors du rafraîchissement de la liste des utilisateurs')
         });
       },
-      error: (err) => this.handleError('Failed to register user')
+      error: (err) => this.handleError('Erreur lors de l\'enregistrement de l\'utilisateur')
     }).add(() => this.loading.set(false));
   }
 
@@ -429,14 +431,14 @@ export class ParametresComponent implements OnInit {
     this.loading.set(true);
     this.userService.changePassword(this.changePassword()).subscribe({
       next: () => {
-        this.showSuccess('Password changed successfully');
+        this.showSuccess('Mot de passe modifié avec succès');
         this.changePassword.set({
           currentPassword: '',
           newPassword: '',
           confirmationPassword: ''
         });
       },
-      error: (err) => this.handleError('Failed to change password')
+      error: (err) => this.handleError('Erreur lors du changement de mot de passe')
     }).add(() => this.loading.set(false));
   }
 
@@ -447,9 +449,9 @@ export class ParametresComponent implements OnInit {
         this.users.update(users =>
           users.map(user => user.id === updatedUser.id ? updatedUser : user)
         );
-        this.showSuccess(`User account ${!currentStatus ? 'locked' : 'unlocked'} successfully`);
+        this.showSuccess(`Compte utilisateur ${!currentStatus ? 'verrouillé' : 'déverrouillé'} avec succès`);
       },
-      error: (err) => this.handleError('Failed to update user lock status')
+      error: (err) => this.handleError('Erreur lors de la mise à jour du statut de verrouillage')
     }).add(() => this.loading.set(false));
   }
 
@@ -460,9 +462,9 @@ export class ParametresComponent implements OnInit {
         this.users.update(users =>
           users.map(user => user.id === updatedUser.id ? updatedUser : user)
         );
-        this.showSuccess(`User account ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+        this.showSuccess(`Compte utilisateur ${!currentStatus ? 'activé' : 'désactivé'} avec succès`);
       },
-      error: (err) => this.handleError('Failed to update user status')
+      error: (err) => this.handleError('Erreur lors de la mise à jour du statut de l\'utilisateur')
     }).add(() => this.loading.set(false));
   }
 
@@ -481,7 +483,7 @@ export class ParametresComponent implements OnInit {
           totalPages: result.totalPages
         }));
       },
-      error: (err) => this.handleError('Failed to load societies')
+      error: (err) => this.handleError('Erreur lors du chargement des sociétés')
     }).add(() => this.loading.set(false));
   }
 
@@ -503,7 +505,7 @@ export class ParametresComponent implements OnInit {
           totalPages: result.totalPages
         }));
       },
-      error: (err) => this.handleError('Failed to load societies')
+      error: (err) => this.handleError('Erreur lors du chargement des sociétés')
     }).add(() => this.loading.set(false));
   }
 
@@ -522,7 +524,7 @@ export class ParametresComponent implements OnInit {
           totalPages: result.totalPages
         }));
       },
-      error: (err) => this.handleError('Failed to load attributions')
+      error: (err) => this.handleError('Erreur lors du chargement des attributions')
     }).add(() => this.loading.set(false));
   }
 
@@ -544,7 +546,7 @@ export class ParametresComponent implements OnInit {
           totalPages: result.totalPages
         }));
       },
-      error: (err) => this.handleError('Failed to load attributions')
+      error: (err) => this.handleError('Erreur lors du chargement des attributions')
     }).add(() => this.loading.set(false));
   }
 
@@ -563,7 +565,7 @@ export class ParametresComponent implements OnInit {
           totalPages: result.totalPages
         }));
       },
-      error: (err) => this.handleError('Failed to load users')
+      error: (err) => this.handleError('Erreur lors du chargement des utilisateurs')
     }).add(() => this.loading.set(false));
   }
 
@@ -574,7 +576,7 @@ export class ParametresComponent implements OnInit {
   changeUsersPageSize(event: Event): void {
     const target = event.target as HTMLSelectElement;
     if (!target || !target.value) return;
-    
+
     const size = Number(target.value);
     this.loading.set(true);
     this.usersPagination.update(p => ({ ...p, pageSize: size, currentPage: 0 }));
@@ -588,9 +590,9 @@ export class ParametresComponent implements OnInit {
           totalItems: result.totalItems,
           totalPages: result.totalPages
         }));
-        this.showSuccess(`Page size changed to ${size} users per page`);
+        this.showSuccess(`Taille de page modifiée à ${size} utilisateurs par page`);
       },
-      error: (err) => this.handleError('Failed to load users')
+      error: (err) => this.handleError('Erreur lors du chargement des utilisateurs')
     }).add(() => this.loading.set(false));
   }
 
@@ -641,14 +643,13 @@ export class ParametresComponent implements OnInit {
   }
 
   private handleError(message: string): void {
-    this.error.set(message);
     this.loading.set(false);
+    this.notificationService.error(message);
     console.error(message);
   }
 
   private showSuccess(message: string): void {
-    this.success.set(message);
-    setTimeout(() => this.success.set(null), 3000);
+    this.notificationService.success(message);
   }
 
   protected logout(): void {
@@ -660,30 +661,30 @@ export class ParametresComponent implements OnInit {
     try {
       const userId = this.auth.getCurrentId();
       const roleId = this.auth.getCurrentIdRole();
-      
+
       if (!userId || !roleId) {
-        alert('Informations utilisateur manquantes');
+        this.notificationService.warning('Informations utilisateur manquantes');
         return;
       }
 
       const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
-      
+
       if (!hasAccess) {
-        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        this.notificationService.warning('Vous n\'avez pas le droit sur cette fonctionnalité');
         return;
       }
 
       this.router.navigate(['/parametres']);
     } catch (error) {
       console.error('Erreur lors de la vérification des droits:', error);
-      alert('Erreur lors de la vérification des droits');
+      this.notificationService.error('Erreur lors de la vérification des droits');
     }
   }
 
   // Attribution Management Methods
   createAttribution(): void {
     if (!this.selectedUserId() || !this.selectedFunctionalityId()) {
-      this.error.set('Veuillez sélectionner un utilisateur et une fonctionnalité');
+      this.notificationService.warning('Veuillez sélectionner un utilisateur et une fonctionnalité');
       return;
     }
 
@@ -693,7 +694,7 @@ export class ParametresComponent implements OnInit {
 
     // Ensure IDs are valid numbers
     if (userId === null || functionalityId === null) {
-      this.error.set('Les IDs utilisateur et fonctionnalité ne peuvent pas être nuls');
+      this.notificationService.error('Les IDs utilisateur et fonctionnalité ne peuvent pas être nuls');
       this.loading.set(false);
       return;
     }
@@ -711,7 +712,7 @@ export class ParametresComponent implements OnInit {
 
     // Vérifier que les IDs sont des nombres valides
     if (isNaN(attribution.userId) || isNaN(attribution.functionalityId)) {
-      this.error.set('Les IDs utilisateur et fonctionnalité doivent être des nombres valides');
+      this.notificationService.error('Les IDs utilisateur et fonctionnalité doivent être des nombres valides');
       this.loading.set(false);
       return;
     }
@@ -726,7 +727,7 @@ export class ParametresComponent implements OnInit {
         this.showSuccess('Attribution créée avec succès');
         this.resetAttributionForm();
       },
-      error: (err) => this.handleError('Failed to create attribution')
+      error: (err) => this.handleError('Erreur lors de la création de l\'attribution')
     }).add(() => this.loading.set(false));
   }
 
@@ -748,7 +749,7 @@ export class ParametresComponent implements OnInit {
         );
         this.showSuccess('Attribution mise à jour avec succès');
       },
-      error: (err) => this.handleError('Failed to update attribution')
+      error: (err) => this.handleError('Erreur lors de la mise à jour de l\'attribution')
     }).add(() => this.loading.set(false));
   }
 
@@ -759,7 +760,7 @@ export class ParametresComponent implements OnInit {
         this.attributions.update(attrs => attrs.filter(attr => attr.id !== attributionId));
         this.showSuccess('Attribution supprimée avec succès');
       },
-      error: (err) => this.handleError('Failed to delete attribution')
+      error: (err) => this.handleError('Erreur lors de la suppression de l\'attribution')
     }).add(() => this.loading.set(false));
   }
 
@@ -819,7 +820,7 @@ export class ParametresComponent implements OnInit {
   // Role-User Management Methods
   addRoleToUser(): void {
     if (!this.selectedUserForRole() || !this.selectedRoleForUser()) {
-      this.error.set('Veuillez sélectionner un utilisateur et un rôle');
+      this.notificationService.warning('Veuillez sélectionner un utilisateur et un rôle');
       return;
     }
 
@@ -833,13 +834,13 @@ export class ParametresComponent implements OnInit {
         // Refresh user list to show updated roles
         this.userService.getUsers().subscribe({
           next: (users) => this.users.set(users),
-          error: (err) => this.handleError('Failed to refresh user list')
+          error: (err) => this.handleError('Erreur lors du rafraîchissement de la liste des utilisateurs')
         });
         // Reset form
         this.selectedUserForRole.set(null);
         this.selectedRoleForUser.set('');
       },
-      error: (err) => this.handleError('Failed to add role to user')
+      error: (err) => this.handleError('Erreur lors de l\'attribution du rôle à l\'utilisateur')
     }).add(() => this.loading.set(false));
   }
 
@@ -850,8 +851,14 @@ export class ParametresComponent implements OnInit {
   }
 
   // Remove role from user
-  removeRoleFromUser(userId: number, roleName: string): void {
-    if (!confirm(`Êtes-vous sûr de vouloir retirer le rôle "${roleName}" de cet utilisateur ?`)) {
+  async removeRoleFromUser(userId: number, roleName: string): Promise<void> {
+    const confirmed = await this.notificationService.confirm(
+      `Êtes-vous sûr de vouloir retirer le rôle "${roleName}" de cet utilisateur ?`,
+      'Confirmation de suppression'
+    );
+
+    if (!confirmed) {
+      this.notificationService.info('Suppression annulée');
       return;
     }
 
@@ -862,10 +869,10 @@ export class ParametresComponent implements OnInit {
         // Refresh user list to show updated roles
         this.userService.getUsers().subscribe({
           next: (users) => this.users.set(users),
-          error: (err) => this.handleError('Failed to refresh user list')
+          error: (err) => this.handleError('Erreur lors du rafraîchissement de la liste des utilisateurs')
         });
       },
-      error: (err) => this.handleError('Failed to remove role from user')
+      error: (err) => this.handleError('Erreur lors du retrait du rôle de l\'utilisateur')
     }).add(() => this.loading.set(false));
   }
 }
