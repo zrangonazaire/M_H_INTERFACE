@@ -123,6 +123,10 @@ public CorsConfigurationSource corsConfigurationSource() {
         "http://norma-factfne.com",
         "http://norma-factfne.com:80",
         "http://norma-factfne.com:8089",
+        "https://norma-factfne.com",
+        "https://norma-factfne.com:80",
+        "https://norma-factfne.com:8089",
+        
         
         
         // localhost

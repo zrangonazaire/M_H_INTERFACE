@@ -7,6 +7,7 @@ import { RefundInvoiceDTO, RefundItemDTO } from '../../core/models/refund-invoic
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
@@ -29,7 +30,8 @@ export class FactureAvoirComponent implements OnInit {
     private readonly router: Router,
     private readonly invoiceService: FneInvoiceService,
     private readonly authService: AuthenticationService,
-    private readonly attributionService: AttributionService
+    private readonly attributionService: AttributionService,
+    private readonly notificationService: NotificationService
   ) {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
@@ -133,14 +135,14 @@ export class FactureAvoirComponent implements OnInit {
     this.invoiceService.createRefund(refundDto).subscribe({
       next: (response) => {
         console.log('Avoir créé avec succès:', response);
-        alert('Avoir créé avec succès pour un montant de ' + this.formatMoney(this.invoice()!.totalTTC));
+        this.notificationService.success(`Avoir créé avec succès pour un montant de ${this.formatMoney(this.creditTotal())}`);
         // Optionnel : rediriger vers la liste des factures après succès
         this.router.navigate(['/factures-certifiees']);
       },
       error: (err) => {
         console.error('Erreur lors de la création de l\'avoir:', err);
         const errorMessage = err?.error?.message || 'Erreur lors de la création de l\'avoir';
-        alert(errorMessage);
+        this.notificationService.error(errorMessage);
       }
     });
   }
@@ -158,8 +160,8 @@ export class FactureAvoirComponent implements OnInit {
       amount: (item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)
     });
 
-    // Pour l'instant, on affiche un message de confirmation
-    alert('Avoir créé avec succès pour le produit ' + (item.description || 'inconnu') + ' pour un montant de ' + this.formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)));
+    // Notification avec Notyf
+    this.notificationService.success(`Avoir créé avec succès pour le produit ${item.description || 'inconnu'} pour un montant de ${this.formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0))}`);
   }
 
   protected resetQuantities(): void {
@@ -205,21 +207,21 @@ export class FactureAvoirComponent implements OnInit {
       const roleId = this.authService.getCurrentIdRole();
       
       if (!userId || !roleId) {
-        alert('Informations utilisateur manquantes');
+        this.notificationService.warning('Informations utilisateur manquantes');
         return;
       }
 
       const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
       
       if (!hasAccess) {
-        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        this.notificationService.warning('Vous n\'avez pas le droit sur cette fonctionnalité');
         return;
       }
 
       this.router.navigate(['/parametres']);
     } catch (error) {
       console.error('Erreur lors de la vérification des droits:', error);
-      alert('Erreur lors de la vérification des droits');
+      this.notificationService.error('Erreur lors de la vérification des droits');
     }
   }
 }

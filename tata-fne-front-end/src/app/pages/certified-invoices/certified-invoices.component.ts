@@ -31,6 +31,11 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly currentTab = signal<'sales' | 'refunds'>('sales');
 
+  // ========== PAGINATION ==========
+  readonly currentPage = signal<number>(0);
+  readonly pageSize = signal<number>(10);
+  readonly pageSizeOptions = [5, 10, 20, 50, 100];
+
   protected readonly creators = computed(() => {
     const set = new Set(this.invoices().map((i) => i.utilisateurCreateur).filter(Boolean));
     return ['all', ...Array.from(set)];
@@ -73,6 +78,17 @@ export class CertifiedInvoicesComponent implements OnInit {
         return matchesQuery && matchesCreator;
       });
     }
+  });
+
+  readonly totalPages = computed(() => {
+    return Math.ceil(this.filtered().length / this.pageSize()) || 1;
+  });
+
+  readonly paginatedItems = computed(() => {
+    const all = this.filtered();
+    const start = this.currentPage() * this.pageSize();
+    const end = start + this.pageSize();
+    return all.slice(start, end);
   });
 
   protected readonly totals = computed(() => {
@@ -130,6 +146,61 @@ export class CertifiedInvoicesComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  // Pagination methods
+  setPage(page: number): void {
+    if (page >= 0 && page < this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    this.setPage(this.currentPage() + 1);
+  }
+
+  previousPage(): void {
+    this.setPage(this.currentPage() - 1);
+  }
+
+  firstPage(): void {
+    this.setPage(0);
+  }
+
+  lastPage(): void {
+    this.setPage(this.totalPages() - 1);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(0);
+  }
+
+  getVisiblePages(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 0; i < total; i++) pages.push(i);
+    } else {
+      pages.push(0);
+      const start = Math.max(1, current - 1);
+      const end = Math.min(total - 2, current + 1);
+      if (start > 1) pages.push(-1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < total - 2) pages.push(-1);
+      if (total > 1) pages.push(total - 1);
+    }
+    return pages.filter(p => p !== -1);
+  }
+
+  getPaginationInfo(): string {
+    const all = this.filtered();
+    if (all.length === 0) return 'Aucune facture';
+    const start = this.currentPage() * this.pageSize() + 1;
+    const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
+    return `Affichage de ${start} à ${end} sur ${all.length} factures`;
   }
 
   protected trackById(_: number, invoice: CertifiedInvoice): string {

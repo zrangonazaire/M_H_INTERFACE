@@ -11,6 +11,7 @@ import { AuthenticationService } from '../../core/services/authentication.servic
 import { InvoiceSignRequest } from '../../core/models/invoice-sign-request';
 import { AttributionService } from '../../core/services/attribution.service';
 import { NonCertifiedInvoice } from '../../core/models/non-certified-invoice';
+import { NotificationService } from '../../core/services/notification.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inconnu';
@@ -18,12 +19,11 @@ type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inc
 @Component({
   selector: 'app-factures-non-certifiees',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule,MenuGauche],
+  imports: [CommonModule, FormsModule, RouterModule, MenuGauche],
   templateUrl: './factures-non-certifiees.component.html',
   styleUrl: './factures-non-certifiees.component.scss'
 })
 export class FacturesNonCertifieesComponent {
-
 
   readonly query = signal('');
   readonly statusFilter = signal<'all' | InvoiceStatus>('all');
@@ -45,29 +45,40 @@ export class FacturesNonCertifieesComponent {
   readonly actionError = signal<string | null>(null);
   readonly userFullName = signal('Compte');
   readonly userPdv = signal('Compte');
-  readonly userEtab= signal('Compte');
+  readonly userEtab = signal('Compte');
   readonly certificationSuccessMessage = signal<string | null>(null);
   readonly certificationDownloadUrl = signal<string | null>(null);
   readonly newInvoiceLabel = 'Facture Odoo';
   readonly odooFileUrl = 'doc/MODEL IMPORTATION ODOO.xlsx';
-ncc: any;
+  ncc: any;
+
+  constructor(
+    private readonly excelService: FneExcelService,
+    private readonly invoiceService: FneInvoiceService,
+    private readonly authService: AuthenticationService,
+    private readonly router: Router,
+    private readonly attributionService: AttributionService,
+    private readonly notificationService: NotificationService
+  ) {
+    this.loadInvoices();
+    this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
+    this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
+    this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
+  }
 
   loadOdooFile(): void {
-    // Create a hidden file input element
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.xls,.xlsx';
     input.style.display = 'none';
-    
-    // Add event listener to handle file selection
+
     input.addEventListener('change', (event) => {
       const file = (event.target as HTMLInputElement)?.files?.[0];
       if (file) {
         this.processOdooFile(file);
       }
     });
-    
-    // Trigger file selection dialog
+
     document.body.appendChild(input);
     input.click();
     document.body.removeChild(input);
@@ -78,81 +89,63 @@ ncc: any;
     this.readError.set(null);
     this.readResult.set(null);
 
-    this.excelService
-      .readExcel(file)
-      .subscribe({
-        next: (result) => {
-          console.log('Excel read result:', result);
-          this.readResult.set(result);
-          
-          // Vérifier si le fichier est vide (aucune ligne de données)
-          if (result.rowCount === 0) {
-            this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
-            this.readState.set('error');
-            // Afficher une alerte à l'utilisateur
-            alert('Le fichier sélectionné ne contient aucune donnée.');
-            return;
-          }
+    this.excelService.readExcel(file).subscribe({
+      next: (result) => {
+        console.log('Excel read result:', result);
+        this.readResult.set(result);
 
-          // Vérifier les en-têtes du fichier Excel
-          const expectedHeaders = [
-            'Partenaire/Numéro CC',
-            'Partenaire/E-mail',
-            'Partenaire/Téléphone',
-            'Nom d\'affichage du partenaire de la facture',
-            'Lignes de facture',
-            'Lignes de facture/Taxes',
-            'Lignes de facture/Produit',
-            'Lignes de facture/Prix unitaire',
-            'Lignes de facture/Quantité',
-            'Lignes de facture/Unité',
-            'Lignes de facture/Remise (%)',
-            'Montant hors taxes signé dans la devise',
-            'Taxe',
-            'Total signé en devises',
-            'Statut en cours de paiement',
-            'Lignes de facture/Taxes/Actif',
-            'Lignes de facture/Taxes/Libellé de taxe'
-          ];
-
-          const actualHeaders = result.headers || [];
-          
-          // Vérifier si tous les en-têtes attendus sont présents
-          const missingHeaders = expectedHeaders.filter(header => !actualHeaders.includes(header));
-          
-          if (missingHeaders.length > 0) {
-            const errorMessage = `Le fichier Excel est corrompu et ne peut être certifié. En-têtes manquants : ${missingHeaders.join(', ')}`;
-            this.readError.set(errorMessage);
-            this.readState.set('error');
-            alert(errorMessage);
-            return;
-          }
-
-          this.readState.set('success');
-          const mappedInvoices = this.mapReadRowsToInvoices(result.rows);
-          console.log('Mapped invoices:', mappedInvoices);
-          this.invoices.set(mappedInvoices);
-          this.selected.set(new Set());
-        },
-        error: (error: unknown) => {
-          const message = error instanceof Error ? error.message : 'Lecture impossible.';
-          this.readError.set(message);
+        if (result.rowCount === 0) {
+          this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
           this.readState.set('error');
+          this.notificationService.error('Le fichier sélectionné ne contient aucune donnée.');
+          return;
         }
-      });
-  }
 
-  constructor(
-    private readonly excelService: FneExcelService,
-    private readonly invoiceService: FneInvoiceService,
-    private readonly authService: AuthenticationService,
-    private readonly router: Router,
-    private readonly attributionService: AttributionService
-  ) {
-    this.loadInvoices();
-    this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
-    this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
-    this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
+        const expectedHeaders = [
+          'Partenaire/Numéro CC',
+          'Partenaire/E-mail',
+          'Partenaire/Téléphone',
+          'Nom d\'affichage du partenaire de la facture',
+          'Lignes de facture',
+          'Lignes de facture/Taxes',
+          'Lignes de facture/Produit',
+          'Lignes de facture/Prix unitaire',
+          'Lignes de facture/Quantité',
+          'Lignes de facture/Unité',
+          'Lignes de facture/Remise (%)',
+          'Montant hors taxes signé dans la devise',
+          'Taxe',
+          'Total signé en devises',
+          'Statut en cours de paiement',
+          'Lignes de facture/Taxes/Actif',
+          'Lignes de facture/Taxes/Libellé de taxe'
+        ];
+
+        const actualHeaders = result.headers || [];
+        const missingHeaders = expectedHeaders.filter(header => !actualHeaders.includes(header));
+
+        if (missingHeaders.length > 0) {
+          const errorMessage = `Le fichier Excel est corrompu et ne peut être certifié. En-têtes manquants : ${missingHeaders.join(', ')}`;
+          this.readError.set(errorMessage);
+          this.readState.set('error');
+          this.notificationService.error(errorMessage);
+          return;
+        }
+
+        this.readState.set('success');
+        const mappedInvoices = this.mapReadRowsToInvoices(result.rows);
+        console.log('Mapped invoices:', mappedInvoices);
+        this.invoices.set(mappedInvoices);
+        this.selected.set(new Set());
+        this.notificationService.success(`${result.rowCount} lignes chargées avec succès.`);
+      },
+      error: (error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Lecture impossible.';
+        this.readError.set(message);
+        this.readState.set('error');
+        this.notificationService.error(message);
+      }
+    });
   }
 
   readonly filteredInvoices = computed(() => {
@@ -171,7 +164,6 @@ ncc: any;
 
   readonly totals = computed(() => {
     const all = this.invoices();
-    // Grouper par numéro de facture pour compter les factures uniques
     const grouped = new Map<string, any[]>();
     all.forEach((invoice) => {
       const key = invoice.invoiceNumber || `__${invoice.id}`;
@@ -204,7 +196,7 @@ ncc: any;
   readonly groupedInvoices = computed(() => {
     const filtered = this.filteredInvoices();
     const grouped = new Map<string, NonCertifiedInvoice[]>();
-    
+
     filtered.forEach((invoice) => {
       const invoiceNumber = invoice.invoiceNumber || 'unknown';
       if (!grouped.has(invoiceNumber)) {
@@ -219,14 +211,102 @@ ncc: any;
       mainInvoice: items[0]
     }));
 
-    // Debug: afficher la valeur de clientCompanyName et clientNcc pour chaque groupe
     result.forEach((group) => {
       console.log('Group clientCompanyName:', group.mainInvoice.clientCompanyName);
       console.log('Group clientNcc:', group.mainInvoice.clientNcc);
     });
-console.log('Grouped Invoices:', result);
+    console.log('Grouped Invoices:', result);
     return result;
   });
+
+  // ========== PAGINATION ==========
+  readonly currentPage = signal<number>(0);
+  readonly pageSize = signal<number>(10);
+  readonly pageSizeOptions = [5, 10, 20, 50, 100];
+
+  readonly groupedInvoicesAll = computed(() => {
+    const filtered = this.filteredInvoices();
+    const grouped = new Map<string, NonCertifiedInvoice[]>();
+
+    filtered.forEach((invoice) => {
+      const invoiceNumber = invoice.invoiceNumber || 'unknown';
+      if (!grouped.has(invoiceNumber)) {
+        grouped.set(invoiceNumber, []);
+      }
+      grouped.get(invoiceNumber)!.push(invoice);
+    });
+
+    return Array.from(grouped.entries()).map(([invoiceNumber, items]) => ({
+      invoiceNumber,
+      items,
+      mainInvoice: items[0]
+    }));
+  });
+
+  readonly totalPages = computed(() => {
+    return Math.ceil(this.groupedInvoicesAll().length / this.pageSize()) || 1;
+  });
+
+  readonly paginatedInvoices = computed(() => {
+    const all = this.groupedInvoicesAll();
+    const start = this.currentPage() * this.pageSize();
+    const end = start + this.pageSize();
+    return all.slice(start, end);
+  });
+
+  setPage(page: number): void {
+    if (page >= 0 && page < this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    this.setPage(this.currentPage() + 1);
+  }
+
+  previousPage(): void {
+    this.setPage(this.currentPage() - 1);
+  }
+
+  firstPage(): void {
+    this.setPage(0);
+  }
+
+  lastPage(): void {
+    this.setPage(this.totalPages() - 1);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(0);
+  }
+
+  getVisiblePages(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 0; i < total; i++) pages.push(i);
+    } else {
+      pages.push(0);
+      const start = Math.max(1, current - 1);
+      const end = Math.min(total - 2, current + 1);
+      if (start > 1) pages.push(-1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < total - 2) pages.push(-1);
+      if (total > 1) pages.push(total - 1);
+    }
+    return pages.filter(p => p !== -1);
+  }
+
+  getPaginationInfo(): string {
+    const all = this.groupedInvoicesAll();
+    if (all.length === 0) return 'Aucune facture';
+    const start = this.currentPage() * this.pageSize() + 1;
+    const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
+    return `Affichage de ${start} à ${end} sur ${all.length} factures`;
+  }
 
   toggleSelection(invoiceId: number): void {
     const next = new Set(this.selected());
@@ -241,7 +321,7 @@ console.log('Grouped Invoices:', result);
   toggleGroupSelection(invoiceIds: number[]): void {
     const next = new Set(this.selected());
     const allSelected = invoiceIds.every((id) => next.has(id));
-    
+
     if (allSelected) {
       invoiceIds.forEach((id) => next.delete(id));
     } else {
@@ -270,10 +350,10 @@ console.log('Grouped Invoices:', result);
   }
 
   isRequiredFieldMissing(invoice: any): boolean {
-    return !invoice.invoiceNumber || 
-           !invoice.typeClient || 
-           !invoice.clientCompanyName || 
-           !invoice.paymentMethod;
+    return !invoice.invoiceNumber ||
+      !invoice.typeClient ||
+      !invoice.clientCompanyName ||
+      !invoice.paymentMethod;
   }
 
   getGroupItemIds(items: any[]): number[] {
@@ -298,7 +378,7 @@ console.log('Grouped Invoices:', result);
     return items.reduce((sum, item) => {
       const quantity = this.toNumber(item.quantite) ?? 0;
       const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
-      const discount = this.toNumber(item.remise) ?? 0; // Remise en %
+      const discount = this.toNumber(item.remise) ?? 0;
       const amountBeforeDiscount = quantity * unitPrice;
       const discountAmount = amountBeforeDiscount * (discount / 100);
       return sum + (amountBeforeDiscount - discountAmount);
@@ -309,7 +389,7 @@ console.log('Grouped Invoices:', result);
     return items.reduce((sum, item) => {
       const quantity = this.toNumber(item.quantite) ?? 0;
       const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
-      const discount = this.toNumber(item.remise) ?? 0; // Remise en %
+      const discount = this.toNumber(item.remise) ?? 0;
       const amountBeforeDiscount = quantity * unitPrice;
       const discountAmount = amountBeforeDiscount * (discount / 100);
       return sum + discountAmount;
@@ -352,13 +432,11 @@ console.log('Grouped Invoices:', result);
     return amountAfterDiscount + taxAmount;
   }
 
-  // Affiche une valeur monétaire ou vide si invalide
   displayCurrency(value: string | number | null | undefined): string {
     const num = this.toNumber(value);
     return num === null ? '' : this.formatCurrency(num);
   }
 
-  // Affiche un pourcentage (ex: '10 %') ou vide si invalide
   displayPercentage(value: string | number | null | undefined): string {
     const num = this.toNumber(value);
     return num === null ? '' : `${num} %`;
@@ -367,10 +445,10 @@ console.log('Grouped Invoices:', result);
   getTaxRate(taxCode: string | null | undefined): number {
     if (!taxCode) return 0;
     const code = taxCode.toLowerCase().trim();
-    if (code.includes('tva')) return 0.18; // TVA = 18%
-    if (code.includes('tvac')) return 0.18; // TVAC = 18%
-    if (code.includes('exempt')) return 0; // Exempt
-    return 0.18; // Défaut: 18%
+    if (code.includes('tva')) return 0.18;
+    if (code.includes('tvac')) return 0.18;
+    if (code.includes('exempt')) return 0;
+    return 0.18;
   }
 
   getTaxLabel(taxCode: string | null | undefined): string {
@@ -430,6 +508,7 @@ console.log('Grouped Invoices:', result);
         const message = error instanceof Error ? error.message : 'Impossible de charger les factures.';
         this.loadError.set(message);
         this.loadState.set('error');
+        this.notificationService.error(message);
       }
     });
   }
@@ -445,32 +524,29 @@ console.log('Grouped Invoices:', result);
     this.readError.set(null);
     this.readResult.set(null);
 
-    this.excelService
-      .readExcel(file)
-      .pipe(finalize(() => input && (input.value = '')))
-      .subscribe({
-        next: (result) => {
-          this.readResult.set(result);
-          
-          // Vérifier si le fichier est vide (aucune ligne de données)
-          if (result.rowCount === 0) {
-            this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
-            this.readState.set('error');
-            // Afficher une alerte à l'utilisateur
-            alert('Le fichier sélectionné ne contient aucune donnée.');
-            return;
-          }
-          console.log('*********************Excel read result:', result);
-          this.readState.set('success');
-          this.invoices.set(this.mapReadRowsToInvoices(result.rows));
-          this.selected.set(new Set());
-        },
-        error: (error: unknown) => {
-          const message = error instanceof Error ? error.message : 'Lecture impossible.';
-          this.readError.set(message);
+    this.excelService.readExcel(file).pipe(finalize(() => input && (input.value = ''))).subscribe({
+      next: (result) => {
+        this.readResult.set(result);
+
+        if (result.rowCount === 0) {
+          this.readError.set('Le fichier sélectionné ne contient aucune donnée.');
           this.readState.set('error');
+          this.notificationService.error('Le fichier sélectionné ne contient aucune donnée.');
+          return;
         }
-      });
+        console.log('*********************Excel read result:', result);
+        this.readState.set('success');
+        this.invoices.set(this.mapReadRowsToInvoices(result.rows));
+        this.selected.set(new Set());
+        this.notificationService.success(`${result.rowCount} lignes chargées avec succès.`);
+      },
+      error: (error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Lecture impossible.';
+        this.readError.set(message);
+        this.readState.set('error');
+        this.notificationService.error(message);
+      }
+    });
   }
 
   certifyAll(): void {
@@ -481,6 +557,7 @@ console.log('Grouped Invoices:', result);
     if (apiIds.length === 0) {
       this.certifyError.set('Aucune facture issue de la base a certifier.');
       this.certifyState.set('error');
+      this.notificationService.warning('Aucune facture issue de la base à certifier.');
       return;
     }
 
@@ -493,45 +570,42 @@ console.log('Grouped Invoices:', result);
         this.certifyCount.set(responses.length);
         this.certifyState.set('success');
         this.loadInvoices();
+        this.notificationService.success(`${responses.length} facture(s) certifiée(s) avec succès.`);
       },
       error: (error: unknown) => {
         const message = error instanceof Error ? error.message : 'Certification en masse impossible.';
         this.certifyError.set(message);
         this.certifyState.set('error');
+        this.notificationService.error(message);
       }
     });
   }
 
   certifyOne(invoice: any): void {
-    debugger;
     this.actionError.set(null);
     const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
     const numFacture = invoice.invoiceNumber;
     if (!numFacture) {
       this.actionError.set('Référence de facture manquante.');
+      this.notificationService.error('Référence de facture manquante.');
       return;
     }
 
-    // Récupérer tous les produits de cette facture
     const allItems = this.invoices().filter((item) => item.invoiceNumber === numFacture);
-    
     const payload = this.buildSignRequest(invoice, allItems);
 
-    // Log payload sent to backend for traceability
     console.log('Certifier FNE payload', { numFacture, utilisateur, payload });
 
     this.certifyingId.set(invoice.id);
     this.invoiceService.certifyFinalFacture(numFacture, utilisateur, payload).subscribe({
       next: () => {
-        // Retirer de l'affichage toutes les lignes appartenant à cette facture
         this.invoices.set(this.invoices().filter((it) => it.invoiceNumber !== numFacture));
         this.selected.set(new Set(Array.from(this.selected()).filter((id) => this.invoices().some((inv) => inv.id === id))));
 
-        // Construire un message de succès et un lien de téléchargement probable
         const msg = `Certification effectuée avec succès: ${numFacture}`;
         this.certificationSuccessMessage.set(msg);
+        this.notificationService.success(msg);
 
-        // Récupérer la facture certifiée pour obtenir le token public
         this.invoiceService.getByNumero(numFacture).subscribe({
           next: (certified) => {
             if (certified && certified.length > 0 && certified[0].token) {
@@ -540,7 +614,6 @@ console.log('Grouped Invoices:', result);
               this.certificationDownloadUrl.set(verificationUrl);
               console.log('Certification success (with token):', { numFacture, msg, token, verificationUrl });
             } else {
-              // fallback to previous heuristic
               const url = this.invoiceService.getDownloadUrl(numFacture);
               this.certificationDownloadUrl.set(url);
               console.log('Certification success (no token):', { numFacture, msg, url });
@@ -554,14 +627,14 @@ console.log('Grouped Invoices:', result);
         });
 
         this.certifyingId.set(null);
-        // réinitialiser l'état de lecture pour remplacer le message "Lecture terminée"
         this.readState.set('idle');
       },
       error: (error: any) => {
         console.error('Erreur lors de la certification:', error);
-        const message = error.error?.message;// instanceof Error ? error.message : 'Certification impossible.';
+        const message = error.error?.message;
         this.actionError.set(message);
         this.certifyingId.set(null);
+        this.notificationService.error(message || 'Erreur lors de la certification');
       }
     });
   }
@@ -569,19 +642,14 @@ console.log('Grouped Invoices:', result);
   private buildSignRequest(invoice: any, items: any[]): InvoiceSignRequest {
     const paymentMethod = this.normalizePaymentMethod(invoice.modePaiement || invoice.paymentMethod);
 
-    // Construire les items à partir de tous les produits
     const signItems = items.map((item) => {
       const quantity = this.toNumber(item.quantite) ?? 0;
       const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
       const discount = this.toNumber(item.remise) ?? 0;
-      // amount = prix unitaire HT (montant unitaire, pas le total)
       const amount = unitPrice;
-      // Déterminer les taxes en fonction de la valeur affichée dans le tableau
       const taxes = this.getTaxesFromDisplay(item.codeTaxe);
-      // Déterminer l'unité de mesure à partir de la colonne lignesdefactureunite
       const measurementUnit = item.unite ?? 'Kg';
-      
-      // Construire l'objet item selon la structure attendue
+
       const itemObj: any = {
         taxes: taxes,
         reference: item.refArticle || undefined,
@@ -590,21 +658,19 @@ console.log('Grouped Invoices:', result);
         amount: amount || undefined,
         measurementUnit: measurementUnit
       };
-      
-      // Ajouter discount seulement s'il y a une remise
+
       if (discount > 0) {
         itemObj.discount = discount;
       }
-      
+
       return itemObj;
     });
 
-    // Déterminer si la facture provient d'un fichier Excel (bouton "Lire Odoo")
     const isFromExcel = invoice.source === 'excel';
-const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
-const pdv = this.authService.getCurrentPdv() ?? 'non defini';
-const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
-    // Construire l'objet payload de base
+    const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
+    const pdv = this.authService.getCurrentPdv() ?? 'non defini';
+    const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
+
     const payload: any = {
       invoiceType: 'sale',
       paymentMethod: paymentMethod,
@@ -613,25 +679,22 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       clientCompanyName: invoice.clientCompanyName || invoice.nomClient || undefined,
       clientPhone: invoice.telephoneClient || '',
       clientEmail: invoice.emailClient || '',
-      clientSellerName:utilisateur,
+      clientSellerName: utilisateur,
       pointOfSale: pdv,
-      establishment: etablissement ,
+      establishment: etablissement,
       commercialMessage: invoice.commentaire || undefined,
       footer: undefined,
       items: signItems,
       discount: undefined
     };
 
-    // Ajouter conditionnellement les champs selon la source
     if (!isFromExcel) {
-      // Pour les factures API, inclure ces champs
       payload.numeroFacture = invoice.invoiceNumber;
       payload.clientSellerName = invoice.clientSellerName || undefined;
       payload.foreignCurrency = '';
       payload.foreignCurrencyRate = 0;
     }
-    // Pour les factures Excel, ces champs sont omis
-    
+
     return payload;
   }
 
@@ -639,21 +702,15 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
     if (value === null || value === undefined) return null;
     if (typeof value === 'number') return Number.isNaN(value) ? null : value;
 
-    // Normaliser la chaîne : retirer espaces et caractères non numériques sauf . , -
     let s = (value as string).trim();
     if (!s) return null;
-    // Enlever caractères non numériques sauf . , -
-    s = s.replace(/[^ -\d.,-]/g, '');
+    s = s.replace(/[^-\d.,-]/g, '');
 
-    // Cas où la chaîne contient à la fois '.' et ',' -> supposer que '.' est séparateur de milliers
     if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
-      s = s.replace(/\./g, ''); // enlever points milliers
-      s = s.replace(/,/g, '.'); // la virgule devient décimale
-    } else if (s.indexOf(',') !== -1) {
-      // si seule la virgule est présente, l'utiliser comme séparateur décimal
+      s = s.replace(/\./g, '');
       s = s.replace(/,/g, '.');
-    } else {
-      // pas de virgule, points éventuels peuvent être milliers ou décimale selon contexte; on laisse
+    } else if (s.indexOf(',') !== -1) {
+      s = s.replace(/,/g, '.');
     }
 
     const num = Number(s);
@@ -691,34 +748,33 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
     try {
       const userId = this.authService.getCurrentId();
       const roleId = this.authService.getCurrentIdRole();
-      
+
       if (!userId || !roleId) {
-        alert('Informations utilisateur manquantes');
+        this.notificationService.warning('Informations utilisateur manquantes');
         return;
       }
 
       const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
-      
+
       if (!hasAccess) {
-        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        this.notificationService.warning('Vous n\'avez pas le droit sur cette fonctionnalité');
         return;
       }
 
       this.router.navigate(['/parametres']);
     } catch (error) {
       console.error('Erreur lors de la vérification des droits:', error);
-      alert('Erreur lors de la vérification des droits');
+      this.notificationService.error('Erreur lors de la vérification des droits');
     }
   }
 
   private mapReadRowsToInvoices(rows: Array<Record<string, string>>): any[] {
-    // Grouper les lignes par numéro de facture pour extraire les informations du client une seule fois
     const groupedRows = new Map<string, Array<Record<string, string>>>();
     rows.forEach((row) => {
       const normalized = this.normalizeRow(row);
       const lignesFacture = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || '';
-      const invoiceNumber = lignesFacture.length > 23 
-        ? lignesFacture.substring(0, 23) 
+      const invoiceNumber = lignesFacture.length > 23
+        ? lignesFacture.substring(0, 23)
         : lignesFacture;
       if (!groupedRows.has(invoiceNumber)) {
         groupedRows.set(invoiceNumber, []);
@@ -726,7 +782,6 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       groupedRows.get(invoiceNumber)!.push(row);
     });
 
-    // Extraire les informations du client pour chaque groupe
     const clientInfoMap = new Map<string, {
       clientCompanyName: string | null;
       clientNameAlt: string | null;
@@ -739,28 +794,22 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
     }>();
 
     groupedRows.forEach((groupRows, invoiceNumber) => {
-      // Trouver la première ligne du groupe (ou celle avec les informations complètes)
       const firstRow = groupRows[0];
       const normalized = this.normalizeRow(firstRow);
       console.log('Normalized row for client extraction:', normalized);
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      // Extraire la valeur de la colonne B (colonne2) pour le nom du client
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) ;
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']);
       console.log('Client Company Name:', clientCompanyName);
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
       const colonneA = this.getFirstValue(normalized, ['ncc']) || '';
-      // Extraire la valeur de la colonne A (colonne1) pour le NCC
       const clientNccValue = this.getFirstValue(normalized, ['partenairenumerocc']) || '000000000000';
-  
-      // Déterminer le type de client en fonction de la présence d'un nom dans la colonne B
+
       const typeClient = clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C';
-      // Extraire le code client (initiales) depuis la première ligne du groupe
       const codeClient = this.extractInitialsFromClient(clientCompanyName || clientNameAlt);
       const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys);
       const emailClient = this.getFirstValue(normalized, this.emailClientKeys);
       const clientSellerName = this.getFirstValue(normalized, this.clientSellerNameKeys) || 'non defini';
 
-      // Debug: afficher les valeurs pour vérification
       console.log('Debug client extraction:', {
         clientNcc,
         clientCompanyName,
@@ -789,24 +838,20 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
 
     return rows.map((row, index) => {
       const normalized = this.normalizeRow(row);
-      
-      // Extraire les 23 premiers caractères de la colonne "Lignes de facture" (colonne C)
+
       const lignesFacture = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || '';
-      const invoiceNumber = lignesFacture.length > 23 
-        ? lignesFacture.substring(0, 23).replace(/\//g, '-') 
+      const invoiceNumber = lignesFacture.length > 23
+        ? lignesFacture.substring(0, 23).replace(/\//g, '-')
         : lignesFacture.replace(/\//g, '-');
 
       const invoiceType = this.getFirstValue(normalized, this.invoiceTypeKeys);
-      // Mode Paiement: transfer si Comptabilisé dans colonne M, sinon transfer
       const statutEnCoursDePaiement = this.getFirstValue(normalized, ['statutencourdepaiement', 'statutencourdepaiement', 'statutencoursdepaiement', 'statutencourdepaiment']) || '';
       const paymentMethod = statutEnCoursDePaiement.trim().toLowerCase() === 'comptabilisé' ? 'transfer' : 'transfer';
 
-      // Extraire les informations du client directement depuis la ligne
       const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) ;
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']);
       const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
       const typeClient = this.getFirstValue(normalized, this.typeClientKeys) || (clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C');
-      // Récupérer le code client depuis la map pour garantir l'unicité par client
       const clientInfo = clientInfoMap.get(invoiceNumber);
       const codeClient = clientInfo?.codeClient;
       const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys) || '';
@@ -819,14 +864,11 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       const refArticle = this.getFirstValue(normalized, this.refArticleKeys) || this.extractReferenceFromLignesDefactureProduit(this.getFirstValue(normalized, ['lignesdefactureproduit']));
       const designation = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || this.getFirstValue(normalized, this.designationKeys);
       const designationWithoutBrackets = designation ? designation.replace(/\[[^\]]*\]/g, '').trim() : null;
-      // Si la désignation contient "Numéro Facture", la supprimer
       const designationWithoutInvoiceNumber = designationWithoutBrackets?.replace(/numéro facture/i, '').trim() || designationWithoutBrackets;
-      // Supprimer les caractères à gauche à partir de ")"
       const designationWithoutLeftChars = designationWithoutInvoiceNumber?.replace(/^[^)]*\)/, '').trim() || designationWithoutInvoiceNumber;
       const quantite = this.getFirstValue(normalized, ['quantite', 'qty', 'quantity', 'colonneG', 'g', 'colonne7', 'quantiteg', 'qtyg', 'quantityg', 'quantitecolonneG', 'qtycolonneG', 'quantitycolonneG', 'lignesdefacturequantite']) || this.getFirstValue(normalized, this.quantiteKeys);
       const prixUnitaireHT = this.getFirstValue(normalized, ['prixunitaireht', 'puht', 'prixunitaire', 'colonneF', 'f', 'colonne6', 'prixht', 'prixunitairehtf', 'lignesdefactureprixunitaire']) || this.getFirstValue(normalized, this.prixUnitaireHTKeys);
-      
-      // Debug: afficher les valeurs pour vérification
+
       console.log('Debug Excel row:', {
         designation,
         quantite,
@@ -840,7 +882,6 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       const modePaiement = this.getFirstValue(normalized, this.modePaiementKeys);
       const devise = this.getFirstValue(normalized, this.deviseKeys);
       const tauxChange = this.getFirstValue(normalized, this.tauxChangeKeys);
-      // Commentaire reçoit le contenu de Numéro Facture avec les "/" remplacés par "-"
       const commentaire = (invoiceNumber || 'non defini').replace(/\//g, '-');
 
       return {
@@ -914,8 +955,8 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
   private readonly invoiceDateKeys = ['invoicedate', 'datefacture', 'date'];
   private readonly typeClientKeys = ['typeclient', 'typeclient', 'typeclient'];
   private readonly codeClientKeys = ['codeclient'];
-  private readonly telephoneClientKeys = ['telephoneclient', 'telclient', 'phoneclient','partenairetelephone'];
-  private readonly emailClientKeys = ['emailclient', 'mailclient','partenaireemail'];
+  private readonly telephoneClientKeys = ['telephoneclient', 'telclient', 'phoneclient', 'partenairetelephone'];
+  private readonly emailClientKeys = ['emailclient', 'mailclient', 'partenaireemail'];
   private readonly refArticleKeys = ['refarticle', 'referencearticle', 'article'];
   private readonly designationKeys = ['designation', 'designationarticle'];
   private readonly quantiteKeys = ['quantite', 'qty', 'quantity'];
@@ -931,14 +972,12 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
 
   private extractReferenceFromLignesDefactureProduit(value: string | null | undefined): string | null {
     if (!value) return null;
-    // Extraire la valeur entre crochets [] dans la chaîne
     const match = value.match(/\[([^\]]+)\]/);
     return match ? match[1].trim() : null;
   }
 
   private extractInitialsFromClient(value: string | null | undefined): string | null {
     if (!value) return null;
-    // Extraire les initiales du nom du client
     const words = value.trim().split(/\s+/);
     const initials = words.map(word => word.charAt(0)).join('').toUpperCase();
     return initials || null;
@@ -953,37 +992,4 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       return ['TVAC'];
     }
   }
-   // PAGINATION FIX
-  readonly currentPage = signal<number>(0);
-  readonly pageSize = signal<number>(10);
-  readonly pageSizeOptions = [5, 10, 20, 50, 100];
-  readonly groupedInvoicesAll = computed(() => this.groupedInvoices());
-  readonly totalPages = computed(() => Math.ceil(this.groupedInvoicesAll().length / this.pageSize()) || 1);
-  readonly paginatedInvoices = computed(() => {
-    const all = this.groupedInvoicesAll();
-    const start = this.currentPage() * this.pageSize();
-    return all.slice(start, start + this.pageSize());
-  });
-  setPage(page: number): void { if (page >= 0 && page < this.totalPages()) this.currentPage.set(page); }
-  nextPage(): void { this.setPage(this.currentPage() + 1); }
-  previousPage(): void { this.setPage(this.currentPage() - 1); }
-  firstPage(): void { this.setPage(0); }
-  lastPage(): void { this.setPage(this.totalPages() - 1); }
-  setPageSize(size: number): void { this.pageSize.set(size); this.currentPage.set(0); }
-  getVisiblePages(): number[] {
-    const total = this.totalPages(), current = this.currentPage(), pages: number[] = [];
-    if (total <= 7) { for (let i = 0; i < total; i++) pages.push(i); }
-    else { pages.push(0); const s = Math.max(1, current - 1), e = Math.min(total - 2, current + 1); if (s > 1) pages.push(-1); for (let i = s; i <= e; i++) pages.push(i); if (e < total - 2) pages.push(-1); if (total > 1) pages.push(total - 1); }
-    return pages.filter(p => p !== -1);
-  }
-  getPaginationInfo(): string {
-    const all = this.groupedInvoicesAll();
-    if (!all.length) return 'Aucune facture';
-    const start = this.currentPage() * this.pageSize() + 1;
-    const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
-    return `Affichage de ${start} à ${end} sur ${all.length} factures`;
-  }
 }
-
-
- 
