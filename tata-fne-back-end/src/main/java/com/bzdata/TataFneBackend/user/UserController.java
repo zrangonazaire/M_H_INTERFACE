@@ -98,6 +98,14 @@ public class UserController {
                         .build()
         );
     }
+
+    @DeleteMapping("/removerolefromuser/{idUser}/roles/{roleName}")
+    public ResponseEntity<Void> removeRoleFromUser(
+            @PathVariable Integer idUser,
+            @PathVariable String roleName) {
+        userService.removeRoleFromUser(idUser, roleName);
+        return ResponseEntity.ok().build();
+    }
 }
 
 class ToggleLockRequest {

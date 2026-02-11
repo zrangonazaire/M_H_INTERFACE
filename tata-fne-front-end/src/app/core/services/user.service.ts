@@ -108,4 +108,10 @@ return this.http.get<boolean>(
     return this.http
       .post<void>(`${this.baseUrl}/users/addroletouser/${userId}/roles/${roleName}`, {});
   }
+
+  // Remove role from user
+  removeRoleFromUser(userId: number, roleName: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/users/removerolefromuser/${userId}/roles/${roleName}`);
+  }
 }

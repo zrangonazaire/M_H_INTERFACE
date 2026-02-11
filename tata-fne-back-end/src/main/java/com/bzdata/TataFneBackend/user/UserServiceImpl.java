@@ -97,4 +97,22 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User not found with id: " + idUser);
         }
     }
+
+    @Override
+    public void removeRoleFromUser(Integer idUser, String roleName) {
+        Optional<User> userOptional = userRepository.findById(idUser);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Optional<Role> roleOptional = roleRepository.findByName(roleName.toUpperCase());
+            if (roleOptional.isPresent()) {
+                Role role = roleOptional.get();
+                user.getRoles().remove(role);
+                userRepository.save(user);
+            } else {
+                throw new RuntimeException("Role not found: " + roleName);
+            }
+        } else {
+            throw new RuntimeException("User not found with id: " + idUser);
+        }
+    }
 }

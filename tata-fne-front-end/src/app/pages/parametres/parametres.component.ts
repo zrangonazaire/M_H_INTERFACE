@@ -1,4 +1,3 @@
-
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -848,5 +847,25 @@ export class ParametresComponent implements OnInit {
   userHasRole(userId: number, roleName: string): boolean {
     const user = this.users().find(u => u.id === userId);
     return user ? user.roles?.includes(roleName) || false : false;
+  }
+
+  // Remove role from user
+  removeRoleFromUser(userId: number, roleName: string): void {
+    if (!confirm(`Êtes-vous sûr de vouloir retirer le rôle "${roleName}" de cet utilisateur ?`)) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.userService.removeRoleFromUser(userId, roleName).subscribe({
+      next: () => {
+        this.showSuccess(`Rôle ${roleName} retiré de l'utilisateur avec succès`);
+        // Refresh user list to show updated roles
+        this.userService.getUsers().subscribe({
+          next: (users) => this.users.set(users),
+          error: (err) => this.handleError('Failed to refresh user list')
+        });
+      },
+      error: (err) => this.handleError('Failed to remove role from user')
+    }).add(() => this.loading.set(false));
   }
 }

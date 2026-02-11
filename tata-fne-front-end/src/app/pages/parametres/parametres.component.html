@@ -1007,7 +1007,10 @@
                         <td>
                           @if (user.roles && user.roles.length > 0) {
                             @for (role of user.roles; track role) {
-                              <span class="badge bg-primary me-1">{{ role }}</span>
+                              <span class="badge bg-primary me-1">
+                                {{ role }}
+                                <button class="btn-remove-role" (click)="removeRoleFromUser(user.id, role)" title="Retirer ce rôle">×</button>
+                              </span>
                             }
                           } @else {
                             <span class="text-muted">Aucun rôle</span>

@@ -5,12 +5,12 @@ import { MenuGauche } from './pages/menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule, MenuGauche],
+  imports: [RouterOutlet, RouterModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('tata-fne-front-end');
+  protected readonly title = signal('modern-hygiene-fne-front-end');
   protected readonly isHeaderless = signal(false);
 
   constructor(private readonly router: Router) {

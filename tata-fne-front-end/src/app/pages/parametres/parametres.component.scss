@@ -612,3 +612,21 @@
     padding: 0.6rem 0.8rem;
   }
 }
+
+/* Role removal button */
+.btn-remove-role {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 0.25rem;
+  padding: 0 0.2rem;
+  transition: color 0.2s ease;
+}
+
+.btn-remove-role:hover {
+  color: #fff;
+}

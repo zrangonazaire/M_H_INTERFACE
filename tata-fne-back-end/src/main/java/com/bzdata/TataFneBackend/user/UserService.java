@@ -13,4 +13,5 @@ public interface UserService {
     boolean getUserByIdAndIdRole(Integer idUser, Integer idRole);
     boolean getUserByIdAndRoleName(Integer idUser, String idRole);
     void addRoleToUser(Integer idUser, String roleName);
+    void removeRoleFromUser(Integer idUser, String roleName);
 }
