@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -109,7 +108,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 🔥 ORIGINES AUTORISÉES - Ajoutez toutes ces combinaisons
+        // 🔥 ORIGINES AUTORISÉES
         configuration.setAllowedOrigins(Arrays.asList(
                 // Adresses de production
                 "http://57.129.119.224",
@@ -119,18 +118,26 @@ public class SecurityConfig {
                 "http://51.75.69.139:8089",
                 "http://51.75.69.139:80",
                 "http://51.75.69.139",
+                
+                // Domaines norma-factfne.com
                 "http://norma-factfne.com",
                 "http://norma-factfne.com:80",
                 "http://norma-factfne.com:8089",
                 "https://norma-factfne.com",
                 "https://norma-factfne.com:80",
                 "https://norma-factfne.com:8089",
+                
+                // www.norma-factfne.com - AJOUTÉ POUR CORRIGER CORS
+                "http://www.norma-factfne.com",
+                "http://www.norma-factfne.com:80",
+                "http://www.norma-factfne.com:8089",
+                "https://www.norma-factfne.com",
+                "https://www.norma-factfne.com:80",
+                "https://www.norma-factfne.com:8089",
 
+                // Wildcards
                 "http://*.norma-factfne.com",
                 "https://*.norma-factfne.com",
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://[::1]:*",
 
                 // localhost
                 "http://localhost",
@@ -138,12 +145,11 @@ public class SecurityConfig {
                 "http://localhost:4200",
                 "http://localhost:8080",
                 "http://localhost:8089",
-                "http://norma-factfne.com",
 
                 // 127.0.0.1
                 "http://127.0.0.1",
                 "http://127.0.0.1:80",
-                "http://127.0.0.1:4200", // Vous avez celui-ci
+                "http://127.0.0.1:4200",
                 "http://127.0.0.1:8080",
                 "http://127.0.0.1:8089",
 
@@ -151,11 +157,7 @@ public class SecurityConfig {
                 "http://[::1]",
                 "http://[::1]:4200",
                 "http://[::1]:8080",
-                "http://[::1]:8089",
-
-                // Adresse réseau locale (si vous y accédez par IP)
-                "http://192.168.1.*", // Remplacez * par vos adresses réseau
-                "http://0.0.0.0:4200"));
+                "http://[::1]:8089"));
 
         // 🔥 MÉTHODES HTTP AUTORISÉES
         configuration.setAllowedMethods(Arrays.asList(

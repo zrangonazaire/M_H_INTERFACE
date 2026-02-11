@@ -21,7 +21,7 @@ services:
       retries: 5
 
   springboot:
-    image: astairenazaire/modern-fne-backend:2.3
+    image: astairenazaire/modern-fne-backend:2.4
     container_name: springboot-modern-hygiene-fne
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/modern_hygiene_db
