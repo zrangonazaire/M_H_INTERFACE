@@ -24,6 +24,7 @@ type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inc
 })
 export class FacturesNonCertifieesComponent {
 
+
   readonly query = signal('');
   readonly statusFilter = signal<'all' | InvoiceStatus>('all');
 
@@ -952,4 +953,37 @@ const etablissement = this.authService.getCurrentEtabFNE() ?? 'non defini';
       return ['TVAC'];
     }
   }
+   // PAGINATION FIX
+  readonly currentPage = signal<number>(0);
+  readonly pageSize = signal<number>(10);
+  readonly pageSizeOptions = [5, 10, 20, 50, 100];
+  readonly groupedInvoicesAll = computed(() => this.groupedInvoices());
+  readonly totalPages = computed(() => Math.ceil(this.groupedInvoicesAll().length / this.pageSize()) || 1);
+  readonly paginatedInvoices = computed(() => {
+    const all = this.groupedInvoicesAll();
+    const start = this.currentPage() * this.pageSize();
+    return all.slice(start, start + this.pageSize());
+  });
+  setPage(page: number): void { if (page >= 0 && page < this.totalPages()) this.currentPage.set(page); }
+  nextPage(): void { this.setPage(this.currentPage() + 1); }
+  previousPage(): void { this.setPage(this.currentPage() - 1); }
+  firstPage(): void { this.setPage(0); }
+  lastPage(): void { this.setPage(this.totalPages() - 1); }
+  setPageSize(size: number): void { this.pageSize.set(size); this.currentPage.set(0); }
+  getVisiblePages(): number[] {
+    const total = this.totalPages(), current = this.currentPage(), pages: number[] = [];
+    if (total <= 7) { for (let i = 0; i < total; i++) pages.push(i); }
+    else { pages.push(0); const s = Math.max(1, current - 1), e = Math.min(total - 2, current + 1); if (s > 1) pages.push(-1); for (let i = s; i <= e; i++) pages.push(i); if (e < total - 2) pages.push(-1); if (total > 1) pages.push(total - 1); }
+    return pages.filter(p => p !== -1);
+  }
+  getPaginationInfo(): string {
+    const all = this.groupedInvoicesAll();
+    if (!all.length) return 'Aucune facture';
+    const start = this.currentPage() * this.pageSize() + 1;
+    const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
+    return `Affichage de ${start} à ${end} sur ${all.length} factures`;
+  }
 }
+
+
+ 

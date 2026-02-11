@@ -15,14 +15,11 @@
         <p class="lede">Contrôle, validation et préparation des factures avant certification.</p>
       </div>
       <div class="heading-actions">
-        <!-- <button class="ghost">Télécharger le modèle</button> -->
         <input #excelInput type="file" accept=".xls,.xlsx" class="hidden-input" (change)="onFileSelected($event)" />
-        <!-- <button class="secondary" (click)="excelInput.click()">Lire Excel</button> -->
         <button class="primary" type="button" (click)="loadOdooFile()">Ouvrir fichier Odoo</button>
       </div>
     </section>
 
-    <!-- Alerte de succès de certification (toujours rendue si présente) -->
     <div class="alert success" *ngIf="certificationSuccessMessage()">
       <strong>{{ certificationSuccessMessage() }}</strong>
       <div *ngIf="certificationDownloadUrl()">
@@ -52,12 +49,7 @@
     <section class="filters">
       <div class="filter">
         <label>Recherche rapide</label>
-        <input
-          type="text"
-          placeholder="Référence, client, identifiant..."
-          [ngModel]="query()"
-          (ngModelChange)="query.set($event)"
-        />
+        <input type="text" placeholder="Référence, client, identifiant..." [ngModel]="query()" (ngModelChange)="query.set($event)" />
       </div>
       <div class="filter">
         <label>Statut</label>
@@ -71,51 +63,31 @@
       </div>
       <div class="filter actions">
         <label>Actions</label>
-        <div class="action-group">
+        <!-- <div class="action-group">
           <button class="ghost">Voir anomalies</button>
-          <button class="primary" type="button" (click)="certifyAll()">
-            Certification en masse ({{ apiInvoicesCount() }})
-          </button>
-        </div>
+          <button class="primary" type="button" (click)="certifyAll()">Certification en masse ({{ apiInvoicesCount() }})</button>
+        </div> -->
       </div>
-    </section> 
+    </section>
 
     @if (readState() !== 'idle' || certifyState() !== 'idle') {
-      <div class="alert info" *ngIf="readState() === 'loading'">
-        Lecture en cours...
-      </div>
+      <div class="alert info" *ngIf="readState() === 'loading'">Lecture en cours...</div>
       <div class="alert success" *ngIf="certificationSuccessMessage()">
         <strong>{{ certificationSuccessMessage() }}</strong>
-        <div *ngIf="certificationDownloadUrl()">
-          <a [href]="certificationDownloadUrl()" target="_blank">Télécharger la facture</a>
-        </div>
+        <div *ngIf="certificationDownloadUrl()"><a [href]="certificationDownloadUrl()" target="_blank">Télécharger la facture</a></div>
       </div>
       <div class="alert success" *ngIf="!certificationSuccessMessage() && readState() === 'success' && readResult()">
-        <strong>Lecture terminée.</strong>
-        {{ readResult()!.rowCount }} lignes chargées.
+        <strong>Lecture terminée.</strong> {{ readResult()!.rowCount }} lignes chargées.
       </div>
-      <div class="alert error" *ngIf="readState() === 'error' && readError()">
-        {{ readError() }}
-      </div>
-      <div class="alert error" *ngIf="readState() === 'error' && !readError()">
-        Une erreur est survenue lors de la lecture du fichier.
-      </div>
-      <div class="alert info" *ngIf="certifyState() === 'loading'">
-        Certification en masse en cours...
-      </div>
-      <div class="alert success" *ngIf="certifyState() === 'success'">
-        <strong>Certification terminée.</strong>
-        {{ certifyCount() }} facture(s) certifiée(s).
-      </div>
-      <div class="alert error" *ngIf="certifyState() === 'error'">
-        {{ certifyError() || 'Une erreur est survenue.' }}
-      </div>
+      <div class="alert error" *ngIf="readState() === 'error' && readError()">{{ readError() }}</div>
+      <div class="alert error" *ngIf="readState() === 'error' && !readError()">Une erreur est survenue lors de la lecture du fichier.</div>
+      <div class="alert info" *ngIf="certifyState() === 'loading'">Certification en masse en cours...</div>
+      <div class="alert success" *ngIf="certifyState() === 'success'"><strong>Certification terminée.</strong> {{ certifyCount() }} facture(s) certifiée(s).</div>
+      <div class="alert error" *ngIf="certifyState() === 'error'">{{ certifyError() || 'Une erreur est survenue.' }}</div>
     }
 
     @if (actionError()) {
-      <div class="alert error">
-        {{ actionError() }}
-      </div>
+      <div class="alert error">{{ actionError() }}</div>
     }
 
     <section class="card table-card">
@@ -134,17 +106,14 @@
               <th>Téléphone</th>
               <th>Email</th>
               <th>Mode Paiement <span class="required">*</span></th>
-              <!-- <th>Devise</th> -->
               <th>Commentaire</th>
               <th class="text-right">Montant HT</th>
               <th class="text-right">Montant TTC</th>
-              <!-- <th>Statut</th>
-              <th>Source</th> -->
               <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            @for (group of groupedInvoices(); track group.invoiceNumber) {
+            @for (group of paginatedInvoices(); track group.invoiceNumber) {
               <tr class="invoice-group-header">
                 <td class="expand-col">
                   <button class="expand-btn" (click)="toggleGroupExpand(group.invoiceNumber)" title="Afficher/Masquer les produits">
@@ -153,9 +122,7 @@
                 </td>
                 <td class="fw-semibold">
                   <div>{{ group.mainInvoice.invoiceNumber }}</div>
-                  <small class="muted">
-                    Facture ID: {{ group.mainInvoice.id }} • {{ group.items.length }} produit{{ group.items.length > 1 ? 's' : '' }}
-                  </small>
+                  <small class="muted">Facture ID: {{ group.mainInvoice.id }} • {{ group.items.length }} produit{{ group.items.length > 1 ? 's' : '' }}</small>
                 </td>
                 <td>{{ group.mainInvoice.typeClient || group.mainInvoice.invoiceType || '' }}</td>
                 <td>{{ group.mainInvoice.clientCompanyName || '' }}</td>
@@ -163,23 +130,11 @@
                 <td>{{ group.mainInvoice.telephoneClient || '' }}</td>
                 <td>{{ group.mainInvoice.emailClient || '' }}</td>
                 <td>{{ group.mainInvoice.paymentMethod || group.mainInvoice.modePaiement || '' }}</td>
-                <!-- <td>{{ group.mainInvoice.devise || '' }}</td> -->
                 <td>{{ group.mainInvoice.commentaire || '' }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountHT(group.items)) }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountTTC(group.items)) }}</td>
-                <!-- <td>
-                  <span class="status-badge" [class]="normalizeStatus(group.mainInvoice)">
-                    {{ getStatusLabel(normalizeStatus(group.mainInvoice)) }}
-                  </span>
-                </td> -->
-                <!-- <td>{{ getEmissionLabel(group.mainInvoice) }}</td> -->
                 <td class="text-end">
-                  <button
-                    class="primary tiny"
-                    type="button"
-                    [disabled]="certifyingId() === group.mainInvoice.id || isRequiredFieldMissing(group.mainInvoice)"
-                    (click)="certifyOne(group.mainInvoice)"
-                  >
+                  <button class="primary tiny" type="button" [disabled]="certifyingId() === group.mainInvoice.id || isRequiredFieldMissing(group.mainInvoice)" (click)="certifyOne(group.mainInvoice)">
                     {{ certifyingId() === group.mainInvoice.id ? 'Certification...' : 'Certifier' }}
                   </button>
                 </td>
@@ -191,7 +146,7 @@
                   <td class="header-label">Référence</td>
                   <td colspan="2" class="header-label">Désignation</td>
                   <td class="header-label text-center">Quantité</td>
-                    <td class="header-label text-right">Prix unitaire HT</td>
+                  <td class="header-label text-right">Prix unitaire HT</td>
                   <td class="header-label">Taxe</td>
                   <td class="header-label text-right">Montant TTC</td>
                   <td class="header-label text-right">Remise %</td>
@@ -200,9 +155,7 @@
                 @for (product of group.items; track product.id) {
                   <tr class="invoice-item-row">
                     <td colspan="1"></td>
-                    <td class="item-indent">
-                      <span class="product-indicator">└</span>
-                    </td>
+                    <td class="item-indent"><span class="product-indicator">└</span></td>
                     <td>{{ product.codeClient || '-' }}</td>
                     <td>{{ product.refArticle || '-' }}</td>
                     <td colspan="2">{{ product.designation || '-' }}</td>
@@ -223,6 +176,31 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      @if (groupedInvoicesAll().length > 0) {
+        <div class="pagination-wrapper">
+          <div class="pagination-info">{{ getPaginationInfo() }}</div>
+          <div class="pagination-controls">
+            <div class="page-size">
+              <label>Par page:</label>
+              <select [ngModel]="pageSize()" (ngModelChange)="setPageSize($event)">
+                <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+              </select>
+            </div>
+            <div class="page-nav">
+              <button (click)="firstPage()" [disabled]="currentPage() === 0" title="Première page">&laquo;</button>
+              <button (click)="previousPage()" [disabled]="currentPage() === 0" title="Page précédente">&lsaquo;</button>
+              <ng-container *ngFor="let page of getVisiblePages()">
+                <button *ngIf="page !== -1" [class.active]="currentPage() === page" (click)="setPage(page)">{{ page + 1 }}</button>
+                <span *ngIf="page === -1" class="ellipsis">...</span>
+              </ng-container>
+              <button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1" title="Page suivante">&rsaquo;</button>
+              <button (click)="lastPage()" [disabled]="currentPage() >= totalPages() - 1" title="Dernière page">&raquo;</button>
+            </div>
+          </div>
+        </div>
+      }
     </section>
   </div>
 </div>
