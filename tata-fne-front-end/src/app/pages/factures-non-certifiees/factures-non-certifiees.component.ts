@@ -582,6 +582,7 @@ export class FacturesNonCertifieesComponent {
   }
 
   certifyOne(invoice: any): void {
+    debugger;
     this.actionError.set(null);
     const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
     const numFacture = invoice.invoiceNumber;
@@ -648,7 +649,7 @@ export class FacturesNonCertifieesComponent {
       const discount = this.toNumber(item.remise) ?? 0;
       const amount = unitPrice;
       const taxes = this.getTaxesFromDisplay(item.codeTaxe);
-      const measurementUnit = item.unite ?? 'Kg';
+      const measurementUnit = item.unite ?? '';
 
       const itemObj: any = {
         taxes: taxes,
