@@ -34,7 +34,7 @@ public class InvoiceCertificationServiceImpl implements InvoiceCertificationServ
 
     @Override
     public JsonNode certifyInvoice(InvoiceSignRequest request) {
-
+request.setFooter("Siege Social: Abidjan Cocody - Les II Plateaux 7eme Tranche en face de la pharmacie Saint Georges.");
         try {
             log.info("Calling FNE sign API with payload: {}", objectMapper.writeValueAsString(request));
         } catch (Exception e) {

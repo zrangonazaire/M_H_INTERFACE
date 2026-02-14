@@ -52,12 +52,12 @@ application:
       photos-output-path: ./uploads
 
 fne:
-  base-url: http://54.247.95.108/ws
+  base-url:  https://www.services.fne.dgi.gouv.ci/ws
   sign-path: /external/invoices/sign
-  bearer-token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
+  bearer-token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
 
 invoice:
   api:
-    base-url: http://54.247.95.108
-    sign-path: /ws/external/invoices/sign
-    token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
+    base-url: https://www.services.fne.dgi.gouv.ci/ws
+    sign-path: /external/invoices/sign
+    token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
