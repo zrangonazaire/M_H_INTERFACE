@@ -15,6 +15,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inconnu';
+type CustomTax = { name: string; amount: number; isRate?: boolean };
 
 @Component({
   selector: 'app-factures-non-certifiees',
@@ -376,12 +377,7 @@ export class FacturesNonCertifieesComponent {
 
   calculateGroupAmountHT(items: any[]): number {
     return items.reduce((sum, item) => {
-      const quantity = this.toNumber(item.quantite) ?? 0;
-      const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
-      const discount = this.toNumber(item.remise) ?? 0;
-      const amountBeforeDiscount = quantity * unitPrice;
-      const discountAmount = amountBeforeDiscount * (discount / 100);
-      return sum + (amountBeforeDiscount - discountAmount);
+      return sum + this.getLineAmountAfterDiscount(item);
     }, 0);
   }
 
@@ -413,21 +409,15 @@ export class FacturesNonCertifieesComponent {
   }
 
   calculateProductTaxAmount(item: any): number {
-    const quantity = this.toNumber(item.quantite) ?? 0;
-    const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
-    const discount = this.toNumber(item.remise) ?? 0;
-    const amountBeforeDiscount = quantity * unitPrice;
-    const amountAfterDiscount = amountBeforeDiscount * (1 - discount / 100);
+    const amountAfterDiscount = this.getLineAmountAfterDiscount(item);
     const taxRate = this.getTaxRate(item.codeTaxe);
-    return amountAfterDiscount * taxRate;
+    const standardTaxAmount = amountAfterDiscount * taxRate;
+    const customTaxAmount = this.calculateCustomTaxesAmount(item, amountAfterDiscount);
+    return standardTaxAmount + customTaxAmount;
   }
 
   calculateLineAmountTTC(item: any): number {
-    const quantity = this.toNumber(item.quantite) ?? 0;
-    const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
-    const discount = this.toNumber(item.remise) ?? 0;
-    const amountBeforeDiscount = quantity * unitPrice;
-    const amountAfterDiscount = amountBeforeDiscount * (1 - (discount / 100));
+    const amountAfterDiscount = this.getLineAmountAfterDiscount(item);
     const taxAmount = this.calculateProductTaxAmount(item);
     return amountAfterDiscount + taxAmount;
   }
@@ -443,19 +433,90 @@ export class FacturesNonCertifieesComponent {
   }
 
   getTaxRate(taxCode: string | null | undefined): number {
-    if (!taxCode) return 0;
-    const code = taxCode.toLowerCase().trim();
-    if (code.includes('tva')) return 0.18;
-    if (code.includes('tvac')) return 0.18;
-    if (code.includes('exempt')) return 0;
-    return 0.18;
+    return this.extractTaxRate(taxCode) ?? 0.18;
   }
 
   getTaxLabel(taxCode: string | null | undefined): string {
     if (!taxCode) return '-';
-    const code = taxCode.toUpperCase().trim();
     const rate = this.getTaxRate(taxCode);
-    return `${Math.round(rate * 100)}% (${Math.round(rate * 100)})`;
+    const percent = Number((rate * 100).toFixed(2));
+    return `${percent} %`;
+  }
+
+  getTaxDisplay(item: any): string {
+    const baseTaxLabel = this.getTaxLabel(item.codeTaxe);
+    const customTaxes = this.getItemCustomTaxes(item);
+    if (!customTaxes.length) {
+      return baseTaxLabel;
+    }
+
+    const customLabels = customTaxes
+      .map((tax) => `${tax.name} (${this.formatCustomTaxValue(tax)})`)
+      .join(', ');
+
+    return baseTaxLabel === '-' ? customLabels : `${baseTaxLabel} + ${customLabels}`;
+  }
+
+  private getLineAmountAfterDiscount(item: any): number {
+    const quantity = this.toNumber(item.quantite) ?? 0;
+    const unitPrice = this.toNumber(item.prixUnitaireHT) ?? 0;
+    const discount = this.toNumber(item.remise) ?? 0;
+    const amountBeforeDiscount = quantity * unitPrice;
+    return amountBeforeDiscount * (1 - (discount / 100));
+  }
+
+  private calculateCustomTaxesAmount(item: any, baseAmount: number): number {
+    return this.getItemCustomTaxes(item).reduce((sum, tax) => {
+      const value = tax.isRate ? (baseAmount * tax.amount / 100) : tax.amount;
+      return sum + value;
+    }, 0);
+  }
+
+  private getItemCustomTaxes(item: any): CustomTax[] {
+    if (!Array.isArray(item?.customTaxes)) {
+      return [];
+    }
+
+    return item.customTaxes
+      .map((tax: any) => {
+        const name = typeof tax?.name === 'string' ? tax.name.trim() : '';
+        const amount = this.toNumber(tax?.amount);
+        if (!name || amount === null) {
+          return null;
+        }
+        return {
+          name,
+          amount,
+          isRate: Boolean(tax?.isRate)
+        } as CustomTax;
+      })
+      .filter((tax: CustomTax | null): tax is CustomTax => tax !== null);
+  }
+
+  private formatCustomTaxValue(tax: CustomTax): string {
+    const percentValue = Number(tax.amount.toFixed(2));
+    return `${percentValue}%`;
+  }
+
+  private extractTaxRate(taxCode: string | null | undefined): number | null {
+    if (!taxCode) return null;
+    const code = taxCode.toLowerCase().trim();
+    if (!code) return null;
+    if (code.includes('exempt')) return 0;
+    if (code.includes('tva') || code.includes('tvac')) return 0.18;
+
+    const percentMatch = code.match(/(\d+(?:[.,]\d+)?)\s*%/);
+    if (percentMatch) {
+      const value = Number(percentMatch[1].replace(',', '.'));
+      return Number.isNaN(value) ? null : value / 100;
+    }
+
+    if (/^\d+(?:[.,]\d+)?$/.test(code)) {
+      const value = Number(code.replace(',', '.'));
+      return Number.isNaN(value) ? null : value / 100;
+    }
+
+    return null;
   }
 
   formatCurrency(value: number): string {
@@ -649,6 +710,10 @@ export class FacturesNonCertifieesComponent {
       const discount = this.toNumber(item.remise) ?? 0;
       const amount = unitPrice;
       const taxes = this.getTaxesFromDisplay(item.codeTaxe);
+      const customTaxes = this.getItemCustomTaxes(item).map((tax) => ({
+        name: tax.name,
+        amount: tax.amount
+      }));
       const measurementUnit = item.unite ?? '';
 
       const itemObj: any = {
@@ -662,6 +727,10 @@ export class FacturesNonCertifieesComponent {
 
       if (discount > 0) {
         itemObj.discount = discount;
+      }
+
+      if (customTaxes.length > 0) {
+        itemObj.customTaxes = customTaxes;
       }
 
       return itemObj;
@@ -770,17 +839,51 @@ export class FacturesNonCertifieesComponent {
   }
 
   private mapReadRowsToInvoices(rows: Array<Record<string, string>>): any[] {
-    const groupedRows = new Map<string, Array<Record<string, string>>>();
+    const preparedRows: Array<{
+      normalized: Record<string, string>;
+      invoiceNumberRaw: string;
+      customTaxes: CustomTax[];
+    }> = [];
+
+    let lastInvoiceNumberRaw = '';
+    let lastProductRow: { normalized: Record<string, string>; invoiceNumberRaw: string; customTaxes: CustomTax[] } | null = null;
+
     rows.forEach((row) => {
       const normalized = this.normalizeRow(row);
-      const lignesFacture = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || '';
-      const invoiceNumber = lignesFacture.length > 23
-        ? lignesFacture.substring(0, 23)
-        : lignesFacture;
-      if (!groupedRows.has(invoiceNumber)) {
-        groupedRows.set(invoiceNumber, []);
+      const invoiceNumberFromRow = this.extractInvoiceNumberRaw(normalized);
+      if (invoiceNumberFromRow) {
+        lastInvoiceNumberRaw = invoiceNumberFromRow;
       }
-      groupedRows.get(invoiceNumber)!.push(row);
+
+      if (this.isCustomTaxRow(normalized)) {
+        const customTax = this.extractCustomTaxFromRow(normalized);
+        if (customTax && lastProductRow) {
+          lastProductRow.customTaxes.push(customTax);
+        }
+        return;
+      }
+
+      if (!this.isInvoiceRow(normalized)) {
+        return;
+      }
+
+      const prepared = {
+        normalized,
+        invoiceNumberRaw: invoiceNumberFromRow || lastInvoiceNumberRaw,
+        customTaxes: [] as CustomTax[]
+      };
+
+      preparedRows.push(prepared);
+      lastProductRow = prepared;
+    });
+
+    const groupedRows = new Map<string, Array<Record<string, string>>>();
+    preparedRows.forEach((row) => {
+      const key = row.invoiceNumberRaw || '';
+      if (!groupedRows.has(key)) {
+        groupedRows.set(key, []);
+      }
+      groupedRows.get(key)!.push(row.normalized);
     });
 
     const clientInfoMap = new Map<string, {
@@ -796,34 +899,15 @@ export class FacturesNonCertifieesComponent {
 
     groupedRows.forEach((groupRows, invoiceNumber) => {
       const firstRow = groupRows[0];
-      const normalized = this.normalizeRow(firstRow);
-      console.log('Normalized row for client extraction:', normalized);
-      const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']);
-      console.log('Client Company Name:', clientCompanyName);
-      const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
-      const colonneA = this.getFirstValue(normalized, ['ncc']) || '';
-      const clientNccValue = this.getFirstValue(normalized, ['partenairenumerocc']) || '000000000000';
+      const clientNcc = this.getFirstValue(firstRow, this.clientNccKeys);
+      const clientCompanyName = this.getFirstValue(firstRow, ['nomdaffichagedupartenairedelafacture']);
+      const clientNameAlt = this.getFirstValue(firstRow, this.clientNameKeys) || '';
 
       const typeClient = clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C';
       const codeClient = this.extractInitialsFromClient(clientCompanyName || clientNameAlt);
-      const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys);
-      const emailClient = this.getFirstValue(normalized, this.emailClientKeys);
-      const clientSellerName = this.getFirstValue(normalized, this.clientSellerNameKeys) || 'non defini';
-
-      console.log('Debug client extraction:', {
-        clientNcc,
-        clientCompanyName,
-        clientNameAlt,
-        colonneA,
-        typeClient,
-        codeClient,
-        telephoneClient,
-        emailClient,
-        clientSellerName,
-        normalizedKeys: Object.keys(normalized),
-        normalizedValues: normalized
-      });
+      const telephoneClient = this.getFirstValue(firstRow, this.telephoneClientKeys);
+      const emailClient = this.getFirstValue(firstRow, this.emailClientKeys);
+      const clientSellerName = this.getFirstValue(firstRow, this.clientSellerNameKeys) || 'non defini';
 
       clientInfoMap.set(invoiceNumber, {
         clientCompanyName,
@@ -837,27 +921,25 @@ export class FacturesNonCertifieesComponent {
       });
     });
 
-    return rows.map((row, index) => {
-      const normalized = this.normalizeRow(row);
-
-      const lignesFacture = this.getFirstValue(normalized, ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit']) || '';
-      const invoiceNumber = lignesFacture.length > 23
-        ? lignesFacture.substring(0, 23).replace(/\//g, '-')
-        : lignesFacture.replace(/\//g, '-');
+    return preparedRows.map((row, index) => {
+      const normalized = row.normalized;
+      const invoiceNumber = this.sanitizeInvoiceNumber(row.invoiceNumberRaw);
+      const clientInfo = clientInfoMap.get(row.invoiceNumberRaw || '');
 
       const invoiceType = this.getFirstValue(normalized, this.invoiceTypeKeys);
       const statutEnCoursDePaiement = this.getFirstValue(normalized, ['statutencourdepaiement', 'statutencourdepaiement', 'statutencoursdepaiement', 'statutencourdepaiment']) || '';
       const paymentMethod = statutEnCoursDePaiement.trim().toLowerCase() === 'comptabilisé' ? 'transfer' : 'transfer';
 
-      const clientNcc = this.getFirstValue(normalized, this.clientNccKeys);
-      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']);
-      const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || '';
-      const typeClient = this.getFirstValue(normalized, this.typeClientKeys) || (clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C');
-      const clientInfo = clientInfoMap.get(invoiceNumber);
-      const codeClient = clientInfo?.codeClient;
-      const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys) || '';
-      const emailClient = this.getFirstValue(normalized, this.emailClientKeys) || '';
-      const clientSellerName = this.getFirstValue(normalized, this.clientSellerNameKeys) || 'non defini';
+      const clientNcc = this.getFirstValue(normalized, this.clientNccKeys) || clientInfo?.clientNcc || null;
+      const clientCompanyName = this.getFirstValue(normalized, ['nomdaffichagedupartenairedelafacture']) || clientInfo?.clientCompanyName || null;
+      const clientNameAlt = this.getFirstValue(normalized, this.clientNameKeys) || clientInfo?.clientNameAlt || '';
+      const typeClient = this.getFirstValue(normalized, this.typeClientKeys)
+        || clientInfo?.typeClient
+        || (clientCompanyName && clientCompanyName.trim() ? 'B2B' : 'B2C');
+      const codeClient = clientInfo?.codeClient ?? null;
+      const telephoneClient = this.getFirstValue(normalized, this.telephoneClientKeys) || clientInfo?.telephoneClient || '';
+      const emailClient = this.getFirstValue(normalized, this.emailClientKeys) || clientInfo?.emailClient || '';
+      const clientSellerName = this.getFirstValue(normalized, this.clientSellerNameKeys) || clientInfo?.clientSellerName || 'non defini';
 
       const status = this.getFirstValue(normalized, this.statusKeys);
       const invoiceDate = this.getFirstValue(normalized, this.invoiceDateKeys);
@@ -869,15 +951,7 @@ export class FacturesNonCertifieesComponent {
       const designationWithoutLeftChars = designationWithoutInvoiceNumber?.replace(/^[^)]*\)/, '').trim() || designationWithoutInvoiceNumber;
       const quantite = this.getFirstValue(normalized, ['quantite', 'qty', 'quantity', 'colonneG', 'g', 'colonne7', 'quantiteg', 'qtyg', 'quantityg', 'quantitecolonneG', 'qtycolonneG', 'quantitycolonneG', 'lignesdefacturequantite']) || this.getFirstValue(normalized, this.quantiteKeys);
       const prixUnitaireHT = this.getFirstValue(normalized, ['prixunitaireht', 'puht', 'prixunitaire', 'colonneF', 'f', 'colonne6', 'prixht', 'prixunitairehtf', 'lignesdefactureprixunitaire']) || this.getFirstValue(normalized, this.prixUnitaireHTKeys);
-
-      console.log('Debug Excel row:', {
-        designation,
-        quantite,
-        prixUnitaireHT,
-        normalizedKeys: Object.keys(normalized),
-        normalizedValues: normalized
-      });
-      const codeTaxe = this.getFirstValue(normalized, ['codetaxe', 'taxe', 'taxcode', 'lignesdefacturetaxes']) || this.getFirstValue(normalized, this.codeTaxeKeys);
+      const codeTaxe = this.getFirstValue(normalized, ['lignesdefacturetaxes', 'codetaxe', 'taxcode', 'taxe']) || this.getFirstValue(normalized, this.codeTaxeKeys);
       const unite = this.getFirstValue(normalized, this.uniteKeys);
       const remise = this.getFirstValue(normalized, ['lignesdefactureremise', 'lignesfactureremise', 'lignesdefacturelignesdefactureremise', 'remise']) || this.getFirstValue(normalized, this.remiseKeys);
       const modePaiement = this.getFirstValue(normalized, this.modePaiementKeys);
@@ -908,6 +982,7 @@ export class FacturesNonCertifieesComponent {
         codeTaxe: codeTaxe ?? null,
         unite: unite ?? null,
         remise: remise ?? null,
+        customTaxes: row.customTaxes.length > 0 ? row.customTaxes : undefined,
         modePaiement: modePaiement ?? null,
         devise: devise ?? null,
         tauxChange: tauxChange ?? null,
@@ -962,7 +1037,7 @@ export class FacturesNonCertifieesComponent {
   private readonly designationKeys = ['designation', 'designationarticle'];
   private readonly quantiteKeys = ['quantite', 'qty', 'quantity'];
   private readonly prixUnitaireHTKeys = ['prixunitaireht', 'puht', 'prixunitaire'];
-  private readonly codeTaxeKeys = ['codetaxe', 'taxe', 'taxcode'];
+  private readonly codeTaxeKeys = ['lignesdefacturetaxes', 'codetaxe', 'taxcode', 'taxe'];
   private readonly uniteKeys = ['unite', 'unit'];
   private readonly remiseKeys = ['remise', 'discount'];
   private readonly modePaiementKeys = ['modepaiement', 'paymentmethod', 'paiement'];
@@ -970,6 +1045,65 @@ export class FacturesNonCertifieesComponent {
   private readonly tauxChangeKeys = ['tauxchange', 'changerate'];
   private readonly commentaireKeys = ['commentaire', 'comment', 'note'];
   private readonly clientSellerNameKeys = ['clientsellername', 'vendeurclient', 'seller'];
+  private readonly invoiceLineKeys = ['lignesdefacture', 'lignesfacture', 'lignesdefacturelignesdefacture', 'lignesdefactureproduit'];
+  private readonly linePriceKeys = ['lignesdefactureprixunitaire', 'prixunitaireht', 'puht', 'prixunitaire'];
+  private readonly lineQuantityKeys = ['lignesdefacturequantite', 'quantite', 'qty', 'quantity'];
+  private readonly lineTaxKeys = ['lignesdefacturetaxes', 'codetaxe', 'taxe', 'taxcode'];
+  private readonly customTaxAmountKeys = ['lignesdefacturetaxeslibelledetaxe'];
+
+  private extractInvoiceNumberRaw(normalized: Record<string, string>): string {
+    const lignesFacture = this.getFirstValue(normalized, this.invoiceLineKeys) || '';
+    return lignesFacture.length > 23 ? lignesFacture.substring(0, 23) : lignesFacture;
+  }
+
+  private sanitizeInvoiceNumber(invoiceNumberRaw: string): string {
+    return (invoiceNumberRaw || '').replace(/\//g, '-');
+  }
+
+  private isInvoiceRow(normalized: Record<string, string>): boolean {
+    const hasLine = Boolean(this.getFirstValue(normalized, this.invoiceLineKeys));
+    const hasPrice = Boolean(this.getFirstValue(normalized, this.linePriceKeys));
+    const hasQuantity = Boolean(this.getFirstValue(normalized, this.lineQuantityKeys));
+    return hasLine || hasPrice || hasQuantity;
+  }
+
+  private isCustomTaxRow(normalized: Record<string, string>): boolean {
+    const taxCode = this.getFirstValue(normalized, this.lineTaxKeys);
+    if (!taxCode || !taxCode.trim()) {
+      return false;
+    }
+    if (this.isPercentageTaxCode(taxCode)) {
+      return false;
+    }
+
+    const hasLine = Boolean(this.getFirstValue(normalized, this.invoiceLineKeys));
+    const hasPrice = Boolean(this.getFirstValue(normalized, this.linePriceKeys));
+    const hasQuantity = Boolean(this.getFirstValue(normalized, this.lineQuantityKeys));
+    return !hasLine && !hasPrice && !hasQuantity;
+  }
+
+  private extractCustomTaxFromRow(normalized: Record<string, string>): CustomTax | null {
+    const name = this.getFirstValue(normalized, this.lineTaxKeys);
+    if (!name || !name.trim()) {
+      return null;
+    }
+
+    const rawAmount = this.getFirstValue(normalized, this.customTaxAmountKeys) || '';
+    const amount = this.toNumber(rawAmount) ?? 0;
+    return {
+      name: name.trim(),
+      amount,
+      isRate: rawAmount.includes('%')
+    };
+  }
+
+  private isPercentageTaxCode(value: string): boolean {
+    const code = value.toLowerCase().trim();
+    if (!code) return false;
+    if (code.includes('%')) return true;
+    if (code.includes('tva') || code.includes('tvac') || code.includes('exempt')) return true;
+    return /^\d+(?:[.,]\d+)?$/.test(code);
+  }
 
   private extractReferenceFromLignesDefactureProduit(value: string | null | undefined): string | null {
     if (!value) return null;
@@ -986,11 +1120,23 @@ export class FacturesNonCertifieesComponent {
 
   private getTaxesFromDisplay(taxCode: string | null | undefined): string[] | undefined {
     if (!taxCode) return undefined;
-    const label = this.getTaxLabel(taxCode);
-    if (label === '18% (18)') {
+    const code = taxCode.toLowerCase().trim();
+    if (!code || code.includes('exempt') || code === '0' || code === '0%') {
+      return undefined;
+    }
+    const rate = this.extractTaxRate(code);
+    if (rate !== null && Math.abs(rate - 0.18) < 0.00001) {
       return ['TVA'];
-    } else {
+    }
+    if (code.includes('tvac')) {
       return ['TVAC'];
     }
+    if (code.includes('tva')) {
+      return ['TVA'];
+    }
+    if (this.isPercentageTaxCode(code)) {
+      return ['TVAC'];
+    }
+    return undefined;
   }
 }

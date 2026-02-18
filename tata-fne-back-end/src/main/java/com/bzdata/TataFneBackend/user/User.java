@@ -19,6 +19,7 @@ import com.bzdata.TataFneBackend.role.Role;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -72,7 +73,7 @@ public class User  implements UserDetails, Principal {
     private Set<Etablissement> etablissements;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return this.roles
+        return (this.roles == null ? Collections.<Role>emptyList() : this.roles)
                 .stream()
                 .map(r -> new SimpleGrantedAuthority(r.getName()))
                 .collect(Collectors.toList());

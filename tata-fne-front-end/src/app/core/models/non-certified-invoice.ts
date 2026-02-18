@@ -20,6 +20,7 @@ export interface NonCertifiedInvoice {
   quantite?: string | number | null;
   prixUnitaireHT?: string | number | null;
   codeTaxe?: string | null;
+  customTaxes?: Array<{ name: string; amount: number; isRate?: boolean }>;
   unite?: string | null;
   remise?: string | number | null;
   modePaiement?: string | null;

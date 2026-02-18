@@ -48,9 +48,6 @@ export class FneInvoiceService {
     if (typeof obj === 'object') {
       const cleaned: any = {};
       for (const [key, value] of Object.entries(obj)) {
-        // Toujours supprimer customTaxes quelle que soit sa valeur
-        if (key === 'customTaxes') continue;
-        
         // Toujours supprimer foreignCurrencyRate quelle que soit sa valeur
         if (key === 'foreignCurrencyRate') continue;
         

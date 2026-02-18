@@ -2,6 +2,7 @@ package com.bzdata.TataFneBackend.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Slf4j
 @RestControllerAdvice
@@ -95,6 +97,21 @@ public class GestionGlobalException {
                         .statusCode(BAD_REQUEST.value())
                         .httpStatus(BAD_REQUEST)
                         .reason("Erreur de validation des champs")
+                        .messageDeveloper(ex.getMessage())
+                        .build()
+        );
+    }
+
+    // 🔹 Gestion des erreurs d'authentification Spring Security
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<HttpResponse> handleAuthenticationException(AuthenticationException ex) {
+        return ResponseEntity.status(UNAUTHORIZED).body(
+                HttpResponse.builder()
+                        .timeStamp(ZonedDateTime.now().toString())
+                        .statusCode(UNAUTHORIZED.value())
+                        .httpStatus(UNAUTHORIZED)
+                        .reason("Authentification échouée")
+                        .message("Email ou mot de passe incorrect.")
                         .messageDeveloper(ex.getMessage())
                         .build()
         );

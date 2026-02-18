@@ -22,6 +22,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -87,9 +88,13 @@ public class AuthenticationService {
 
         var claims = new HashMap<String, Object>();
         var user = ((User) auth.getPrincipal());
+        Integer roleId = Optional.ofNullable(user.getRoles())
+                .filter(roles -> !roles.isEmpty())
+                .map(roles -> roles.get(0).getId())
+                .orElse(null);
         claims.put("fullName", user.getFullName());
         claims.put("agence", user.getAgence());
-        claims.put("roles", user.getRoles().get(0).getId());
+        claims.put("roles", roleId);
         claims.put("idUtilisateur", user.getId());
         claims.put("email", user.getEmail());
         claims.put("pdv", user.getPdvFne());

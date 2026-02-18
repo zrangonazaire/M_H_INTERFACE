@@ -161,7 +161,7 @@
                     <td colspan="2">{{ product.designation || '-' }}</td>
                     <td class="text-center">{{ product.quantite || '-' }}</td>
                     <td class="text-right">{{ displayCurrency(product.prixUnitaireHT) }}</td>
-                    <td>{{ getTaxLabel(product.codeTaxe) }}</td>
+                    <td>{{ getTaxDisplay(product) }}</td>
                     <td class="text-right">{{ formatCurrency(calculateLineAmountTTC(product)) }}</td>
                     <td class="text-right">{{ displayPercentage(product.remise) }}</td>
                     <td></td>
