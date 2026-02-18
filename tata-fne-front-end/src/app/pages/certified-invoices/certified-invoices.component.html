@@ -1,4 +1,4 @@
-<div class="layout">
+﻿<div class="layout">
 <app-menu-gauche></app-menu-gauche>
 
   <div class="content">
@@ -72,7 +72,7 @@
       <div class="heading-actions">
         <input
           type="search"
-          placeholder="Rechercher par numero, reference ou token"
+          placeholder="Rechercher par numéro, référence ou token"
           [ngModel]="search()"
           (ngModelChange)="search.set($event); currentPage.set(0)"
         />
@@ -84,22 +84,22 @@
             }
           }
         </select>
-        <button class="refresh secondary" type="button" (click)="resetFilters()">Reinitialiser filtres</button>
-        <button class="refresh" type="button" (click)="load()">Rafraichir</button>
+        <button class="refresh secondary" type="button" (click)="resetFilters()">Réinitialiser les filtres</button>
+        <button class="refresh" type="button" (click)="load()">Rafraîchir</button>
       </div>
 
       <div class="advanced-filters">
         <div class="filter-field">
-          <label>Periode (date d'enregistrement)</label>
+          <label>Période (date d'enregistrement)</label>
           <select [ngModel]="periodFilter()" (ngModelChange)="onPeriodChange($event)">
             <option [ngValue]="'all'">Toutes</option>
             <option [ngValue]="'today'">Aujourd'hui</option>
             <option [ngValue]="'last7'">7 derniers jours</option>
             <option [ngValue]="'last30'">30 derniers jours</option>
             <option [ngValue]="'thisMonth'">Ce mois</option>
-            <option [ngValue]="'lastMonth'">Mois precedent</option>
-            <option [ngValue]="'thisYear'">Cette annee</option>
-            <option [ngValue]="'custom'">Personnalisee</option>
+            <option [ngValue]="'lastMonth'">Mois précédent</option>
+            <option [ngValue]="'thisYear'">Cette année</option>
+            <option [ngValue]="'custom'">Personnalisée</option>
           </select>
         </div>
 
@@ -141,18 +141,18 @@
           />
         </div>
 
-        <div class="filter-field">
+        <!-- <div class="filter-field">
           <label>Token</label>
           <select [ngModel]="tokenFilter()" (ngModelChange)="tokenFilter.set($event); currentPage.set(0)">
             <option [ngValue]="'all'">Tous</option>
             <option [ngValue]="'with'">Avec token</option>
             <option [ngValue]="'without'">Sans token</option>
           </select>
-        </div>
+        </div> -->
 
         @if (currentTab() === 'sales') {
           <div class="filter-field">
-            <label>Etat vente / avoir</label>
+            <label>Etat Facture vente / avoir</label>
             <select [ngModel]="salesRefundFilter()" (ngModelChange)="salesRefundFilter.set($event); currentPage.set(0)">
               <option [ngValue]="'all'">Toutes</option>
               <option [ngValue]="'withoutRefund'">Sans avoir</option>
@@ -251,7 +251,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="10" class="empty">Aucun resultat pour ces filtres.</td>
+                  <td colspan="10" class="empty">Aucun résultat pour ces filtres.</td>
                 </tr>
               }
             </tbody>
@@ -286,4 +286,7 @@
     }
   </div>
 </div>
+
+
+
 

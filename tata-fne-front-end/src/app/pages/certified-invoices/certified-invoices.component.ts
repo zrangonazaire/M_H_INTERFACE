@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, computed, effect, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -194,25 +194,25 @@ export class CertifiedInvoicesComponent implements OnInit {
     // Charger les factures de vente
     this.invoiceService.getCertifiedInvoices().subscribe({
       next: (data) => {
-        console.log('Données reçues du backend:', data);
+        console.log('DonnÃ©es reÃ§ues du backend:', data);
         this.invoices.set(data);
         
         // Charger les factures d'avoir
         this.invoiceService.getRefunds().subscribe({
           next: (refundData) => {
-            console.log('Avoirs reçus du backend:', refundData);
+            console.log('Avoirs reÃ§us du backend:', refundData);
             this.refunds.set(refundData);
             this.loading.set(false);
           },
           error: (err) => {
             console.error('Erreur lors du chargement des avoirs:', err);
-            // Continuer même si les avoirs ne chargent pas
+            // Continuer mÃªme si les avoirs ne chargent pas
             this.loading.set(false);
           }
         });
       },
       error: (err) => {
-        const message = err?.error?.message ?? 'Impossible de charger les factures certifiées.';
+        const message = err?.error?.message ?? 'Impossible de charger les factures certifiÃ©es.';
         this.error.set(message);
         this.loading.set(false);
       }
@@ -315,11 +315,11 @@ export class CertifiedInvoicesComponent implements OnInit {
 
   getPaginationInfo(): string {
     const all = this.filtered();
-    if (all.length === 0) return 'Aucun resultat';
+    if (all.length === 0) return 'Aucun résultat';
     const start = this.currentPage() * this.pageSize() + 1;
     const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
     const entity = this.currentTab() === 'sales' ? 'factures' : 'avoirs';
-    return `Affichage de ${start} a ${end} sur ${all.length} ${entity}`;
+    return `Affichage de ${start} à ${end} sur ${all.length} ${entity}`;
   }
 
   protected trackById(_: number, invoice: InvoiceTableItem): string {
@@ -410,7 +410,7 @@ export class CertifiedInvoicesComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        const message = err?.error?.message ?? 'Impossible de charger les factures pour ce numéro.';
+        const message = err?.error?.message ?? 'Impossible de charger les factures pour ce numÃ©ro.';
         this.error.set(message);
         this.loading.set(false);
       }
@@ -430,14 +430,14 @@ export class CertifiedInvoicesComponent implements OnInit {
       const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
       
       if (!hasAccess) {
-        alert('Vous n\'avez pas le droit sur cette fonctionnalité');
+        alert('Vous n\'avez pas le droit sur cette fonctionnalitÃ©');
         return;
       }
 
       this.router.navigate(['/parametres']);
     } catch (error) {
-      console.error('Erreur lors de la vérification des droits:', error);
-      alert('Erreur lors de la vérification des droits');
+      console.error('Erreur lors de la vÃ©rification des droits:', error);
+      alert('Erreur lors de la vÃ©rification des droits');
     }
   }
 
@@ -591,4 +591,5 @@ export class CertifiedInvoicesComponent implements OnInit {
     return 'invoiceId' in invoice;
   }
 }
+
 

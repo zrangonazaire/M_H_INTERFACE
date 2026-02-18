@@ -3,30 +3,22 @@
 
   <div class="content">
     <header class="topbar">
-      <div class="breadcrumbs">Pages / Certification par fichier Excel</div>
+      <div class="header-main">
+        <div class="breadcrumbs">Pages / Certification par fichier Excel</div>
+        <p class="eyebrow">Certification par fichier Excel</p>
+        <p class="lede">Controle, validation et preparation des factures avant certification.</p>
+      </div>
       <div class="top-actions">
         <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
       </div>
     </header>
 
-    <section class="page-heading">
-      <div>
-        <p class="eyebrow">Certification par fichier Excel</p>
-        <p class="lede">Contrôle, validation et préparation des factures avant certification.</p>
-      </div>
+    <section class="quick-actions">
       <div class="heading-actions">
         <input #excelInput type="file" accept=".xls,.xlsx" class="hidden-input" (change)="onFileSelected($event)" />
         <button class="primary" type="button" (click)="loadOdooFile()">Ouvrir fichier Odoo</button>
       </div>
     </section>
-
-    <div class="alert success" *ngIf="certificationSuccessMessage()">
-      <strong>{{ certificationSuccessMessage() }}</strong>
-      <div *ngIf="certificationDownloadUrl()">
-        <a [href]="certificationDownloadUrl()" target="_blank">Télécharger la facture</a>
-      </div>
-    </div>
-
     <section class="summary">
       <div class="summary-card">
         <p>Total dossiers</p>
@@ -60,13 +52,6 @@
           <option value="rejete">Rejeté</option>
           <option value="certifie">Certifié</option>
         </select>
-      </div>
-      <div class="filter actions">
-        <label>Actions</label>
-        <!-- <div class="action-group">
-          <button class="ghost">Voir anomalies</button>
-          <button class="primary" type="button" (click)="certifyAll()">Certification en masse ({{ apiInvoicesCount() }})</button>
-        </div> -->
       </div>
     </section>
 
@@ -204,3 +189,4 @@
     </section>
   </div>
 </div>
+

@@ -1,69 +1,64 @@
 ﻿<div class="layout">
- 
-<app-menu-gauche></app-menu-gauche>
+  <app-menu-gauche></app-menu-gauche>
+
   <div class="content">
     <header class="topbar">
-      <div class="breadcrumbs">Pages / Tableau De Bord</div>
+      <div class="header-main">
+        <div class="breadcrumbs">Pages / Tableau de bord</div>
+        <p class="eyebrow">Entreprise - NormaFact (FNE)</p>
+      </div>
       <div class="top-actions">
         <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
       </div>
     </header>
 
-    <section class="page-heading">
-      <p class="eyebrow">Entreprise - NormaFact (FNE)</p>
-    </section>
-
     <section class="company-card">
       <div class="company-name">MODERNE HYGIENE</div>
       <div class="company-grid">
-        <div><span>RÃ©gime d'imposition :</span> RNI</div>
-        <div><span>Secteur d'activitÃ© :</span> AUTRE</div>
+        <div><span>Régime d'imposition :</span> RNI</div>
+        <div><span>Secteur d'activité :</span> AUTRE</div>
         <div><span>IDU :</span> CI20120000178D</div>
         <div><span>NCC :</span> 2404924S</div>
         <div><span>Direction de rattachement :</span> DME</div>
-        <div><span>Centre d'impÃ´ts / Poste comptable :</span> 872 ImpÃ´ts de II Plateaux III</div>
+        <div><span>Centre d'impôts / Poste comptable :</span> 872 Impôts de II Plateaux III</div>
       </div>
     </section>
-
 
     <section class="cards-grid large">
       <div class="card">
         <div class="card-title">Factures de vente</div>
         <div class="card-value">{{ certifiedInvoiceCount() }}</div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ totalHT() | cfa }} </strong></div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ totalTTC() | cfa }} </strong></div>
+        <div class="metric-line">
+          <span>Montant HT</span>
+          <strong>{{ totalHT() | cfa }}</strong>
+        </div>
+        <div class="metric-line">
+          <span>Montant TTC</span>
+          <strong>{{ totalTTC() | cfa }}</strong>
+        </div>
       </div>
+
       <div class="card">
         <div class="card-title">Factures d'avoir</div>
         <div class="card-value">{{ refundInvoiceCount() }}</div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ refundTotalHT() | cfa }}</strong></div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ refundTotalTTC() | cfa }}</strong></div>
+        <div class="metric-line">
+          <span>Montant HT</span>
+          <strong>{{ refundTotalHT() | cfa }}</strong>
+        </div>
+        <div class="metric-line">
+          <span>Montant TTC</span>
+          <strong>{{ refundTotalTTC() | cfa }}</strong>
+        </div>
       </div>
+
       <div class="card">
         <div class="card-title">Stickers</div>
-        <div class="meta"><strong style="font-size: 1.2em;">Quantite: {{ stickersAmount() /20 }}</strong></div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant: {{ stickersAmount() | cfa }}</strong></div>
+        <div class="card-value">{{ stickersQuantity() }}</div>
+        <div class="metric-line">
+          <span>Montant</span>
+          <strong>{{ stickersAmount() | cfa }}</strong>
+        </div>
       </div>
     </section>
-
-
-    <!-- <section class="cards-grid large">
-      <div class="card">
-        <div class="card-title">Factures total autres taxes</div>
-        <div class="card-value">0</div>
-        <div class="meta">CFA</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Factures total remises</div>
-        <div class="card-value">0</div>
-        <div class="meta">CFA</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Factures total TTC</div>
-        <div class="card-value">0</div>
-        <div class="meta">CFA</div>
-      </div>
-    </section> -->
   </div>
 </div>
-

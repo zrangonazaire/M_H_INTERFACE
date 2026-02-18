@@ -1,10 +1,8 @@
-﻿import { Component, signal, OnInit } from '@angular/core';
+﻿import { Component, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 import { AuthenticationService } from '../../core/services/authentication.service';
-import { AttributionService } from '../../core/services/attribution.service';
-import { UserService } from '../../core/services/user.service';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { CertifiedInvoice } from '../../core/models/certified-invoice';
 import { CfaPipe } from '../../shared/pipes/cfa-pipe';
@@ -18,6 +16,7 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
+  private readonly stickerUnitPrice = 20;
 
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
@@ -29,12 +28,10 @@ export class DashboardComponent implements OnInit {
   protected readonly refundTotalHT = signal(0);
   protected readonly refundTotalTTC = signal(0);
   protected readonly stickersAmount = signal(0);
+  protected readonly stickersQuantity = computed(() => Math.floor(this.stickersAmount() / this.stickerUnitPrice));
 
   constructor(
     private readonly auth: AuthenticationService,
-    private readonly router: Router,
-    private readonly attributionService: AttributionService,
-    private readonly userService: UserService,
     private readonly fneInvoiceService: FneInvoiceService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
@@ -72,7 +69,6 @@ export class DashboardComponent implements OnInit {
       next: (refunds) => {
         this.refundInvoiceCount.set(refunds.length);
 
-        // Les montants des avoirs sont ceux des factures de vente liees.
         const refundTotalHTValue = refunds.reduce((sum, refund) => {
           const linkedSale = salesById.get(refund.invoiceId);
           return sum + (linkedSale?.totalHorsTaxes ?? refund.totalHorsTaxes ?? 0);

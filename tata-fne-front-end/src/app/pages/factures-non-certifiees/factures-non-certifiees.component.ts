@@ -714,7 +714,11 @@ export class FacturesNonCertifieesComponent {
         name: tax.name,
         amount: tax.amount
       }));
-      const measurementUnit = item.unite ?? '';
+      const measurementUnit =
+        (typeof item.unite === 'string' && item.unite.trim())
+        || (typeof item.measurementUnit === 'string' && item.measurementUnit.trim())
+        || (typeof item.unit === 'string' && item.unit.trim())
+        || '';
 
       const itemObj: any = {
         taxes: taxes,
@@ -1038,7 +1042,7 @@ export class FacturesNonCertifieesComponent {
   private readonly quantiteKeys = ['quantite', 'qty', 'quantity'];
   private readonly prixUnitaireHTKeys = ['prixunitaireht', 'puht', 'prixunitaire'];
   private readonly codeTaxeKeys = ['lignesdefacturetaxes', 'codetaxe', 'taxcode', 'taxe'];
-  private readonly uniteKeys = ['unite', 'unit'];
+  private readonly uniteKeys = ['lignesdefactureunite', 'lignesdefactureunit', 'unite', 'unit', 'measurementunit'];
   private readonly remiseKeys = ['remise', 'discount'];
   private readonly modePaiementKeys = ['modepaiement', 'paymentmethod', 'paiement'];
   private readonly deviseKeys = ['devise', 'currency'];
