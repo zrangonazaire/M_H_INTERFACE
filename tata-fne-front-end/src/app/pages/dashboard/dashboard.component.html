@@ -1,4 +1,4 @@
-<div class="layout">
+﻿<div class="layout">
  
 <app-menu-gauche></app-menu-gauche>
   <div class="content">
@@ -16,12 +16,12 @@
     <section class="company-card">
       <div class="company-name">MODERNE HYGIENE</div>
       <div class="company-grid">
-        <div><span>Régime d'imposition :</span> RNI</div>
-        <div><span>Secteur d'activité :</span> AUTRE</div>
+        <div><span>RÃ©gime d'imposition :</span> RNI</div>
+        <div><span>Secteur d'activitÃ© :</span> AUTRE</div>
         <div><span>IDU :</span> CI20120000178D</div>
         <div><span>NCC :</span> 2404924S</div>
         <div><span>Direction de rattachement :</span> DME</div>
-        <div><span>Centre d'impôts / Poste comptable :</span> 872 Impôts de II Plateaux III</div>
+        <div><span>Centre d'impÃ´ts / Poste comptable :</span> 872 ImpÃ´ts de II Plateaux III</div>
       </div>
     </section>
 
@@ -36,14 +36,13 @@
       <div class="card">
         <div class="card-title">Factures d'avoir</div>
         <div class="card-value">{{ refundInvoiceCount() }}</div>
-        <!-- <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ refundTotalHT() | cfa }}</strong></div>
-        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ refundTotalTTC() | cfa }}</strong></div> -->
+        <div class="meta"><strong style="font-size: 1.2em;">Montant HT: {{ refundTotalHT() | cfa }}</strong></div>
+        <div class="meta"><strong style="font-size: 1.2em;">Montant TTC: {{ refundTotalTTC() | cfa }}</strong></div>
       </div>
       <div class="card">
         <div class="card-title">Stickers</div>
-        <div class="card-value">0</div>
-        <div class="meta">Quantité</div>
-        <div class="meta">Montant</div>
+        <div class="meta"><strong style="font-size: 1.2em;">Quantite: {{ stickersAmount() /20 }}</strong></div>
+        <div class="meta"><strong style="font-size: 1.2em;">Montant: {{ stickersAmount() | cfa }}</strong></div>
       </div>
     </section>
 
@@ -67,3 +66,4 @@
     </section> -->
   </div>
 </div>
+

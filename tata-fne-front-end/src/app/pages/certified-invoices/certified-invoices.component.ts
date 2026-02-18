@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
@@ -9,6 +9,12 @@ import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
+
+type PeriodFilter = 'all' | 'today' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'thisYear' | 'custom';
+type AmountFilter = 'ttc' | 'ht';
+type TokenFilter = 'all' | 'with' | 'without';
+type SalesRefundFilter = 'all' | 'withRefund' | 'withoutRefund';
+type InvoiceTableItem = CertifiedInvoice | VerificationRefundResponse;
 
 @Component({
   selector: 'app-certified-invoices',
@@ -24,6 +30,14 @@ export class CertifiedInvoicesComponent implements OnInit {
 
   protected readonly search = signal('');
   protected readonly creatorFilter = signal('all');
+  protected readonly periodFilter = signal<PeriodFilter>('all');
+  protected readonly dateFrom = signal('');
+  protected readonly dateTo = signal('');
+  protected readonly amountTypeFilter = signal<AmountFilter>('ttc');
+  protected readonly amountMinFilter = signal('');
+  protected readonly amountMaxFilter = signal('');
+  protected readonly tokenFilter = signal<TokenFilter>('all');
+  protected readonly salesRefundFilter = signal<SalesRefundFilter>('all');
 
   protected readonly invoices = signal<CertifiedInvoice[]>([]);
   protected readonly refunds = signal<VerificationRefundResponse[]>([]);
@@ -37,31 +51,68 @@ export class CertifiedInvoicesComponent implements OnInit {
   readonly pageSizeOptions = [5, 10, 20, 50, 100];
 
   protected readonly creators = computed(() => {
-    const set = new Set(this.invoices().map((i) => i.utilisateurCreateur).filter(Boolean));
+    const source = this.currentTab() === 'sales' ? this.invoices() : this.refunds();
+    const set = new Set(source.map((i) => this.getCreator(i)).filter(Boolean));
     return ['all', ...Array.from(set)];
+  });
+
+  protected readonly refundedInvoiceIds = computed(() => {
+    return new Set(this.refunds().map((refund) => refund.invoiceId).filter(Boolean));
+  });
+
+  protected readonly salesById = computed(() => {
+    return new Map(this.invoices().map((invoice) => [invoice.id, invoice]));
   });
 
   protected readonly filtered = computed(() => {
     const q = this.search().toLowerCase().trim();
     const creator = this.creatorFilter();
     const tab = this.currentTab();
-    
+    const from = this.parseStartDate(this.dateFrom());
+    const to = this.parseEndDate(this.dateTo());
+    const minAmount = this.parseNumber(this.amountMinFilter());
+    const maxAmount = this.parseNumber(this.amountMaxFilter());
+    const amountType = this.amountTypeFilter();
+    const tokenFilter = this.tokenFilter();
+    const refundedInvoiceIds = this.refundedInvoiceIds();
+    const salesRefundFilter = this.salesRefundFilter();
+
     if (tab === 'sales') {
       return this.invoices().filter((invoice) => {
         // Filter by tab
         const matchesTab = (invoice.invoiceType || '').toLowerCase() === 'sale';
-        
+
         // Filter by search query
         const matchesQuery =
           !q ||
           invoice.numeroFactureInterne?.toLowerCase().includes(q) ||
           invoice.reference?.toLowerCase().includes(q) ||
-          invoice.token?.toLowerCase().includes(q);
-        
+          invoice.token?.toLowerCase().includes(q) ||
+          invoice.utilisateurCreateur?.toLowerCase().includes(q);
+
         // Filter by creator
-        const matchesCreator = creator === 'all' || invoice.utilisateurCreateur === creator;
-        
-        return matchesTab && matchesQuery && matchesCreator;
+        const matchesCreator = creator === 'all' || this.getCreator(invoice) === creator;
+
+        // Filter by token availability
+        const matchesToken = this.matchesTokenFilter(invoice.token, tokenFilter);
+
+        // Filter by amount
+        const amount = this.getAmountValue(invoice, amountType);
+        const matchesAmount = this.matchesAmountRange(amount, minAmount, maxAmount);
+
+        // Filter by date range
+        const matchesDate = this.matchesDateRange(this.getRegistrationDate(invoice), from, to);
+
+        // Filter by refund existence on sales
+        const hasRefund = refundedInvoiceIds.has(invoice.id);
+        const matchesRefundFilter =
+          salesRefundFilter === 'all'
+            ? true
+            : salesRefundFilter === 'withRefund'
+              ? hasRefund
+              : !hasRefund;
+
+        return matchesTab && matchesQuery && matchesCreator && matchesToken && matchesAmount && matchesDate && matchesRefundFilter;
       });
     } else {
       return this.refunds().filter((refund) => {
@@ -70,12 +121,25 @@ export class CertifiedInvoicesComponent implements OnInit {
           !q ||
           refund.numeroFactureInterne?.toLowerCase().includes(q) ||
           refund.reference?.toLowerCase().includes(q) ||
-          refund.token?.toLowerCase().includes(q);
-        
+          refund.token?.toLowerCase().includes(q) ||
+          this.getCreator(refund)?.toLowerCase().includes(q) ||
+          refund.invoiceId?.toLowerCase().includes(q) ||
+          this.getInternalNumber(refund).toLowerCase().includes(q);
+
         // Filter by creator
-        const matchesCreator = creator === 'all' || refund.utilisateurCreateur === creator;
-        
-        return matchesQuery && matchesCreator;
+        const matchesCreator = creator === 'all' || this.getCreator(refund) === creator;
+
+        // Filter by token availability
+        const matchesToken = this.matchesTokenFilter(refund.token, tokenFilter);
+
+        // Filter by amount
+        const amount = this.getAmountValue(refund, amountType);
+        const matchesAmount = this.matchesAmountRange(amount, minAmount, maxAmount);
+
+        // Filter by date range
+        const matchesDate = this.matchesDateRange(this.getRegistrationDate(refund), from, to);
+
+        return matchesQuery && matchesCreator && matchesToken && matchesAmount && matchesDate;
       });
     }
   });
@@ -95,9 +159,9 @@ export class CertifiedInvoicesComponent implements OnInit {
     const list = this.filtered();
     return {
       count: list.length,
-      ttc: list.reduce((sum, inv) => sum + (inv.totalTTC || 0), 0),
-      ht: list.reduce((sum, inv) => sum + (inv.totalHorsTaxes || 0), 0),
-      taxes: list.reduce((sum, inv) => sum + (inv.totalTaxes || 0), 0)
+      ttc: list.reduce((sum, inv) => sum + this.getAmountValue(inv, 'ttc'), 0),
+      ht: list.reduce((sum, inv) => sum + this.getAmountValue(inv, 'ht'), 0),
+      taxes: list.reduce((sum, inv) => sum + this.getAmountValue(inv, 'taxes'), 0)
     };
   });
 
@@ -110,6 +174,13 @@ export class CertifiedInvoicesComponent implements OnInit {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
     this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
+
+    effect(() => {
+      const total = this.totalPages();
+      if (this.currentPage() >= total) {
+        this.currentPage.set(Math.max(total - 1, 0));
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -146,6 +217,53 @@ export class CertifiedInvoicesComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  protected setCurrentTab(tab: 'sales' | 'refunds'): void {
+    if (this.currentTab() === tab) return;
+    this.currentTab.set(tab);
+    this.creatorFilter.set('all');
+    this.currentPage.set(0);
+  }
+
+  protected onPeriodChange(value: PeriodFilter): void {
+    this.periodFilter.set(value);
+
+    if (value === 'all') {
+      this.dateFrom.set('');
+      this.dateTo.set('');
+      this.currentPage.set(0);
+      return;
+    }
+
+    if (value === 'custom') {
+      this.currentPage.set(0);
+      return;
+    }
+
+    const range = this.getRangeForPreset(value);
+    this.dateFrom.set(range.from);
+    this.dateTo.set(range.to);
+    this.currentPage.set(0);
+  }
+
+  protected onDateRangeChange(): void {
+    this.periodFilter.set(this.dateFrom() || this.dateTo() ? 'custom' : 'all');
+    this.currentPage.set(0);
+  }
+
+  protected resetFilters(): void {
+    this.search.set('');
+    this.creatorFilter.set('all');
+    this.periodFilter.set('all');
+    this.dateFrom.set('');
+    this.dateTo.set('');
+    this.amountTypeFilter.set('ttc');
+    this.amountMinFilter.set('');
+    this.amountMaxFilter.set('');
+    this.tokenFilter.set('all');
+    this.salesRefundFilter.set('all');
+    this.currentPage.set(0);
   }
 
   // Pagination methods
@@ -197,14 +315,15 @@ export class CertifiedInvoicesComponent implements OnInit {
 
   getPaginationInfo(): string {
     const all = this.filtered();
-    if (all.length === 0) return 'Aucune facture';
+    if (all.length === 0) return 'Aucun resultat';
     const start = this.currentPage() * this.pageSize() + 1;
     const end = Math.min((this.currentPage() + 1) * this.pageSize(), all.length);
-    return `Affichage de ${start} à ${end} sur ${all.length} factures`;
+    const entity = this.currentTab() === 'sales' ? 'factures' : 'avoirs';
+    return `Affichage de ${start} a ${end} sur ${all.length} ${entity}`;
   }
 
-  protected trackById(_: number, invoice: CertifiedInvoice): string {
-    return invoice.id;
+  protected trackById(_: number, invoice: InvoiceTableItem): string {
+    return `${invoice.id}`;
   }
 
   protected formatDate(value: string): string {
@@ -225,14 +344,61 @@ export class CertifiedInvoicesComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  protected createCreditNote(invoice: CertifiedInvoice): void {
+  protected createCreditNote(invoice: InvoiceTableItem): void {
+    if (this.isRefund(invoice)) {
+      return;
+    }
     // Navigate to the credit note page with the invoice ID
     this.router.navigate(['/factures-certifiees', invoice.id, 'avoir']);
   }
 
-  protected shouldShowCreateCreditNoteButton(invoice: CertifiedInvoice): boolean {
+  protected shouldShowCreateCreditNoteButton(invoice: InvoiceTableItem): boolean {
+    if (this.isRefund(invoice)) {
+      return false;
+    }
     // Check if there are any refunds for this invoice
-    return this.refunds().filter(refund => refund.invoiceId === invoice.id).length === 0;
+    return !this.refundedInvoiceIds().has(invoice.id);
+  }
+
+  protected getRegistrationDate(invoice: InvoiceTableItem): string {
+    if (this.isRefund(invoice)) {
+      return invoice.createdAt || invoice.date || '';
+    }
+    return invoice.date || '';
+  }
+
+  protected getCreator(invoice: InvoiceTableItem): string {
+    if (this.isRefund(invoice)) {
+      const fromRefund = invoice.utilisateurCreateur || '';
+      if (fromRefund.trim()) {
+        return fromRefund;
+      }
+      const linkedSale = this.getLinkedSaleInvoice(invoice);
+      return linkedSale?.utilisateurCreateur || '';
+    }
+    return invoice.utilisateurCreateur || '';
+  }
+
+  protected getInternalNumber(invoice: InvoiceTableItem): string {
+    if (this.isRefund(invoice)) {
+      const fromRefund = invoice.numeroFactureInterne || '';
+      if (fromRefund.trim()) {
+        return fromRefund;
+      }
+      const linkedSale = this.getLinkedSaleInvoice(invoice);
+      return linkedSale?.numeroFactureInterne || invoice.invoiceId || '-';
+    }
+    return invoice.numeroFactureInterne || '-';
+  }
+
+  protected getAmountValue(invoice: InvoiceTableItem, type: 'ttc' | 'ht' | 'taxes'): number {
+    if (this.isRefund(invoice)) {
+      const linkedSale = this.getLinkedSaleInvoice(invoice);
+      if (linkedSale) {
+        return this.extractAmount(linkedSale, type);
+      }
+    }
+    return this.extractAmount(invoice, type);
   }
 
   protected getByNumero(numeroFacture: string): void {
@@ -279,4 +445,150 @@ export class CertifiedInvoicesComponent implements OnInit {
     const authorities = this.authService.getCurrentAuthorities();
     return authorities.includes('FACTURIER');
   }
+
+  private getRangeForPreset(value: Exclude<PeriodFilter, 'all' | 'custom'>): { from: string; to: string } {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let from = new Date(today);
+    let to = new Date(today);
+
+    if (value === 'last7') {
+      from.setDate(today.getDate() - 6);
+    } else if (value === 'last30') {
+      from.setDate(today.getDate() - 29);
+    } else if (value === 'thisMonth') {
+      from = new Date(today.getFullYear(), today.getMonth(), 1);
+    } else if (value === 'lastMonth') {
+      from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      to = new Date(today.getFullYear(), today.getMonth(), 0);
+    } else if (value === 'thisYear') {
+      from = new Date(today.getFullYear(), 0, 1);
+    }
+
+    return {
+      from: this.toDateInputValue(from),
+      to: this.toDateInputValue(to)
+    };
+  }
+
+  private toDateInputValue(value: Date): string {
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private parseStartDate(value: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(`${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private parseEndDate(value: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(`${value}T23:59:59.999`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private parseInvoiceDate(value: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const raw = value.trim();
+    if (!raw) {
+      return null;
+    }
+
+    const direct = new Date(raw);
+    if (!Number.isNaN(direct.getTime())) {
+      return direct;
+    }
+
+    const normalized = new Date(raw.replace(' ', 'T'));
+    return Number.isNaN(normalized.getTime()) ? null : normalized;
+  }
+
+  private parseNumber(value: string): number | null {
+    if (!value || !value.trim()) {
+      return null;
+    }
+
+    let normalized = value.trim().replace(/\s/g, '');
+    if (normalized.includes(',') && normalized.includes('.')) {
+      normalized = normalized.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = normalized.replace(',', '.');
+    }
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private matchesAmountRange(amount: number, min: number | null, max: number | null): boolean {
+    if (min !== null && amount < min) {
+      return false;
+    }
+    if (max !== null && amount > max) {
+      return false;
+    }
+    return true;
+  }
+
+  private matchesTokenFilter(token: string | undefined | null, filter: TokenFilter): boolean {
+    const hasToken = Boolean(token && token.trim());
+    if (filter === 'with') {
+      return hasToken;
+    }
+    if (filter === 'without') {
+      return !hasToken;
+    }
+    return true;
+  }
+
+  private matchesDateRange(value: string, start: Date | null, end: Date | null): boolean {
+    if (!start && !end) {
+      return true;
+    }
+
+    const invoiceDate = this.parseInvoiceDate(value);
+    if (!invoiceDate) {
+      return false;
+    }
+
+    if (start && invoiceDate < start) {
+      return false;
+    }
+
+    if (end && invoiceDate > end) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private getLinkedSaleInvoice(refund: VerificationRefundResponse): CertifiedInvoice | undefined {
+    return this.salesById().get(refund.invoiceId);
+  }
+
+  private extractAmount(invoice: InvoiceTableItem, type: 'ttc' | 'ht' | 'taxes'): number {
+    if (type === 'ttc') {
+      return invoice.totalTTC || 0;
+    }
+    if (type === 'ht') {
+      return invoice.totalHorsTaxes || 0;
+    }
+    return invoice.totalTaxes || 0;
+  }
+
+  private isRefund(invoice: InvoiceTableItem): invoice is VerificationRefundResponse {
+    return 'invoiceId' in invoice;
+  }
 }
+

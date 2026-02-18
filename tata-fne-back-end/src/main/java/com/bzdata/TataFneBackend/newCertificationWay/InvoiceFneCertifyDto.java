@@ -18,6 +18,7 @@ public class InvoiceFneCertifyDto {
     private Long totalTTC;
     private  Long totalHorsTaxes;
     private Long totalTaxes;
+    private Integer balanceFunds;
 
     private String token;
     private List<ItemDto> items;

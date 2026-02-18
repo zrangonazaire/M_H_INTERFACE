@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+﻿import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 
@@ -6,27 +6,29 @@ import { AuthenticationService } from '../../core/services/authentication.servic
 import { AttributionService } from '../../core/services/attribution.service';
 import { UserService } from '../../core/services/user.service';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
+import { CertifiedInvoice } from '../../core/models/certified-invoice';
 import { CfaPipe } from '../../shared/pipes/cfa-pipe';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule,CfaPipe,MenuGauche],
+  imports: [CommonModule, RouterModule, CfaPipe, MenuGauche],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
 
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
-  protected readonly userEtab= signal('Compte');
+  protected readonly userEtab = signal('Compte');
   protected readonly certifiedInvoiceCount = signal(0);
   protected readonly totalHT = signal(0);
   protected readonly totalTTC = signal(0);
   protected readonly refundInvoiceCount = signal(0);
   protected readonly refundTotalHT = signal(0);
   protected readonly refundTotalTTC = signal(0);
+  protected readonly stickersAmount = signal(0);
 
   constructor(
     private readonly auth: AuthenticationService,
@@ -38,52 +40,83 @@ export class DashboardComponent {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.auth.getCurrentPdv() ?? 'Compte');
     this.userEtab.set(this.auth.getCurrentEtabFNE() ?? 'Compte');
-    debugger;
-    this.auth.getCurrentEtabFNE();
   }
 
   ngOnInit(): void {
     this.loadCertifiedInvoiceData();
-    this.loadRefundInvoiceData();
   }
 
   private loadCertifiedInvoiceData(): void {
     this.fneInvoiceService.getCertifiedInvoices().subscribe({
       next: (invoices) => {
         this.certifiedInvoiceCount.set(invoices.length);
-        
-        // Calculer les totaux HT et TTC
+
         const totalHTValue = invoices.reduce((sum, invoice) => sum + (invoice.totalHorsTaxes || 0), 0);
         const totalTTCValue = invoices.reduce((sum, invoice) => sum + (invoice.totalTTC || 0), 0);
-        
+
         this.totalHT.set(totalHTValue);
         this.totalTTC.set(totalTTCValue);
+        this.loadRefundInvoiceData(invoices);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des données de factures certifiées:', error);
+        console.error('Erreur lors du chargement des donnees de factures certifiees:', error);
+        this.loadRefundInvoiceData([]);
       }
     });
   }
 
-  private loadRefundInvoiceData(): void {
+  private loadRefundInvoiceData(salesInvoices: CertifiedInvoice[]): void {
+    const salesById = new Map(salesInvoices.map((invoice) => [invoice.id, invoice]));
+
     this.fneInvoiceService.getRefunds().subscribe({
       next: (refunds) => {
         this.refundInvoiceCount.set(refunds.length);
-        
-        // Calculer les totaux HT et TTC pour les factures d'avoir
-        const refundTotalHTValue = refunds.reduce((sum, refund) => sum + (refund.totalHorsTaxes || 0), 0);
-        const refundTotalTTCValue = refunds.reduce((sum, refund) => sum + (refund.totalTTC || 0), 0);
-        
+
+        // Les montants des avoirs sont ceux des factures de vente liees.
+        const refundTotalHTValue = refunds.reduce((sum, refund) => {
+          const linkedSale = salesById.get(refund.invoiceId);
+          return sum + (linkedSale?.totalHorsTaxes ?? refund.totalHorsTaxes ?? 0);
+        }, 0);
+
+        const refundTotalTTCValue = refunds.reduce((sum, refund) => {
+          const linkedSale = salesById.get(refund.invoiceId);
+          return sum + (linkedSale?.totalTTC ?? refund.totalTTC ?? 0);
+        }, 0);
+
         this.refundTotalHT.set(refundTotalHTValue);
         this.refundTotalTTC.set(refundTotalTTCValue);
+
+        const latestBalanceFunds = this.getFirstDefinedValue(salesInvoices.map((invoice) => invoice.balanceFunds));
+        const latestBalanceSticker = this.getFirstDefinedValue(refunds.map((refund) => refund.balanceSticker));
+        this.stickersAmount.set(this.getSmallestAvailable(latestBalanceFunds, latestBalanceSticker));
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des données de factures d\'avoir:', error);
+        console.error('Erreur lors du chargement des donnees de factures d\'avoir:', error);
+        const latestBalanceFunds = this.getFirstDefinedValue(salesInvoices.map((invoice) => invoice.balanceFunds));
+        this.stickersAmount.set(this.getSmallestAvailable(latestBalanceFunds, null));
       }
     });
   }
 
- 
+  private getFirstDefinedValue(values: Array<number | null | undefined>): number | null {
+    for (const value of values) {
+      if (value !== null && value !== undefined) {
+        return value;
+      }
+    }
+    return null;
+  }
 
- 
+  private getSmallestAvailable(first: number | null, second: number | null): number {
+    if (first !== null && second !== null) {
+      return Math.min(first, second);
+    }
+    if (first !== null) {
+      return first;
+    }
+    if (second !== null) {
+      return second;
+    }
+    return 0;
+  }
 }

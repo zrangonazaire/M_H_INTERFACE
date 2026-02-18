@@ -1,15 +1,19 @@
 export interface VerificationRefundResponse {
-  id: string;
+  id: string | number;
   invoiceId: string;
-  invoiceType: string;
-  numeroFactureInterne: string;
-  utilisateurCreateur: string;
+  invoiceType?: string;
+  numeroFactureInterne?: string;
+  utilisateurCreateur?: string;
   reference: string;
-  date: string;
-  totalTTC: number;
-  totalHorsTaxes: number;
-  totalTaxes: number;
-  token: string;
+  date?: string;
+  createdAt?: string;
+  totalTTC?: number;
+  totalHorsTaxes?: number;
+  totalTaxes?: number;
+  token?: string;
+  ncc?: string;
+  warning?: boolean;
+  balanceSticker?: number;
   items?: RefundItemResponse[];
 }
 

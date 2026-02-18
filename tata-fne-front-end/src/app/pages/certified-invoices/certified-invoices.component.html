@@ -57,14 +57,14 @@
         <button 
           class="tab-btn" 
           [class.active]="currentTab() === 'sales'"
-          (click)="currentTab.set('sales'); currentPage.set(0)"
+          (click)="setCurrentTab('sales')"
         >
           Ventes
         </button>
         <button 
           class="tab-btn" 
           [class.active]="currentTab() === 'refunds'"
-          (click)="currentTab.set('refunds'); currentPage.set(0)"
+          (click)="setCurrentTab('refunds')"
         >
           Avoirs
         </button>
@@ -72,7 +72,7 @@
       <div class="heading-actions">
         <input
           type="search"
-          placeholder="Rechercher par numéro, référence ou token"
+          placeholder="Rechercher par numero, reference ou token"
           [ngModel]="search()"
           (ngModelChange)="search.set($event); currentPage.set(0)"
         />
@@ -84,7 +84,82 @@
             }
           }
         </select>
-        <button class="refresh" type="button" (click)="load()">Rafraîchir</button>
+        <button class="refresh secondary" type="button" (click)="resetFilters()">Reinitialiser filtres</button>
+        <button class="refresh" type="button" (click)="load()">Rafraichir</button>
+      </div>
+
+      <div class="advanced-filters">
+        <div class="filter-field">
+          <label>Periode (date d'enregistrement)</label>
+          <select [ngModel]="periodFilter()" (ngModelChange)="onPeriodChange($event)">
+            <option [ngValue]="'all'">Toutes</option>
+            <option [ngValue]="'today'">Aujourd'hui</option>
+            <option [ngValue]="'last7'">7 derniers jours</option>
+            <option [ngValue]="'last30'">30 derniers jours</option>
+            <option [ngValue]="'thisMonth'">Ce mois</option>
+            <option [ngValue]="'lastMonth'">Mois precedent</option>
+            <option [ngValue]="'thisYear'">Cette annee</option>
+            <option [ngValue]="'custom'">Personnalisee</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Date du</label>
+          <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event); onDateRangeChange()" />
+        </div>
+
+        <div class="filter-field">
+          <label>Date au</label>
+          <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event); onDateRangeChange()" />
+        </div>
+
+        <div class="filter-field">
+          <label>Type de montant</label>
+          <select [ngModel]="amountTypeFilter()" (ngModelChange)="amountTypeFilter.set($event); currentPage.set(0)">
+            <option [ngValue]="'ttc'">Total TTC</option>
+            <option [ngValue]="'ht'">Total HT</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Montant minimum</label>
+          <input
+            type="text"
+            placeholder="Ex: 100000"
+            [ngModel]="amountMinFilter()"
+            (ngModelChange)="amountMinFilter.set($event); currentPage.set(0)"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label>Montant maximum</label>
+          <input
+            type="text"
+            placeholder="Ex: 500000"
+            [ngModel]="amountMaxFilter()"
+            (ngModelChange)="amountMaxFilter.set($event); currentPage.set(0)"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label>Token</label>
+          <select [ngModel]="tokenFilter()" (ngModelChange)="tokenFilter.set($event); currentPage.set(0)">
+            <option [ngValue]="'all'">Tous</option>
+            <option [ngValue]="'with'">Avec token</option>
+            <option [ngValue]="'without'">Sans token</option>
+          </select>
+        </div>
+
+        @if (currentTab() === 'sales') {
+          <div class="filter-field">
+            <label>Etat vente / avoir</label>
+            <select [ngModel]="salesRefundFilter()" (ngModelChange)="salesRefundFilter.set($event); currentPage.set(0)">
+              <option [ngValue]="'all'">Toutes</option>
+              <option [ngValue]="'withoutRefund'">Sans avoir</option>
+              <option [ngValue]="'withRefund'">Avec avoir</option>
+            </select>
+          </div>
+        }
       </div>
     </section>
 
@@ -100,7 +175,7 @@
     } @else {
       <section class="summary">
         <div class="summary-card">
-          <p>Total factures</p>
+          <p>Total resultats</p>
           <h2>{{ totals().count }}</h2>
         </div>
         <div class="summary-card">
@@ -126,7 +201,7 @@
                 <th>Numéro interne</th>
                 <th>Référence</th>
                 <th>Utilisateur</th>
-                <th>Date</th>
+                <th>Date enregistrement</th>
                 <th>Total HT</th>
                 <th>Total Taxes</th>
                 <th>Total TTC</th>
@@ -143,15 +218,15 @@
                     </span>
                   </td>
                   <td>
-                    <div class="fw-semibold">{{ invoice.numeroFactureInterne || '-' }}</div>
+                    <div class="fw-semibold">{{ getInternalNumber(invoice) }}</div>
                     <small class="muted">ID: {{ invoice.id }}</small>
                   </td>
                   <td>{{ invoice.reference || '-' }}</td>
-                  <td>{{ invoice.utilisateurCreateur || '-' }}</td>
-                  <td>{{ formatDate(invoice.date) }}</td>
-                  <td>{{ formatMoney(invoice.totalHorsTaxes) }}</td>
-                  <td>{{ formatMoney(invoice.totalTaxes) }}</td>
-                  <td>{{ formatMoney(invoice.totalTTC) }}</td>
+                  <td>{{ getCreator(invoice) || '-' }}</td>
+                  <td>{{ formatDate(getRegistrationDate(invoice)) }}</td>
+                  <td>{{ formatMoney(getAmountValue(invoice, 'ht')) }}</td>
+                  <td>{{ formatMoney(getAmountValue(invoice, 'taxes')) }}</td>
+                  <td>{{ formatMoney(getAmountValue(invoice, 'ttc')) }}</td>
                   <td class="token">
                     @if (invoice.token) {
                       <a class="token-link" [href]="invoice.token" target="_blank" rel="noreferrer noopener">{{ invoice.token }}</a>
@@ -176,7 +251,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="10" class="empty">Aucune facture certifiée trouvée.</td>
+                  <td colspan="10" class="empty">Aucun resultat pour ces filtres.</td>
                 </tr>
               }
             </tbody>
@@ -211,3 +286,4 @@
     }
   </div>
 </div>
+

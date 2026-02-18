@@ -424,7 +424,8 @@ request.setFooter("Siege Social: Abidjan Cocody - Les II Plateaux 7eme Tranche e
         dto.setTotalTTC(invoice.getTotalAfterTaxes());
         dto.setTotalHorsTaxes(invoice.getTotalBeforeTaxes());
         dto.setTotalTaxes(invoice.getTotalTaxes());
-        dto.setToken(mainResp.getToken());
+        dto.setToken(mainResp != null ? mainResp.getToken() : null);
+        dto.setBalanceFunds(mainResp != null ? mainResp.getBalanceFunds() : null);
         return dto;
     }
 

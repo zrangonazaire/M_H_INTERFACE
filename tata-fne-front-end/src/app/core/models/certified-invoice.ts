@@ -8,6 +8,7 @@ export interface CertifiedInvoice {
   totalTTC: number;
   totalHorsTaxes: number;
   totalTaxes: number;
+  balanceFunds?: number;
   token: string;
   items?: ItemDto[];
 }
