@@ -40,7 +40,7 @@ request.setFooter("Siege Social: Abidjan Cocody - Les II Plateaux 7eme Tranche e
         } catch (Exception e) {
             log.warn("Unable to serialize InvoiceSignRequest for logging", e);
         }
-
+log.info("**********************************FNE API URL: {}********", props.getBaseUrl()       );
        return invoiceWebClient.post()
         .uri(props.getSignPath())
         .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())

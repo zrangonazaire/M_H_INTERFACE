@@ -4,6 +4,34 @@
   color: #1f1b16;
 }
 
+.environment-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background: #c62828;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.environment-banner__separator {
+  opacity: 0.85;
+}
+
+.environment-banner__url {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
 .app-header {
   background: #fff5f5;
   border-bottom: 1px solid #ffe0e0;

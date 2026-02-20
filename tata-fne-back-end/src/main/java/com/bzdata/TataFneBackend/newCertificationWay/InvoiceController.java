@@ -1,6 +1,7 @@
 package com.bzdata.TataFneBackend.newCertificationWay;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class InvoiceController {
 
     private final InvoiceCertificationService service;
+    private final InvoiceApiProperties props;
 
     @PostMapping("/certify")
     public JsonNode certify(@RequestBody InvoiceSignRequest request) {
@@ -52,6 +54,17 @@ public class InvoiceController {
     @GetMapping("/by-numero")
     public ResponseEntity<List<InvoiceFneCertifyDto>> getByNumero(@RequestParam String numeroFacture) {
         return ResponseEntity.ok(service.getByNumeroFacture(numeroFacture));
+    }
+
+    @GetMapping("/environment-label")
+    public ResponseEntity<Map<String, String>> getEnvironmentLabel() {
+        String baseUrl = props.getBaseUrl() == null ? "" : props.getBaseUrl().trim();
+        String label = baseUrl.startsWith("https://www")
+                ? "ENVIRONNEMENT DE PRODUCTION"
+                : "ENVIRONNEMENT DE TEST";
+        return ResponseEntity.ok(Map.of(
+                "label", label,
+                "baseUrl", baseUrl));
     }
 
      @PostMapping("/refund-invoice")

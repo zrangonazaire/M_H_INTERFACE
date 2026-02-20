@@ -16,6 +16,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -30,14 +31,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(req -> req
-                        // 🔥 AUTORISER OPTIONS POUR TOUS (CORS PREFLIGHT)
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(req -> req
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🔓 ENDPOINTS D'AUTHENTIFICATION
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
 
-                        // 🔓 SWAGGER / OPENAPI
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -54,7 +53,6 @@ public class SecurityConfig {
                                 "/actuator")
                         .permitAll()
 
-                        // 🔓 ENDPOINTS PUBLIC DE VOTRE FICHIER
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/authenticate",
@@ -64,7 +62,6 @@ public class SecurityConfig {
                                 "/auth/reset-password")
                         .permitAll()
 
-                        // 🔓 ENDPOINTS ROLES ET PERMISSIONS
                         .requestMatchers(
                                 "/roles/**",
                                 "/attributions/**",
@@ -72,31 +69,24 @@ public class SecurityConfig {
                                 "/role-functionalities/**")
                         .permitAll()
 
-                        // 🔓 ENDPOINTS FNE
                         .requestMatchers("/fne/**").permitAll()
 
-                        // 🔓 ENDPOINTS FACTURES
                         .requestMatchers(
                                 "/new-invoices/**",
                                 "/invoices/**")
                         .permitAll()
 
-                        // 🔓 ENDPOINTS SOCIÉTÉS
                         .requestMatchers("/societes/**").permitAll()
-
-                        // 🔓 ENDPOINTS SYNCHRONISATION
                         .requestMatchers("/sync/**").permitAll()
 
-                        // 🔓 ENDPOINTS STRUCTURE
                         .requestMatchers(
                                 "/etablissements/**",
                                 "/departments/**",
-                                "/services/**", "/users/**")
+                                "/services/**",
+                                "/users/**")
                         .permitAll()
 
-                        // 🔐 TOUS LES AUTRES ENDPOINTS NÉCESSITENT UNE AUTHENTIFICATION
                         .anyRequest().authenticated())
-
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -108,58 +98,24 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 🔥 ORIGINES AUTORISÉES
-        configuration.setAllowedOrigins(Arrays.asList(
-                // Adresses de production
-                "http://57.129.119.224",
-                "http://57.129.119.224:80",
-                "http://57.129.119.224:8089",
-                "http://57.129.119.224:4200",
-                "http://51.75.69.139:8089",
-                "http://51.75.69.139:80",
-                "http://51.75.69.139",
-                
-                // Domaines norma-factfne.com
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://57.129.119.224:*",
+                "https://57.129.119.224:*",
+                "http://51.75.69.139:*",
+                "https://51.75.69.139:*",
                 "http://norma-factfne.com",
-                "http://norma-factfne.com:80",
-                "http://norma-factfne.com:8089",
                 "https://norma-factfne.com",
-                "https://norma-factfne.com:80",
-                "https://norma-factfne.com:8089",
-                
-                // www.norma-factfne.com - AJOUTÉ POUR CORRIGER CORS
                 "http://www.norma-factfne.com",
-                "http://www.norma-factfne.com:80",
-                "http://www.norma-factfne.com:8089",
                 "https://www.norma-factfne.com",
-                "https://www.norma-factfne.com:80",
-                "https://www.norma-factfne.com:8089",
-
-                // Wildcards
                 "http://*.norma-factfne.com",
                 "https://*.norma-factfne.com",
+                "http://localhost:*",
+                "https://localhost:*",
+                "http://127.0.0.1:*",
+                "https://127.0.0.1:*",
+                "http://[::1]:*",
+                "https://[::1]:*"));
 
-                // localhost
-                "http://localhost",
-                "http://localhost:80",
-                "http://localhost:4200",
-                "http://localhost:8080",
-                "http://localhost:8089",
-
-                // 127.0.0.1
-                "http://127.0.0.1",
-                "http://127.0.0.1:80",
-                "http://127.0.0.1:4200",
-                "http://127.0.0.1:8080",
-                "http://127.0.0.1:8089",
-
-                // IPv6 localhost
-                "http://[::1]",
-                "http://[::1]:4200",
-                "http://[::1]:8080",
-                "http://[::1]:8089"));
-
-        // 🔥 MÉTHODES HTTP AUTORISÉES
         configuration.setAllowedMethods(Arrays.asList(
                 "OPTIONS",
                 "GET",
@@ -169,7 +125,6 @@ public class SecurityConfig {
                 "PATCH",
                 "HEAD"));
 
-        // 🔥 HEADERS AUTORISÉS
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -183,7 +138,6 @@ public class SecurityConfig {
                 "Cache-Control",
                 "Pragma"));
 
-        // 🔥 HEADERS EXPOSÉS AU FRONTEND
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -191,16 +145,11 @@ public class SecurityConfig {
                 "Access-Control-Allow-Credentials",
                 "Content-Disposition"));
 
-        // 🔥 AUTORISER LES CREDENTIALS (COOKIES, SESSIONS)
         configuration.setAllowCredentials(true);
-
-        // 🔥 TEMPS DE CACHE PREFILGHT (1 HEURE)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
-
 }

@@ -1,3 +1,13 @@
+@if (showEnvironmentBanner()) {
+  <div class="environment-banner">
+    <span class="environment-banner__label">{{ environmentLabel() }}</span>
+    @if (environmentBaseUrl()) {
+      <span class="environment-banner__separator">|</span>
+      <span class="environment-banner__url">{{ environmentBaseUrl() }}</span>
+    }
+  </div>
+}
+
 <main>
   <router-outlet />
 </main>

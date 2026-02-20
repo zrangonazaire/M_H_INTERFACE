@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -31,7 +31,7 @@ export class FneInvoiceService {
   }
 
   certifyFinalFacture(numFacture: string, utilisateur: string, payload: InvoiceSignRequest): Observable<void> {
-    // Nettoyer la payload pour éviter d'envoyer des propriétés undefined/null
+    // Nettoyer la payload pour Ã©viter d'envoyer des propriÃ©tÃ©s undefined/null
     const cleanedPayload = this.cleanPayload(payload);
     console.log('Payload before cleaning:', payload);
     console.log('Payload after cleaning:', cleanedPayload);
@@ -52,7 +52,7 @@ export class FneInvoiceService {
         if (key === 'foreignCurrencyRate') continue;
         
         const cleanedValue = this.cleanPayload(value);
-        // Garder les chaînes vides (""), ne supprimer que undefined/null
+        // Garder les chaÃ®nes vides (""), ne supprimer que undefined/null
         if (cleanedValue !== undefined) {
           cleaned[key] = cleanedValue;
         }
@@ -63,7 +63,7 @@ export class FneInvoiceService {
     return obj;
   }
 
-  // Retourne une URL probable pour télécharger la facture certifiée (backend doit exposer cet endpoint)
+  // Retourne une URL probable pour tÃ©lÃ©charger la facture certifiÃ©e (backend doit exposer cet endpoint)
   getDownloadUrl(numFacture: string): string {
     return `${this.baseUrl}/new-invoices/download/${encodeURIComponent(numFacture)}`;
   }
@@ -75,27 +75,56 @@ export class FneInvoiceService {
   getVerificationUrl(token: string): string {
     if (!token) return '';
 
-    // Si le token est déjà une URL décodée ou encodée (http://... ou http%3A%2F%2F...), retourner l'URL décodée
-    try {
-      const decoded = decodeURIComponent(token);
-      if (/^https?:\/\//i.test(decoded)) return decoded;
-    } catch (e) {
-      // ignore
-    }
-
-    if (/^https?:\/\//i.test(token)) return token;
+    const verificationToken = this.extractVerificationToken(token);
+    if (!verificationToken) return '';
 
     try {
       const u = new URL(this.baseUrl);
-      u.pathname = `/fr/verification/${encodeURIComponent(token)}`;
+      u.pathname = `/fr/verification/${encodeURIComponent(verificationToken)}`;
       u.search = '';
       u.hash = '';
       return u.toString();
-    } catch (e) {
-      return `/fr/verification/${encodeURIComponent(token)}`;
+    } catch {
+      return `/fr/verification/${encodeURIComponent(verificationToken)}`;
     }
   }
 
+  private extractVerificationToken(token: string): string {
+    const raw = token.trim();
+    if (!raw) return '';
+
+    const decoded = this.safeDecodeURIComponent(raw);
+    const candidate = /^https?:\/\//i.test(decoded)
+      ? decoded
+      : (/^https?:\/\//i.test(raw) ? raw : decoded);
+
+    if (!/^https?:\/\//i.test(candidate)) {
+      return decoded;
+    }
+
+    try {
+      const parsed = new URL(candidate);
+      const segments = parsed.pathname.split('/').filter(Boolean);
+      const verificationIndex = segments.findIndex((segment) => segment.toLowerCase() === 'verification');
+
+      if (verificationIndex >= 0 && verificationIndex < segments.length - 1) {
+        const extracted = segments.slice(verificationIndex + 1).join('/');
+        return this.safeDecodeURIComponent(extracted);
+      }
+
+      return this.safeDecodeURIComponent(segments[segments.length - 1] ?? '');
+    } catch {
+      return decoded;
+    }
+  }
+
+  private safeDecodeURIComponent(value: string): string {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
   createRefund(refundDto: RefundInvoiceDTO): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/new-invoices/refund-invoice`, refundDto);
   }
@@ -108,3 +137,4 @@ export class FneInvoiceService {
     return this.http.get<VerificationRefundResponse[]>(`${this.baseUrl}/new-invoices/invoice/${invoiceId}`);
   }
 }
+
