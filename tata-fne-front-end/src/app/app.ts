@@ -1,7 +1,13 @@
 import { Component, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { NavigationEnd, Router, RouterOutlet, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
-import { MenuGauche } from './pages/menu-gauche/menu-gauche';
+import { environment } from '../environments/environment';
+
+type EnvironmentInfo = {
+  label?: string;
+  baseUrl?: string;
+};
 
 @Component({
   selector: 'app-root',
@@ -10,27 +16,48 @@ import { MenuGauche } from './pages/menu-gauche/menu-gauche';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('tata-fne-front-end');
-  protected readonly isHeaderless = signal(false);
+  protected readonly showEnvironmentBanner = signal(false);
+  protected readonly environmentLabel = signal('ENVIRONNEMENT DE TEST');
+  protected readonly environmentBaseUrl = signal('');
 
-  constructor(private readonly router: Router) {
-    this.isHeaderless.set(this.shouldHideHeader(this.router.url));
+  constructor(
+    private readonly router: Router,
+    private readonly http: HttpClient
+  ) {
+    this.showEnvironmentBanner.set(this.shouldShowEnvironmentBanner(this.router.url));
+    this.loadEnvironmentLabel();
 
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        this.isHeaderless.set(this.shouldHideHeader(event.urlAfterRedirects));
+        this.showEnvironmentBanner.set(this.shouldShowEnvironmentBanner(event.urlAfterRedirects));
       });
   }
 
-  private shouldHideHeader(url: string): boolean {
-    return (
-      url.startsWith('/login') ||
-      url.startsWith('/dashboard') ||
-      url.startsWith('/factures-certifiees') ||
-      url.startsWith('/factures-non-certifiees') ||
-      url.startsWith('/parametres') ||
-      url.startsWith('/facture-avoir')
-    );
+  private loadEnvironmentLabel(): void {
+    this.http
+      .get<EnvironmentInfo>(`${environment.apiBaseUrl}/new-invoices/environment-label`)
+      .subscribe({
+        next: (environmentInfo) => {
+          const label = environmentInfo?.label;
+          const baseUrl = environmentInfo?.baseUrl?.trim() ?? '';
+
+          this.environmentBaseUrl.set(baseUrl);
+
+          if (label === 'ENVIRONNEMENT DE PRODUCTION' || label === 'ENVIRONNEMENT DE TEST') {
+            this.environmentLabel.set(label);
+            return;
+          }
+          this.environmentLabel.set('ENVIRONNEMENT DE TEST');
+        },
+        error: () => {
+          this.environmentLabel.set('ENVIRONNEMENT DE TEST');
+          this.environmentBaseUrl.set('');
+        }
+      });
+  }
+
+  private shouldShowEnvironmentBanner(url: string): boolean {
+    return url !== '/' && !url.startsWith('/login');
   }
 }
