@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CertifiedInvoice, ItemDto } from '../../core/models/certified-invoice';
-import { RefundInvoiceDTO, RefundItemDTO } from '../../core/models/refund-invoice.dto';
+import { RefundInvoiceDTO } from '../../core/models/refund-invoice.dto';
 import { FneInvoiceService } from '../../core/services/fne-invoice.service';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { AttributionService } from '../../core/services/attribution.service';
@@ -20,7 +20,7 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
 export class FactureAvoirComponent implements OnInit {
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
-  protected readonly userEtab= signal('Compte');
+  protected readonly userEtab = signal('Compte');
   protected readonly invoice = signal<CertifiedInvoice | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -51,43 +51,36 @@ export class FactureAvoirComponent implements OnInit {
 
     this.loading.set(true);
     this.error.set(null);
-    
-    // Charger la facture par ID
+
+    // 1) Try certified invoices first (existing behavior).
     this.invoiceService.getCertifiedInvoices().subscribe({
       next: (data) => {
-        const invoice = data.find(inv => inv.id === invoiceId);
+        const invoice = data.find((inv) => inv.id === invoiceId);
         if (invoice) {
-          // Ajouter la propriété creditQuantity à chaque item pour le suivi de l'avoir
-          const invoiceWithCredit = {
-            ...invoice,
-            items: invoice.items?.map(item => ({
-              ...item,
-              creditQuantity: item.quantity // Par défaut, tout avoir
-            }))
-          };
-          this.invoice.set(invoiceWithCredit);
-        } else {
-          this.error.set('Facture non trouvée.');
+          this.invoice.set(this.withDefaultCreditQuantities(invoice));
+          this.loading.set(false);
+          return;
         }
-        this.loading.set(false);
+
+        // 2) Fallback for IDs coming from liste-factures-clients.
+        this.loadClientInvoice(invoiceId);
       },
-      error: (err) => {
-        const message = err?.error?.message ?? 'Impossible de charger la facture.';
-        this.error.set(message);
-        this.loading.set(false);
+      error: () => {
+        // If certified endpoint fails, still try client invoice endpoint.
+        this.loadClientInvoice(invoiceId);
       }
     });
   }
 
   protected updateCreditQuantity(item: ItemDto, value: string): void {
     const quantity = parseInt(value, 10);
-    if (isNaN(quantity) || quantity < 0) return;
+    if (Number.isNaN(quantity) || quantity < 0) return;
 
     const currentInvoice = this.invoice();
     if (!currentInvoice || !currentInvoice.items) return;
 
-    const updatedItems = currentInvoice.items.map(i => 
-      i.id === item.id 
+    const updatedItems = currentInvoice.items.map((i) =>
+      i.id === item.id
         ? { ...i, creditQuantity: Math.min(quantity, i.quantity || 0) }
         : i
     );
@@ -112,36 +105,32 @@ export class FactureAvoirComponent implements OnInit {
     const invoice = this.invoice();
     if (!invoice || !invoice.items) return;
 
-    // Créer le DTO pour l'appel API
     const refundDto: RefundInvoiceDTO = {
       invoiceId: invoice.id,
-      items: invoice.items.map(item => ({
+      items: invoice.items.map((item) => ({
         id: item.id,
         quantity: item.creditQuantity || 0
       }))
     };
 
-    // Afficher les valeurs envoyées dans la console
-    console.log('Données envoyées à l\'API:', {
+    console.log('Donnees envoyees a l API:', {
       invoiceId: refundDto.invoiceId,
-      items: refundDto.items.map(item => ({
+      items: refundDto.items.map((item) => ({
         id: item.id,
         quantity: item.quantity
       })),
       totalAmount: this.creditTotal()
     });
 
-    // Appeler l'API backend
     this.invoiceService.createRefund(refundDto).subscribe({
       next: (response) => {
-        console.log('Avoir créé avec succès:', response);
-        this.notificationService.success(`Avoir créé avec succès pour un montant de ${this.formatMoney(this.creditTotal())}`);
-        // Optionnel : rediriger vers la liste des factures après succès
+        console.log('Avoir cree avec succes:', response);
+        this.notificationService.success(`Avoir cree avec succes pour un montant de ${this.formatMoney(this.creditTotal())}`);
         this.router.navigate(['/factures-certifiees']);
       },
       error: (err) => {
-        console.error('Erreur lors de la création de l\'avoir:', err);
-        const errorMessage = err?.error?.message || 'Erreur lors de la création de l\'avoir';
+        console.error('Erreur lors de la creation de l avoir:', err);
+        const errorMessage = err?.error?.message || 'Erreur lors de la creation de l avoir';
         this.notificationService.error(errorMessage);
       }
     });
@@ -151,26 +140,26 @@ export class FactureAvoirComponent implements OnInit {
     const invoice = this.invoice();
     if (!invoice) return;
 
-    // Logique de création de l'avoir pour un item spécifique
-    console.log('Création de l\'avoir pour le produit:', item.description);
-    console.log('Détails de l\'avoir:', {
+    console.log('Creation de l avoir pour le produit:', item.description);
+    console.log('Details de l avoir:', {
       invoiceId: invoice.id,
       productId: item.id,
       quantity: item.creditQuantity,
       amount: (item.amount / (item.quantity || 1)) * (item.creditQuantity || 0)
     });
 
-    // Notification avec Notyf
-    this.notificationService.success(`Avoir créé avec succès pour le produit ${item.description || 'inconnu'} pour un montant de ${this.formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0))}`);
+    this.notificationService.success(
+      `Avoir cree avec succes pour le produit ${item.description || 'inconnu'} pour un montant de ${this.formatMoney((item.amount / (item.quantity || 1)) * (item.creditQuantity || 0))}`
+    );
   }
 
   protected resetQuantities(): void {
     const currentInvoice = this.invoice();
     if (!currentInvoice || !currentInvoice.items) return;
 
-    const resetItems = currentInvoice.items.map(item => ({
+    const resetItems = currentInvoice.items.map((item) => ({
       ...item,
-      creditQuantity: item.quantity // Réinitialiser à la quantité totale
+      creditQuantity: item.quantity
     }));
 
     this.invoice.set({
@@ -205,23 +194,160 @@ export class FactureAvoirComponent implements OnInit {
     try {
       const userId = this.authService.getCurrentId();
       const roleId = this.authService.getCurrentIdRole();
-      
+
       if (!userId || !roleId) {
         this.notificationService.warning('Informations utilisateur manquantes');
         return;
       }
 
       const hasAccess = await this.attributionService.checkRoleExist(Number(userId), Number(roleId)).toPromise();
-      
+
       if (!hasAccess) {
-        this.notificationService.warning('Vous n\'avez pas le droit sur cette fonctionnalité');
+        this.notificationService.warning('Vous n avez pas le droit sur cette fonctionnalite');
         return;
       }
 
       this.router.navigate(['/parametres']);
     } catch (error) {
-      console.error('Erreur lors de la vérification des droits:', error);
-      this.notificationService.error('Erreur lors de la vérification des droits');
+      console.error('Erreur lors de la verification des droits:', error);
+      this.notificationService.error('Erreur lors de la verification des droits');
     }
+  }
+
+  private loadClientInvoice(invoiceId: string): void {
+    this.invoiceService.getClientInvoiceById(invoiceId).subscribe({
+      next: (rawInvoice) => {
+        const mapped = this.mapClientInvoiceToCertified(invoiceId, rawInvoice);
+        if (!mapped) {
+          this.invoice.set(null);
+          this.error.set('Facture non trouvee.');
+          this.loading.set(false);
+          return;
+        }
+
+        this.invoice.set(this.withDefaultCreditQuantities(mapped));
+        this.error.set(null);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        const message = err?.error?.message ?? 'Impossible de charger la facture.';
+        this.invoice.set(null);
+        this.error.set(message);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private withDefaultCreditQuantities(invoice: CertifiedInvoice): CertifiedInvoice {
+    return {
+      ...invoice,
+      items: invoice.items?.map((item) => ({
+        ...item,
+        creditQuantity: item.quantity ?? 0
+      }))
+    };
+  }
+
+  private mapClientInvoiceToCertified(
+    fallbackInvoiceId: string,
+    source: Record<string, unknown>
+  ): CertifiedInvoice | null {
+    if (!source || typeof source !== 'object') {
+      return null;
+    }
+
+    const id = this.readString(source, ['id', 'invoiceId']) || fallbackInvoiceId;
+    const subtype = this.readString(source, ['subtype']).toLowerCase();
+    const invoiceType = subtype === 'normal' ? 'sale' : 'refund';
+
+    const totalTTC = this.readNumber(source, ['totalTTC', 'totalAfterTaxes', 'totalDue', 'amount', 'total']) ?? 0;
+    const totalHorsTaxes = this.readNumber(source, ['totalHorsTaxes', 'totalHT', 'amountWithoutTaxes']) ?? totalTTC;
+    const totalTaxes = this.readNumber(source, ['totalTaxes', 'taxes', 'taxAmount']) ?? Math.max(totalTTC - totalHorsTaxes, 0);
+
+    const rawToken = this.readString(source, ['token', 'externalToken']);
+    const token = this.normalizeToken(rawToken);
+
+    return {
+      id,
+      invoiceType,
+      numeroFactureInterne: this.readString(source, ['numeroFactureInterne', 'invoiceNumber', 'reference']) || id,
+      utilisateurCreateur: this.readString(source, ['utilisateurCreateur', 'createdBy', 'user']) || '-',
+      reference: this.readString(source, ['reference', 'invoiceNumber']) || id,
+      date: this.readString(source, ['date', 'invoiceDate', 'createdAt', 'updatedAt']) || '',
+      totalTTC,
+      totalHorsTaxes,
+      totalTaxes,
+      token,
+      items: this.mapClientItems(source['items'])
+    };
+  }
+
+  private mapClientItems(value: unknown): ItemDto[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((entry, index) => {
+        const item = this.asRecord(entry);
+        if (!item) {
+          return null;
+        }
+
+        return {
+          id: this.readString(item, ['id', 'itemId']) || `item-${index + 1}`,
+          quantity: this.readNumber(item, ['quantity', 'qty']) ?? 0,
+          reference: this.readString(item, ['reference', 'code']) || '',
+          description: this.readString(item, ['description', 'label', 'name']) || '',
+          amount: this.readNumber(item, ['amount', 'total', 'price', 'totalAmount']) ?? 0
+        } as ItemDto;
+      })
+      .filter((item): item is ItemDto => item !== null);
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return null;
+    }
+    return value as Record<string, unknown>;
+  }
+
+  private readString(record: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+    }
+    return '';
+  }
+
+  private readNumber(record: Record<string, unknown>, keys: string[]): number | null {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string' && value.trim()) {
+        const parsed = Number(value.trim().replace(/\s/g, '').replace(',', '.'));
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+    }
+    return null;
+  }
+
+  private normalizeToken(token: string): string {
+    if (!token) {
+      return '';
+    }
+    if (/^https?:\/\//i.test(token)) {
+      return token;
+    }
+    return this.invoiceService.getVerificationUrl(token);
   }
 }

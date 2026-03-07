@@ -1,5 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -10,18 +10,54 @@ import { InvoiceSignRequest } from '../models/invoice-sign-request';
 import { RefundInvoiceDTO } from '../models/refund-invoice.dto';
 import { VerificationRefundResponse } from '../models/verification-refund-response';
 
+export interface FneStoredLoginResponse {
+  username: string;
+  expiresAt: string | null;
+  message: string;
+}
+
+export interface FneClientInvoicesQuery {
+  page: number;
+  perPage: number;
+  fromDate: string;
+  toDate: string;
+  sortBy: string;
+  listing: string;
+  complete: boolean;
+}
+
+export interface FneInvoiceSyncResult {
+  page: number;
+  perPage: number;
+  total: number;
+  fetchedCount: number;
+  savedCount: number;
+  createdCount: number;
+  updatedCount: number;
+  data: Record<string, unknown>[];
+}
+
+type FneEnvironmentInfo = {
+  baseUrl?: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class FneInvoiceService {
   private readonly baseUrl = environment.apiBaseUrl;
+  private readonly environmentInfoUrl = `${this.baseUrl}/new-invoices/environment-label`;
+  private readonly runtimeFneBaseUrlKey = 'tata_fne_runtime_base_url';
+  private runtimeFneBaseUrl = this.readRuntimeFneBaseUrl();
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {
+    this.loadRuntimeFneBaseUrl();
+  }
 
   getInvoices(): Observable<NonCertifiedInvoice[]> {
-    return this.http.get<NonCertifiedInvoice[]>(`${this.baseUrl}/fne/invoices`);
+    return this.http.get<NonCertifiedInvoice[]>(`${this.baseUrl}/invoices`);
   }
 
   certifyMass(invoiceIds: number[]): Observable<InvoiceCertificationResponse[]> {
-    return this.http.post<InvoiceCertificationResponse[]>(`${this.baseUrl}/fne/invoices/certify-mass`, {
+    return this.http.post<InvoiceCertificationResponse[]>(`${this.baseUrl}/invoices/certify-mass`, {
       invoiceIds
     });
   }
@@ -78,6 +114,11 @@ export class FneInvoiceService {
     const verificationToken = this.extractVerificationToken(token);
     if (!verificationToken) return '';
 
+    const runtimeBaseUrl = this.runtimeFneBaseUrl;
+    if (runtimeBaseUrl) {
+      return this.buildVerificationUrl(runtimeBaseUrl, verificationToken);
+    }
+
     try {
       const u = new URL(this.baseUrl);
       u.pathname = `/fr/verification/${encodeURIComponent(verificationToken)}`;
@@ -118,6 +159,51 @@ export class FneInvoiceService {
     }
   }
 
+  private loadRuntimeFneBaseUrl(): void {
+    this.http.get<FneEnvironmentInfo>(this.environmentInfoUrl).subscribe({
+      next: (environmentInfo) => {
+        const configuredBaseUrl = environmentInfo?.baseUrl?.trim() ?? '';
+        if (!configuredBaseUrl) {
+          return;
+        }
+
+        this.runtimeFneBaseUrl = configuredBaseUrl;
+        this.writeRuntimeFneBaseUrl(configuredBaseUrl);
+      },
+      error: () => {
+        // Keep local fallback when endpoint is unreachable.
+      }
+    });
+  }
+
+  private buildVerificationUrl(baseUrl: string, verificationToken: string): string {
+    try {
+      const u = new URL(baseUrl);
+      u.pathname = `/fr/verification/${encodeURIComponent(verificationToken)}`;
+      u.search = '';
+      u.hash = '';
+      return u.toString();
+    } catch {
+      return `/fr/verification/${encodeURIComponent(verificationToken)}`;
+    }
+  }
+
+  private readRuntimeFneBaseUrl(): string {
+    try {
+      return localStorage.getItem(this.runtimeFneBaseUrlKey)?.trim() ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  private writeRuntimeFneBaseUrl(baseUrl: string): void {
+    try {
+      localStorage.setItem(this.runtimeFneBaseUrlKey, baseUrl);
+    } catch {
+      // Ignore local storage errors.
+    }
+  }
+
   private safeDecodeURIComponent(value: string): string {
     try {
       return decodeURIComponent(value);
@@ -135,6 +221,47 @@ export class FneInvoiceService {
 
   getRefundsByInvoice(invoiceId: string): Observable<VerificationRefundResponse[]> {
     return this.http.get<VerificationRefundResponse[]>(`${this.baseUrl}/new-invoices/invoice/${invoiceId}`);
+  }
+
+  loginToFne(username: string, password: string): Observable<FneStoredLoginResponse> {
+    return this.http.post<FneStoredLoginResponse>(`${this.baseUrl}/fne/auth/login`, {
+      username,
+      password
+    });
+  }
+
+  getClientInvoices(query: FneClientInvoicesQuery): Observable<FneInvoiceSyncResult> {
+    const params = new HttpParams()
+      .set('page', String(query.page))
+      .set('perPage', String(query.perPage))
+      .set('fromDate', query.fromDate)
+      .set('toDate', query.toDate)
+      .set('sortBy', query.sortBy)
+      .set('listing', query.listing)
+      .set('complete', String(query.complete));
+
+    return this.http.get<FneInvoiceSyncResult>(`${this.baseUrl}/fne/invoices`, { params });
+  }
+
+  getClientInvoiceById(id: string): Observable<Record<string, unknown>> {
+    return this.http.get<Record<string, unknown>>(`${this.baseUrl}/fne/invoices/${encodeURIComponent(id)}`);
+  }
+
+  syncClientInvoices(query: FneClientInvoicesQuery, username?: string): Observable<FneInvoiceSyncResult> {
+    let params = new HttpParams()
+      .set('page', String(query.page))
+      .set('perPage', String(query.perPage))
+      .set('fromDate', query.fromDate)
+      .set('toDate', query.toDate)
+      .set('sortBy', query.sortBy)
+      .set('listing', query.listing)
+      .set('complete', String(query.complete));
+
+    if (username && username.trim()) {
+      params = params.set('username', username.trim());
+    }
+
+    return this.http.post<FneInvoiceSyncResult>(`${this.baseUrl}/fne/invoices/sync`, null, { params });
   }
 }
 

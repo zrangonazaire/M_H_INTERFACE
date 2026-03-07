@@ -69,7 +69,12 @@ public class SecurityConfig {
                                 "/role-functionalities/**")
                         .permitAll()
 
-                        .requestMatchers("/fne/**").permitAll()
+                        .requestMatchers(
+                                "/fne/**",
+                                "/api/fne/**",
+                                "/api/v1/fne/**",
+                                "/api/v1/api/fne/**")
+                        .permitAll()
 
                         .requestMatchers(
                                 "/new-invoices/**",

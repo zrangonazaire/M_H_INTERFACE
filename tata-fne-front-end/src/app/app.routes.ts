@@ -8,6 +8,7 @@ import { FactureAvoirComponent } from './pages/facture-avoir/facture-avoir.compo
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { AuthGuard } from './core/guards/auth.guard';
+import { ListeFacturesClientsComponent } from './pages/liste-factures-clients/liste-factures-clients.component';
 
 export const routes: Routes = [
   {
@@ -27,6 +28,11 @@ export const routes: Routes = [
   {
     path: 'factures-certifiees',
     component: CertifiedInvoicesComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'liste-factures-clients',
+    component: ListeFacturesClientsComponent,
     canActivate: [AuthGuard]
   },
   {
