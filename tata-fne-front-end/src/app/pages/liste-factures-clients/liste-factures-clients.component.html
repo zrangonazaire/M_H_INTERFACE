@@ -1,0 +1,186 @@
+<div class="layout">
+  <app-menu-gauche></app-menu-gauche>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="header-main">
+        <div class="breadcrumbs">Pages / Liste Factures Clients</div>
+        <p class="eyebrow">Liste Factures Clients</p>
+        <p class="lede">Source: package factureFromFne (login FNE + sync + lecture base locale).</p>
+      </div>
+      <div class="top-actions">
+        <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
+      </div>
+    </header>
+
+    <section class="card auth-card">
+      <h3>Connexion FNE</h3>
+      <div class="auth-grid">
+        <div class="field">
+          <label>Username</label>
+          <input
+            type="text"
+            [ngModel]="fneUsername()"
+            (ngModelChange)="fneUsername.set($event)"
+            placeholder="ex: ncc_12345"
+          />
+        </div>
+        <div class="field">
+          <label>Mot de passe</label>
+          <input
+            type="password"
+            [ngModel]="fnePassword()"
+            (ngModelChange)="fnePassword.set($event)"
+            placeholder="Mot de passe FNE"
+          />
+        </div>
+        <div class="actions">
+          <button class="primary" type="button" [disabled]="isConnecting()" (click)="loginAndSync()">
+            {{ isConnecting() ? 'Connexion...' : 'Se connecter et synchroniser' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card filters-card">
+      <h3>Filtres API FNE</h3>
+      <div class="filters-grid">
+        <div class="field">
+          <label>Page</label>
+          <input type="number" min="1" [ngModel]="page()" (ngModelChange)="page.set(+$event)" />
+        </div>
+        <div class="field">
+          <label>Par page</label>
+          <input type="number" min="1" [ngModel]="perPage()" (ngModelChange)="perPage.set(+$event)" />
+        </div>
+        <div class="field">
+          <label>Du</label>
+          <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+        </div>
+        <div class="field">
+          <label>Au</label>
+          <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+        </div>
+        <div class="field">
+          <label>Sort By</label>
+          <input type="text" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" />
+        </div>
+        <div class="field">
+          <label>Listing</label>
+          <select [ngModel]="listing()" (ngModelChange)="listing.set($event)">
+            @for (option of listingOptions; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        </div>
+        <div class="field checkbox-field">
+          <label>
+            <input type="checkbox" [ngModel]="complete()" (ngModelChange)="complete.set($event)" />
+            Reponse complete
+          </label>
+        </div>
+        <div class="actions actions-double">
+          <button class="secondary" type="button" [disabled]="isLoading()" (click)="syncInvoicesFromFne()">
+            {{ isLoading() ? 'Chargement...' : 'Synchroniser FNE' }}
+          </button>
+          <button class="ghost" type="button" [disabled]="isLoading()" (click)="loadInvoicesFromDatabase()">
+            Charger depuis base
+          </button>
+        </div>
+      </div>
+    </section>
+
+    @if (error()) {
+      <div class="alert error">{{ error() }}</div>
+    }
+    @if (success()) {
+      <div class="alert success">{{ success() }}</div>
+    }
+    @if (isLoading()) {
+      <div class="alert info">Chargement en cours...</div>
+    }
+
+    <section class="card table-card">
+      <div class="table-header">
+        <h3>Factures clients</h3>
+        <span>{{ totalItems() }} element(s)</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Client</th>
+              <th>Montant</th>
+              <th>Token</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of invoices(); track trackByInvoice($index, row)) {
+              <tr>
+                <td>{{ getField(row, ['reference', 'invoiceNumber', 'numeroFacture']) }}</td>
+                <td>{{ getDateField(row) }}</td>
+                <td>
+                  <span
+                    class="type-badge"
+                    [class.type-sale]="getTypeLabel(row) === 'Vente'"
+                    [class.type-refund]="getTypeLabel(row) === 'Avoir'"
+                  >
+                    {{ getTypeLabel(row) }}
+                  </span>
+                </td>
+                <td>{{ getField(row, ['clientCompanyName', 'clientMerchantName', 'customerName', 'client']) }}</td>
+                <td>{{ getAmountField(row) }}</td>
+                <td class="token">
+                  @if (getInvoiceDownloadUrl(row)) {
+                    <a
+                      class="token-link"
+                      [href]="getInvoiceDownloadUrl(row)"
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {{ getInvoiceDownloadUrl(row) }}
+                    </a>
+                  } @else {
+                    <span class="muted">-</span>
+                  }
+                </td>
+                <td>
+                  @if (isSaleInvoice(row)) {
+                    @if (hasExistingCreditNote(row)) {
+                      @if (getCreditNoteDownloadUrl(row)) {
+                        <a
+                          class="action-link"
+                          [href]="getCreditNoteDownloadUrl(row)"
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          Avoir existant
+                        </a>
+                      } @else {
+                        <span class="muted">Avoir existant</span>
+                      }
+                    } @else {
+                      <button class="action-btn" type="button" [disabled]="!hasFacturierRole()" (click)="makeCreditNote(row)">
+                        Faire un avoir
+                      </button>
+                    }
+                  } @else {
+                    <span class="muted">Avoir existant</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">Aucune donnee a afficher.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
