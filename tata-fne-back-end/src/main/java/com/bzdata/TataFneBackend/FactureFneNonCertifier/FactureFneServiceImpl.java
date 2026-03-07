@@ -576,19 +576,9 @@ public class FactureFneServiceImpl implements FactureFneService {
     }
 
     private BigDecimal parseBigDecimal(String value, List<String> errors, int rowNumber, String fieldName) {
-        if (value == null) {
+        String cleaned = normalizeNumericString(value);
+        if (cleaned == null) {
             return null;
-        }
-        String cleaned = value.trim();
-        if (cleaned.isEmpty()) {
-            return null;
-        }
-        cleaned = cleaned.replace("\u00A0", "");
-        cleaned = cleaned.replace(" ", "");
-        if (cleaned.contains(",") && !cleaned.contains(".")) {
-            cleaned = cleaned.replace(",", ".");
-        } else if (cleaned.contains(",") && cleaned.contains(".")) {
-            cleaned = cleaned.replace(",", "");
         }
         try {
             return new BigDecimal(cleaned);
@@ -596,6 +586,57 @@ public class FactureFneServiceImpl implements FactureFneService {
             errors.add("Row " + rowNumber + ": invalid number for " + fieldName + " -> " + value);
             return null;
         }
+    }
+
+    private String normalizeNumericString(String value) {
+        if (value == null) {
+            return null;
+        }
+        String cleaned = value.trim();
+        if (cleaned.isEmpty()) {
+            return null;
+        }
+
+        cleaned = cleaned
+                .replace("\u00A0", "")
+                .replace("\u202F", "")
+                .replace(" ", "")
+                .replace("'", "")
+                .replaceAll("[^0-9,\\.\\-+]", "");
+
+        if (cleaned.isEmpty() || "-".equals(cleaned) || "+".equals(cleaned)) {
+            return null;
+        }
+        if (cleaned.startsWith("+")) {
+            cleaned = cleaned.substring(1);
+        }
+        return normalizeNumericSeparators(cleaned);
+    }
+
+    private String normalizeNumericSeparators(String value) {
+        boolean hasComma = value.contains(",");
+        boolean hasDot = value.contains(".");
+
+        if (hasComma && hasDot) {
+            boolean decimalIsComma = value.lastIndexOf(',') > value.lastIndexOf('.');
+            if (decimalIsComma) {
+                return value.replace(".", "").replace(',', '.');
+            }
+            return value.replace(",", "");
+        }
+
+        if (hasComma) {
+            if (value.matches("^-?\\d{1,3}(,\\d{3})+$")) {
+                return value.replace(",", "");
+            }
+            return value.replace(',', '.');
+        }
+
+        if (hasDot && value.matches("^-?\\d{1,3}(\\.\\d{3})+$")) {
+            return value.replace(".", "");
+        }
+
+        return value;
     }
 
     private Boolean parseBoolean(String value) {

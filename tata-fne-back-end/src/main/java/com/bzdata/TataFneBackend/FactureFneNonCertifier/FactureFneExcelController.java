@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -60,7 +61,7 @@ public class FactureFneExcelController {
                 return new ExcelReadResult(List.of(), List.of(), 0);
             }
 
-            DataFormatter formatter = new DataFormatter();
+            DataFormatter formatter = new DataFormatter(Locale.FRANCE);
             List<String> headers = new ArrayList<>();
             int lastCell = Math.max(headerRow.getLastCellNum(), 0);
             for (int col = 0; col < lastCell; col++) {

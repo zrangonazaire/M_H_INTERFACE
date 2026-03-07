@@ -774,21 +774,47 @@ export class FacturesNonCertifieesComponent {
 
   private toNumber(value: string | number | null | undefined): number | null {
     if (value === null || value === undefined) return null;
-    if (typeof value === 'number') return Number.isNaN(value) ? null : value;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 
     let s = (value as string).trim();
     if (!s) return null;
-    s = s.replace(/[^-\d.,-]/g, '');
-
-    if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
-      s = s.replace(/\./g, '');
-      s = s.replace(/,/g, '.');
-    } else if (s.indexOf(',') !== -1) {
-      s = s.replace(/,/g, '.');
+    s = s
+      .replace(/[\u00A0\u202F\s']/g, '')
+      .replace(/[^\d,.\-+]/g, '');
+    if (!s || s === '-' || s === '+') return null;
+    if (s.startsWith('+')) {
+      s = s.slice(1);
     }
+    s = this.normalizeNumericSeparators(s);
 
     const num = Number(s);
-    return Number.isNaN(num) ? null : num;
+    return Number.isFinite(num) ? num : null;
+  }
+
+  private normalizeNumericSeparators(value: string): string {
+    const hasComma = value.includes(',');
+    const hasDot = value.includes('.');
+
+    if (hasComma && hasDot) {
+      const decimalIsComma = value.lastIndexOf(',') > value.lastIndexOf('.');
+      if (decimalIsComma) {
+        return value.replace(/\./g, '').replace(',', '.');
+      }
+      return value.replace(/,/g, '');
+    }
+
+    if (hasComma) {
+      if (/^-?\d{1,3}(,\d{3})+$/.test(value)) {
+        return value.replace(/,/g, '');
+      }
+      return value.replace(/,/g, '.');
+    }
+
+    if (hasDot && /^-?\d{1,3}(\.\d{3})+$/.test(value)) {
+      return value.replace(/\./g, '');
+    }
+
+    return value;
   }
 
   private normalizePaymentMethod(value?: string | null): string {
