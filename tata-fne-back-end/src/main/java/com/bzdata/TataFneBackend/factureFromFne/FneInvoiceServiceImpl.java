@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,7 +74,7 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
             JsonNode root = fetchInvoicesWithRefresh(pageQuery, username);
             ArrayNode dataArray = extractDataArray(root);
 
-            SyncCounters counters = savePage(dataArray, fetchedAt, processedExternalIds);
+            SyncCounters counters = savePage(dataArray, fetchedAt, processedExternalIds, query.resolvedListing());
             savedCount += counters.savedCount();
             createdCount += counters.createdCount();
             updatedCount += counters.updatedCount();
@@ -145,7 +146,12 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
         return (ArrayNode) dataNode;
     }
 
-    private SyncCounters savePage(ArrayNode dataArray, Instant fetchedAt, Set<String> processedExternalIds) {
+    private SyncCounters savePage(
+            ArrayNode dataArray,
+            Instant fetchedAt,
+            Set<String> processedExternalIds,
+            String defaultListing
+    ) {
         Map<String, FneReceivedInvoiceEntity> existingByExternalId = loadExistingByExternalId(dataArray);
         List<FneReceivedInvoiceEntity> toSave = new ArrayList<>();
 
@@ -166,7 +172,7 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
                 updatedCount++;
             }
 
-            fillEntity(entity, invoiceNode, fetchedAt);
+            fillEntity(entity, invoiceNode, fetchedAt, defaultListing);
             toSave.add(entity);
         }
 
@@ -197,8 +203,15 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
                         cb.greaterThanOrEqualTo(root.get("invoiceDate"), fromInclusive),
                         cb.lessThan(root.get("invoiceDate"), toExclusive)
                 );
+        String listing = query.resolvedListing().toLowerCase(Locale.ROOT);
+        Specification<FneReceivedInvoiceEntity> byListing = (root, cq, cb) ->
+                cb.or(
+                        cb.equal(cb.lower(root.get("source")), listing),
+                        cb.equal(cb.lower(root.get("source")), "api"),
+                        cb.isNull(root.get("source"))
+                );
 
-        Page<FneReceivedInvoiceEntity> resultPage = receivedInvoiceRepository.findAll(byDateRange, pageable);
+        Page<FneReceivedInvoiceEntity> resultPage = receivedInvoiceRepository.findAll(byDateRange.and(byListing), pageable);
         Map<String, CreditNoteMetadata> creditNotesByParentId = loadCreditNotesByParentId(resultPage.getContent());
         ArrayNode data = objectMapper.createArrayNode();
         for (FneReceivedInvoiceEntity entity : resultPage.getContent()) {
@@ -421,7 +434,7 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
         return map;
     }
 
-    private void fillEntity(FneReceivedInvoiceEntity entity, JsonNode invoiceNode, Instant fetchedAt) {
+    private void fillEntity(FneReceivedInvoiceEntity entity, JsonNode invoiceNode, Instant fetchedAt, String defaultListing) {
         entity.setExternalToken(asText(invoiceNode, "token"));
         entity.setReference(asText(invoiceNode, "reference"));
         entity.setParentId(asText(invoiceNode, "parentId"));
@@ -435,7 +448,11 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
         entity.setStatus(asText(invoiceNode, "status"));
         entity.setClientNcc(asText(invoiceNode, "clientNcc"));
         entity.setClientCompanyName(asText(invoiceNode, "clientCompanyName"));
-        entity.setSource(asText(invoiceNode, "source"));
+        String source = asText(invoiceNode, "source");
+        if (!StringUtils.hasText(source) || "api".equalsIgnoreCase(source)) {
+            source = defaultListing;
+        }
+        entity.setSource(StringUtils.hasText(source) ? source.toLowerCase(Locale.ROOT) : null);
 
         JsonNode companyNode = invoiceNode.path("company");
         if (companyNode.isObject()) {

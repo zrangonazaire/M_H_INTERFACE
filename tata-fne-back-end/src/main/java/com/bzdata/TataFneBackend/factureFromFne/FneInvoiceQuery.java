@@ -26,7 +26,14 @@ public record FneInvoiceQuery(
     }
 
     public String resolvedListing() {
-        return StringUtils.hasText(listing) ? listing.trim() : "issued";
+        if (!StringUtils.hasText(listing)) {
+            return "issued";
+        }
+        String normalized = listing.trim().toLowerCase();
+        return switch (normalized) {
+            case "received", "fournisseur", "fournisseurs", "supplier", "suppliers" -> "received";
+            default -> "issued";
+        };
     }
 
     public boolean resolvedComplete() {

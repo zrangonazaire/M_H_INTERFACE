@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, firstValueFrom } from 'rxjs';
 
 import { AuthenticationService } from '../../core/services/authentication.service';
 import {
@@ -23,6 +23,7 @@ type InvoiceRow = Record<string, unknown>;
 })
 export class ListeFacturesClientsComponent {
   private readonly fneUsernameStorageKey = 'tata_fne_external_username';
+  private readonly invoiceAmountKeys = ['totalDue', 'totalAfterTaxes', 'totalTTC', 'amount', 'total'];
 
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
@@ -33,22 +34,46 @@ export class ListeFacturesClientsComponent {
 
   protected readonly page = signal(1);
   protected readonly perPage = signal(12);
-  protected readonly fromDate = signal(this.toDateInputValue(this.addDays(new Date(), -14)));
+  protected readonly fromDate = signal('2025-12-01');
   protected readonly toDate = signal(this.toDateInputValue(new Date()));
   protected readonly sortBy = signal('-date');
-  protected readonly listing = signal('issued');
+  protected readonly listing = signal<'issued' | 'received'>('issued');
   protected readonly complete = signal(true);
 
   protected readonly isConnecting = signal(false);
   protected readonly isLoading = signal(false);
+  protected readonly isExportingAll = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
 
   protected readonly rawResponse = signal<FneInvoiceSyncResult | null>(null);
   protected readonly invoices = signal<InvoiceRow[]>([]);
 
-  protected readonly listingOptions = ['issued', 'received'];
+  protected readonly listingOptions: Array<'issued' | 'received'> = ['issued', 'received'];
+  protected readonly tablePageSizeOptions = [10, 25, 50, 100];
   protected readonly totalItems = computed(() => this.rawResponse()?.total ?? this.invoices().length);
+  protected readonly currentTablePage = computed(() => this.rawResponse()?.page ?? this.page());
+  protected readonly currentTablePageSize = computed(() => this.rawResponse()?.perPage ?? this.perPage());
+  protected readonly totalTablePages = computed(() => {
+    const pageSize = Math.max(1, this.currentTablePageSize());
+    return Math.max(1, Math.ceil(this.totalItems() / pageSize));
+  });
+  protected readonly paginatedInvoices = computed(() => this.invoices());
+  protected readonly tableStartIndex = computed(() => {
+    const total = this.totalItems();
+    if (total === 0) {
+      return 0;
+    }
+    const page = Math.min(Math.max(this.currentTablePage(), 1), this.totalTablePages());
+    return (page - 1) * this.currentTablePageSize() + 1;
+  });
+  protected readonly tableEndIndex = computed(() => {
+    const total = this.totalItems();
+    if (total === 0) {
+      return 0;
+    }
+    return Math.min(this.tableStartIndex() + this.currentTablePageSize() - 1, total);
+  });
 
   constructor(
     private readonly authService: AuthenticationService,
@@ -58,13 +83,10 @@ export class ListeFacturesClientsComponent {
     this.userFullName.set(this.authService.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.authService.getCurrentPdv() ?? 'Compte');
     this.userEtab.set(this.authService.getCurrentEtabFNE() ?? 'Compte');
-
-    if (this.fneUsername()) {
-      this.loadInvoicesFromDatabase();
-    }
+    this.loadInvoicesFromDatabase();
   }
 
-  protected loginAndSync(): void {
+  protected connectToFne(): void {
     const username = this.fneUsername().trim();
     const password = this.fnePassword().trim();
 
@@ -85,7 +107,6 @@ export class ListeFacturesClientsComponent {
           this.fnePassword.set('');
           localStorage.setItem(this.fneUsernameStorageKey, username);
           this.success.set(res.message || 'Connexion FNE reussie.');
-          this.syncInvoicesFromFne();
         },
         error: (err) => {
           this.error.set(this.extractErrorMessage(err, 'Connexion FNE impossible.'));
@@ -103,15 +124,16 @@ export class ListeFacturesClientsComponent {
       .subscribe({
         next: (response) => {
           this.rawResponse.set(response);
+          this.syncQueryStateFromResponse(response);
           const rows = this.extractRows(response.data);
-          this.invoices.set(rows);
+          this.setInvoices(rows);
           this.success.set(
             `${rows.length} facture(s) synchronisee(s). `
             + `Sauvegardees: ${response.savedCount}, Creees: ${response.createdCount}, Mises a jour: ${response.updatedCount}.`
           );
         },
         error: (err) => {
-          this.invoices.set([]);
+          this.setInvoices([]);
           this.rawResponse.set(null);
           this.error.set(this.extractErrorMessage(err, 'Impossible de synchroniser les factures depuis la FNE.'));
           this.success.set(null);
@@ -128,12 +150,14 @@ export class ListeFacturesClientsComponent {
       .subscribe({
         next: (response) => {
           this.rawResponse.set(response);
+          this.syncQueryStateFromResponse(response);
           const rows = this.extractRows(response.data);
-          this.invoices.set(rows);
-          this.success.set(`${rows.length} facture(s) chargee(s) depuis la base locale.`);
+          const total = Number.isFinite(response.total) && response.total > 0 ? response.total : rows.length;
+          this.setInvoices(rows);
+          this.success.set(`${rows.length} facture(s) affichee(s) sur ${total} facture(s) total(es) depuis la base locale.`);
         },
         error: (err) => {
-          this.invoices.set([]);
+          this.setInvoices([]);
           this.rawResponse.set(null);
           this.error.set(this.extractErrorMessage(err, 'Impossible de charger la liste des factures clients.'));
           this.success.set(null);
@@ -158,15 +182,122 @@ export class ListeFacturesClientsComponent {
   }
 
   protected getAmountField(row: InvoiceRow): string {
-    const amount = this.readNumeric(row, ['totalDue', 'totalAfterTaxes', 'totalTTC', 'amount', 'total']);
+    const amount = this.readNumeric(row, this.invoiceAmountKeys);
     if (amount === null) {
       return '-';
     }
+    const displayAmount = this.isSaleInvoice(row) ? amount : Math.abs(amount);
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'XOF',
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(displayAmount);
+  }
+
+  protected goToPreviousTablePage(): void {
+    const currentPage = this.currentTablePage();
+    if (currentPage <= 1) {
+      return;
+    }
+    this.page.set(currentPage - 1);
+    this.reloadCurrentTablePage();
+  }
+
+  protected goToNextTablePage(): void {
+    const currentPage = this.currentTablePage();
+    if (currentPage >= this.totalTablePages()) {
+      return;
+    }
+    this.page.set(currentPage + 1);
+    this.reloadCurrentTablePage();
+  }
+
+  protected onTablePageSizeChange(value: string | number): void {
+    const next = Number(value);
+    if (!Number.isFinite(next) || next <= 0) {
+      return;
+    }
+    this.perPage.set(next);
+    this.page.set(1);
+    this.reloadCurrentTablePage();
+  }
+
+  protected onListingChange(value: string): void {
+    const normalized = this.normalizeListingValue(value);
+    if (this.listing() === normalized) {
+      return;
+    }
+    this.listing.set(normalized);
+    this.page.set(1);
+    this.loadInvoicesFromDatabase();
+  }
+
+  protected exportInvoicesToExcel(): void {
+    const rows = this.paginatedInvoices();
+    if (rows.length === 0) {
+      this.error.set('Aucune donnee a exporter.');
+      this.success.set(null);
+      return;
+    }
+
+    this.error.set(null);
+    this.exportRowsToExcel(rows, 'factures-clients');
+    this.success.set(`${rows.length} ligne(s) exportee(s) vers Excel.`);
+  }
+
+  protected async exportAllInvoicesToExcel(): Promise<void> {
+    if (this.isExportingAll()) {
+      return;
+    }
+    if (this.totalItems() === 0) {
+      this.error.set('Aucune donnee a exporter.');
+      this.success.set(null);
+      return;
+    }
+
+    this.isExportingAll.set(true);
+    this.error.set(null);
+
+    try {
+      const exportPageSize = 100;
+      const baseQuery = this.buildQuery();
+      const firstPage = await firstValueFrom(
+        this.invoiceService.getClientInvoices({
+          ...baseQuery,
+          page: 1,
+          perPage: exportPageSize
+        })
+      );
+
+      const rows: InvoiceRow[] = this.extractRows(firstPage.data);
+      const total = Number.isFinite(firstPage.total) && firstPage.total > 0 ? firstPage.total : rows.length;
+      const totalPages = Math.max(1, Math.ceil(total / exportPageSize));
+
+      for (let pageIndex = 2; pageIndex <= totalPages; pageIndex++) {
+        const pageResult = await firstValueFrom(
+          this.invoiceService.getClientInvoices({
+            ...baseQuery,
+            page: pageIndex,
+            perPage: exportPageSize
+          })
+        );
+        rows.push(...this.extractRows(pageResult.data));
+      }
+
+      if (rows.length === 0) {
+        this.error.set('Aucune donnee a exporter.');
+        this.success.set(null);
+        return;
+      }
+
+      this.exportRowsToExcel(rows, 'factures-clients-toutes-pages');
+      this.success.set(`${rows.length} ligne(s) exportee(s) vers Excel (toutes les pages).`);
+    } catch (err) {
+      this.error.set(this.extractErrorMessage(err, 'Impossible d exporter toutes les donnees vers Excel.'));
+      this.success.set(null);
+    } finally {
+      this.isExportingAll.set(false);
+    }
   }
 
   protected getDateField(row: InvoiceRow): string {
@@ -246,6 +377,23 @@ export class ListeFacturesClientsComponent {
     return authorities.includes('FACTURIER');
   }
 
+  private setInvoices(rows: InvoiceRow[]): void {
+    this.invoices.set(rows);
+  }
+
+  private reloadCurrentTablePage(): void {
+    this.loadInvoicesFromDatabase();
+  }
+
+  private syncQueryStateFromResponse(response: FneInvoiceSyncResult): void {
+    if (Number.isFinite(response.page) && response.page > 0) {
+      this.page.set(response.page);
+    }
+    if (Number.isFinite(response.perPage) && response.perPage > 0) {
+      this.perPage.set(response.perPage);
+    }
+  }
+
   private extractRows(payload: unknown): InvoiceRow[] {
     const directArray = this.asInvoiceRows(payload);
     if (directArray.length > 0) {
@@ -294,7 +442,7 @@ export class ListeFacturesClientsComponent {
       fromDate: this.fromDate(),
       toDate: this.toDate(),
       sortBy: this.sortBy(),
-      listing: this.listing(),
+      listing: this.normalizeListingValue(this.listing()),
       complete: this.complete()
     };
   }
@@ -334,6 +482,82 @@ export class ListeFacturesClientsComponent {
       }
     }
     return null;
+  }
+
+  private normalizeListingValue(value: string | null | undefined): 'issued' | 'received' {
+    const normalized = (value ?? '').toLowerCase().trim();
+    if (
+      normalized === 'received'
+      || normalized === 'fournisseurs'
+      || normalized === 'fournisseur'
+      || normalized === 'supplier'
+      || normalized === 'suppliers'
+    ) {
+      return 'received';
+    }
+    return 'issued';
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private exportRowsToExcel(rows: InvoiceRow[], filePrefix: string): void {
+    const headers = ['Reference', 'Date', 'Type', 'Client', 'Montant', 'Token'];
+    const lines = rows.map((row) => {
+      const amount = this.readNumeric(row, this.invoiceAmountKeys);
+      const displayAmount = amount === null ? '' : (this.isSaleInvoice(row) ? amount : Math.abs(amount));
+      return [
+        this.getField(row, ['reference', 'invoiceNumber', 'numeroFacture']),
+        this.getDateField(row),
+        this.getTypeLabel(row),
+        this.getField(row, ['clientCompanyName', 'clientMerchantName', 'customerName', 'client']),
+        displayAmount === '' ? '' : String(displayAmount),
+        this.getInvoiceDownloadUrl(row)
+      ];
+    });
+
+    const tableHeader = headers.map((h) => `<th>${this.escapeHtml(h)}</th>`).join('');
+    const tableRows = lines
+      .map((line) => `<tr>${line.map((value) => `<td>${this.escapeHtml(value)}</td>`).join('')}</tr>`)
+      .join('');
+    const workbook = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head><meta charset="UTF-8"></head>
+        <body>
+          <table>
+            <thead><tr>${tableHeader}</tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filePrefix}-${this.buildExportTimestamp()}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  private buildExportTimestamp(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, '0');
+    const day = `${now.getDate()}`.padStart(2, '0');
+    const hours = `${now.getHours()}`.padStart(2, '0');
+    const minutes = `${now.getMinutes()}`.padStart(2, '0');
+    const seconds = `${now.getSeconds()}`.padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {

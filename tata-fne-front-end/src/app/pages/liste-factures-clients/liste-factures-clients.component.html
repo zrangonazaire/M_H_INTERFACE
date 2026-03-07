@@ -35,8 +35,8 @@
           />
         </div>
         <div class="actions">
-          <button class="primary" type="button" [disabled]="isConnecting()" (click)="loginAndSync()">
-            {{ isConnecting() ? 'Connexion...' : 'Se connecter et synchroniser' }}
+          <button class="primary" type="button" [disabled]="isConnecting()" (click)="connectToFne()">
+            {{ isConnecting() ? 'Connexion...' : 'Se connecter' }}
           </button>
         </div>
       </div>
@@ -45,14 +45,6 @@
     <section class="card filters-card">
       <h3>Filtres API FNE</h3>
       <div class="filters-grid">
-        <div class="field">
-          <label>Page</label>
-          <input type="number" min="1" [ngModel]="page()" (ngModelChange)="page.set(+$event)" />
-        </div>
-        <div class="field">
-          <label>Par page</label>
-          <input type="number" min="1" [ngModel]="perPage()" (ngModelChange)="perPage.set(+$event)" />
-        </div>
         <div class="field">
           <label>Du</label>
           <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
@@ -67,24 +59,15 @@
         </div>
         <div class="field">
           <label>Listing</label>
-          <select [ngModel]="listing()" (ngModelChange)="listing.set($event)">
+          <select [ngModel]="listing()" (ngModelChange)="onListingChange($event)">
             @for (option of listingOptions; track option) {
-              <option [value]="option">{{ option }}</option>
+              <option [ngValue]="option">{{ option }}</option>
             }
           </select>
-        </div>
-        <div class="field checkbox-field">
-          <label>
-            <input type="checkbox" [ngModel]="complete()" (ngModelChange)="complete.set($event)" />
-            Reponse complete
-          </label>
         </div>
         <div class="actions actions-double">
           <button class="secondary" type="button" [disabled]="isLoading()" (click)="syncInvoicesFromFne()">
             {{ isLoading() ? 'Chargement...' : 'Synchroniser FNE' }}
-          </button>
-          <button class="ghost" type="button" [disabled]="isLoading()" (click)="loadInvoicesFromDatabase()">
-            Charger depuis base
           </button>
         </div>
       </div>
@@ -103,7 +86,15 @@
     <section class="card table-card">
       <div class="table-header">
         <h3>Factures clients</h3>
-        <span>{{ totalItems() }} element(s)</span>
+        <div class="table-header-actions">
+          <span>{{ totalItems() }} element(s)</span>
+          <button class="ghost export-btn" type="button" [disabled]="invoices().length === 0 || isExportingAll()" (click)="exportInvoicesToExcel()">
+            Exporter Excel
+          </button>
+          <button class="ghost export-btn" type="button" [disabled]="totalItems() === 0 || isExportingAll()" (click)="exportAllInvoicesToExcel()">
+            {{ isExportingAll() ? 'Export global...' : 'Exporter tout Excel' }}
+          </button>
+        </div>
       </div>
       <div class="table-wrapper">
         <table>
@@ -119,7 +110,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of invoices(); track trackByInvoice($index, row)) {
+            @for (row of paginatedInvoices(); track trackByInvoice($index, row)) {
               <tr>
                 <td>{{ getField(row, ['reference', 'invoiceNumber', 'numeroFacture']) }}</td>
                 <td>{{ getDateField(row) }}</td>
@@ -180,6 +171,28 @@
             }
           </tbody>
         </table>
+      </div>
+      <div class="table-pagination">
+        <div class="pagination-info">
+          Affichage {{ tableStartIndex() }} a {{ tableEndIndex() }} sur {{ totalItems() }} ligne(s)
+        </div>
+        <div class="pagination-controls">
+          <label>
+            Taille
+            <select [ngModel]="currentTablePageSize()" (ngModelChange)="onTablePageSizeChange($event)">
+              @for (size of tablePageSizeOptions; track size) {
+                <option [ngValue]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+          <button class="ghost page-btn" type="button" [disabled]="currentTablePage() <= 1" (click)="goToPreviousTablePage()">
+            Precedent
+          </button>
+          <span class="page-state">{{ currentTablePage() }} / {{ totalTablePages() }}</span>
+          <button class="ghost page-btn" type="button" [disabled]="currentTablePage() >= totalTablePages()" (click)="goToNextTablePage()">
+            Suivant
+          </button>
+        </div>
       </div>
     </section>
   </div>
