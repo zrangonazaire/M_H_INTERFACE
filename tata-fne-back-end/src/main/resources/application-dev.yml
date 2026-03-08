@@ -2,7 +2,7 @@
 ###########################################################
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5434/modern_hygiene_db
+    url: jdbc:postgresql://localhost:5435/modern_hygiene_db
     username: username
     password: password
     driver-class-name: org.postgresql.Driver
@@ -47,23 +47,23 @@ application:
 server:
   port: 8089
 
-fne:
-  base-url: http://54.247.95.108/ws
-  sign-path: /external/invoices/sign
-  bearer-token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
-
-invoice:
-  api:
-    base-url: http://54.247.95.108
-    sign-path: /ws/external/invoices/sign    
-    token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
 # fne:
-#   base-url:  https://www.services.fne.dgi.gouv.ci/ws
+#   base-url: http://54.247.95.108/ws
 #   sign-path: /external/invoices/sign
-#   bearer-token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
+#   bearer-token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
 
 # invoice:
 #   api:
-#     base-url: https://www.services.fne.dgi.gouv.ci/ws
-#     sign-path: /external/invoices/sign
-#     token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
+#     base-url: http://54.247.95.108
+#     sign-path: /ws/external/invoices/sign    
+#     token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
+fne:
+  base-url:  https://www.services.fne.dgi.gouv.ci/ws
+  sign-path: /external/invoices/sign
+  bearer-token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
+
+invoice:
+  api:
+    base-url: https://www.services.fne.dgi.gouv.ci/ws
+    sign-path: /external/invoices/sign
+    token: qroYuiOXtt32EcsPa9Wg6JWjhEyLNOWr
