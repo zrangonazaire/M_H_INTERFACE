@@ -536,21 +536,12 @@ public VerificationRefundResponse refundInvoice(RefundInvoiceDTO refundDto) {
     // ===== 2) APPEL API FNE =====
     VerificationRefundResponseDto response;
     try {
-        log.info("Url  is {}",props.getBaseUrl());
-        // return invoiceWebClient.post()
-        //         .uri(props.getSignPath() + "ws/external/invoices/{id}/refund", refundDto.getInvoiceId())
-        //         .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
-        //         .contentType(MediaType.APPLICATION_JSON)
-        //         .accept(MediaType.APPLICATION_JSON)
-        //         .bodyValue(refundDto)
-        //         .retrieve()
-        //         .bodyToMono(JsonNode.class)
-        //         .block();
-        
+        String refundPath = "/external/invoices/{id}/refund";
+        log.info("Calling FNE refund API at {}{}", props.getBaseUrl(), refundPath);
+
         response = invoiceWebClient
                 .post()
-               
-                .uri(props.getBaseUrl() + "/ws/external/invoices/{id}/refund", refundDto.getInvoiceId())
+                .uri(refundPath, refundDto.getInvoiceId())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)

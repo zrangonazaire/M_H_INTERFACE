@@ -54,8 +54,8 @@ server:
 
 # invoice:
 #   api:
-#     base-url: http://54.247.95.108
-#     sign-path: /ws/external/invoices/sign    
+#     base-url: http://54.247.95.108/ws
+#     sign-path: /external/invoices/sign
 #     token: Ql16HNhOhdXxn52RvS4qNy2JOyyyuBxv
 fne:
   base-url:  https://www.services.fne.dgi.gouv.ci/ws
