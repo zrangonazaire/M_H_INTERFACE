@@ -1,6 +1,7 @@
 ﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { CertifiedInvoice, ItemDto } from '../../core/models/certified-invoice';
 import { RefundInvoiceDTO } from '../../core/models/refund-invoice.dto';
@@ -23,6 +24,7 @@ export class FactureAvoirComponent implements OnInit {
   protected readonly userEtab = signal('Compte');
   protected readonly invoice = signal<CertifiedInvoice | null>(null);
   protected readonly loading = signal(false);
+  protected readonly creatingCreditNote = signal(false);
   protected readonly error = signal<string | null>(null);
 
   constructor(
@@ -102,6 +104,10 @@ export class FactureAvoirComponent implements OnInit {
   }
 
   protected createCreditNote(): void {
+    if (this.creatingCreditNote()) {
+      return;
+    }
+
     const invoice = this.invoice();
     if (!invoice || !invoice.items) return;
 
@@ -122,18 +128,21 @@ export class FactureAvoirComponent implements OnInit {
       totalAmount: this.creditTotal()
     });
 
-    this.invoiceService.createRefund(refundDto).subscribe({
-      next: (response) => {
-        console.log('Avoir cree avec succes:', response);
-        this.notificationService.success(`Avoir cree avec succes pour un montant de ${this.formatMoney(this.creditTotal())}`);
-        this.router.navigate(['/factures-certifiees']);
-      },
-      error: (err) => {
-        console.error('Erreur lors de la creation de l avoir:', err);
-        const errorMessage = err?.error?.message || 'Erreur lors de la creation de l avoir';
-        this.notificationService.error(errorMessage);
-      }
-    });
+    this.creatingCreditNote.set(true);
+    this.invoiceService.createRefund(refundDto)
+      .pipe(finalize(() => this.creatingCreditNote.set(false)))
+      .subscribe({
+        next: (response) => {
+          console.log('Avoir cree avec succes:', response);
+          this.notificationService.success(`Avoir cree avec succes pour un montant de ${this.formatMoney(this.creditTotal())}`);
+          this.router.navigate(['/factures-certifiees']);
+        },
+        error: (err) => {
+          console.error('Erreur lors de la creation de l avoir:', err);
+          const errorMessage = err?.error?.message || 'Erreur lors de la creation de l avoir';
+          this.notificationService.error(errorMessage);
+        }
+      });
   }
 
   protected createCreditNoteForItem(item: ItemDto): void {

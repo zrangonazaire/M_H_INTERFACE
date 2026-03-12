@@ -155,8 +155,8 @@
                         <span class="muted">Avoir existant</span>
                       }
                     } @else {
-                      <button class="action-btn" type="button" [disabled]="!hasFacturierRole()" (click)="makeCreditNote(row)">
-                        Faire un avoir
+                      <button class="action-btn" type="button" [disabled]="!hasFacturierRole() || navigatingToCreditNoteId() !== null" (click)="makeCreditNote(row)">
+                        {{ navigatingToCreditNoteId() === getField(row, ['id', 'invoiceId']) ? 'Ouverture...' : 'Faire un avoir' }}
                       </button>
                     }
                   } @else {

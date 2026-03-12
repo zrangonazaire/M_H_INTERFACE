@@ -107,7 +107,9 @@
         </div> -->
 
         <div class="actions">
-          <button class="btn btn-primary" (click)="createCreditNote()">Créer la facture Avoir</button>
+          <button class="btn btn-primary" type="button" [disabled]="creatingCreditNote()" (click)="createCreditNote()">
+            {{ creatingCreditNote() ? 'Création...' : 'Créer la facture Avoir' }}
+          </button>
         </div>
       </section>
     } @else {
