@@ -119,7 +119,7 @@
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountHT(group.items)) }}</td>
                 <td class="text-right fw-semibold">{{ formatCurrency(calculateGroupAmountTTC(group.items)) }}</td>
                 <td class="text-end">
-                  <button class="primary tiny" type="button" [disabled]="certifyingId() === group.mainInvoice.id || isRequiredFieldMissing(group.mainInvoice)" (click)="certifyOne(group.mainInvoice)">
+                  <button class="primary tiny" type="button" [disabled]="certifyingId() !== null || isRequiredFieldMissing(group.mainInvoice)" (click)="certifyOne(group.mainInvoice)">
                     {{ certifyingId() === group.mainInvoice.id ? 'Certification...' : 'Certifier' }}
                   </button>
                 </td>

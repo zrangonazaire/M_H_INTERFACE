@@ -42,6 +42,7 @@ export class CertifiedInvoicesComponent implements OnInit {
   protected readonly invoices = signal<CertifiedInvoice[]>([]);
   protected readonly refunds = signal<VerificationRefundResponse[]>([]);
   protected readonly loading = signal(false);
+  protected readonly navigatingToCreditNoteId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly currentTab = signal<'sales' | 'refunds'>('sales');
 
@@ -345,11 +346,13 @@ export class CertifiedInvoicesComponent implements OnInit {
   }
 
   protected createCreditNote(invoice: InvoiceTableItem): void {
-    if (this.isRefund(invoice)) {
+    if (this.isRefund(invoice) || this.navigatingToCreditNoteId() !== null) {
       return;
     }
-    // Navigate to the credit note page with the invoice ID
-    this.router.navigate(['/factures-certifiees', invoice.id, 'avoir']);
+
+    this.navigatingToCreditNoteId.set(invoice.id);
+    this.router.navigate(['/factures-certifiees', invoice.id, 'avoir'])
+      .finally(() => this.navigatingToCreditNoteId.set(null));
   }
 
   protected shouldShowCreateCreditNoteButton(invoice: InvoiceTableItem): boolean {

@@ -43,6 +43,7 @@ export class ListeFacturesClientsComponent {
   protected readonly isConnecting = signal(false);
   protected readonly isLoading = signal(false);
   protected readonly isExportingAll = signal(false);
+  protected readonly navigatingToCreditNoteId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
 
@@ -355,6 +356,10 @@ export class ListeFacturesClientsComponent {
   }
 
   protected makeCreditNote(row: InvoiceRow): void {
+    if (this.navigatingToCreditNoteId() !== null) {
+      return;
+    }
+
     if (!this.isSaleInvoice(row) || this.hasExistingCreditNote(row)) {
       return;
     }
@@ -369,7 +374,9 @@ export class ListeFacturesClientsComponent {
       return;
     }
 
-    this.router.navigate(['/factures-certifiees', invoiceId, 'avoir']);
+    this.navigatingToCreditNoteId.set(invoiceId);
+    this.router.navigate(['/factures-certifiees', invoiceId, 'avoir'])
+      .finally(() => this.navigatingToCreditNoteId.set(null));
   }
 
   protected hasFacturierRole(): boolean {

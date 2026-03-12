@@ -611,6 +611,10 @@ export class FacturesNonCertifieesComponent {
   }
 
   certifyAll(): void {
+    if (this.certifyState() === 'loading' || this.certifyingId() !== null) {
+      return;
+    }
+
     const apiIds = this.invoices()
       .filter((invoice) => invoice.source !== 'excel')
       .map((invoice) => invoice.id);
@@ -643,7 +647,10 @@ export class FacturesNonCertifieesComponent {
   }
 
   certifyOne(invoice: any): void {
-    debugger;
+    if (this.certifyingId() !== null) {
+      return;
+    }
+
     this.actionError.set(null);
     const utilisateur = this.authService.getCurrentFullName() ?? 'non defini';
     const numFacture = invoice.invoiceNumber;
@@ -659,46 +666,46 @@ export class FacturesNonCertifieesComponent {
     console.log('Certifier FNE payload', { numFacture, utilisateur, payload });
 
     this.certifyingId.set(invoice.id);
-    this.invoiceService.certifyFinalFacture(numFacture, utilisateur, payload).subscribe({
-      next: () => {
-        this.invoices.set(this.invoices().filter((it) => it.invoiceNumber !== numFacture));
-        this.selected.set(new Set(Array.from(this.selected()).filter((id) => this.invoices().some((inv) => inv.id === id))));
+    this.invoiceService.certifyFinalFacture(numFacture, utilisateur, payload)
+      .pipe(finalize(() => this.certifyingId.set(null)))
+      .subscribe({
+        next: () => {
+          this.invoices.set(this.invoices().filter((it) => it.invoiceNumber !== numFacture));
+          this.selected.set(new Set(Array.from(this.selected()).filter((id) => this.invoices().some((inv) => inv.id === id))));
 
-        const msg = `Certification effectuée avec succès: ${numFacture}`;
-        this.certificationSuccessMessage.set(msg);
-        this.notificationService.success(msg);
+          const msg = `Certification effectuée avec succès: ${numFacture}`;
+          this.certificationSuccessMessage.set(msg);
+          this.notificationService.success(msg);
 
-        this.invoiceService.getByNumero(numFacture).subscribe({
-          next: (certified) => {
-            if (certified && certified.length > 0 && certified[0].token) {
-              const token = certified[0].token;
-              const verificationUrl = this.invoiceService.getVerificationUrl(token);
-              this.certificationDownloadUrl.set(verificationUrl);
-              console.log('Certification success (with token):', { numFacture, msg, token, verificationUrl });
-            } else {
+          this.invoiceService.getByNumero(numFacture).subscribe({
+            next: (certified) => {
+              if (certified && certified.length > 0 && certified[0].token) {
+                const token = certified[0].token;
+                const verificationUrl = this.invoiceService.getVerificationUrl(token);
+                this.certificationDownloadUrl.set(verificationUrl);
+                console.log('Certification success (with token):', { numFacture, msg, token, verificationUrl });
+              } else {
+                const url = this.invoiceService.getDownloadUrl(numFacture);
+                this.certificationDownloadUrl.set(url);
+                console.log('Certification success (no token):', { numFacture, msg, url });
+              }
+            },
+            error: (err) => {
               const url = this.invoiceService.getDownloadUrl(numFacture);
               this.certificationDownloadUrl.set(url);
-              console.log('Certification success (no token):', { numFacture, msg, url });
+              console.warn('Failed to fetch certified invoice token, fallback to download URL', err);
             }
-          },
-          error: (err) => {
-            const url = this.invoiceService.getDownloadUrl(numFacture);
-            this.certificationDownloadUrl.set(url);
-            console.warn('Failed to fetch certified invoice token, fallback to download URL', err);
-          }
-        });
+          });
 
-        this.certifyingId.set(null);
-        this.readState.set('idle');
-      },
-      error: (error: any) => {
-        console.error('Erreur lors de la certification:', error);
-        const message = error.error?.message;
-        this.actionError.set(message);
-        this.certifyingId.set(null);
-        this.notificationService.error(message || 'Erreur lors de la certification');
-      }
-    });
+          this.readState.set('idle');
+        },
+        error: (error: any) => {
+          console.error('Erreur lors de la certification:', error);
+          const message = error.error?.message;
+          this.actionError.set(message);
+          this.notificationService.error(message || 'Erreur lors de la certification');
+        }
+      });
   }
 
   private buildSignRequest(invoice: any, items: any[]): InvoiceSignRequest {
