@@ -143,14 +143,13 @@ public class FactureFneServiceImpl implements FactureFneService {
         for (Map<String, String> row : rows) {
             processed++;
             Map<String, String> normalizedRow = normalizeRow(row);
-            String invoiceNumberRaw = getFirstValue(normalizedRow, INVOICE_NUMBER_KEYS);
-            if (invoiceNumberRaw == null || invoiceNumberRaw.isBlank()) {
+            String invoiceNumber = extractImportedInvoiceNumber(normalizedRow);
+            if (invoiceNumber == null || invoiceNumber.isBlank()) {
                 skipped++;
                 errors.add("Row " + rowNumber + ": invoiceNumber is missing");
                 rowNumber++;
                 continue;
             }
-            String invoiceNumber = invoiceNumberRaw.trim();
 
             Optional<FactureNonCertifier> existing = factureFneRepository.findByInvoiceNumber(invoiceNumber);
             FactureNonCertifier facture = existing.orElseGet(() -> {
@@ -389,7 +388,9 @@ public class FactureFneServiceImpl implements FactureFneService {
         );
     }
 
+    private static final int EXCEL_INVOICE_NUMBER_LENGTH = 14;
     private static final String[] INVOICE_NUMBER_KEYS = {"invoicenumber", "invoiceid", "numerofacture", "numfacture", "numfact", "facturenumber"};
+    private static final String[] INVOICE_LINE_KEYS = {"lignesdefacture", "lignesfacture", "lignesdefacturelignesdefacture", "lignesdefactureproduit"};
     private static final String[] INVOICE_TYPE_KEYS = {"invoicetype", "typefacture", "type"};
     private static final String[] PAYMENT_METHOD_KEYS = {"paymentmethod", "modepaiement", "moyenpaiement", "paiement"};
     private static final String[] TEMPLATE_KEYS = {"template", "modele", "typeclient"};
@@ -551,6 +552,32 @@ public class FactureFneServiceImpl implements FactureFneService {
             }
         }
         return null;
+    }
+
+    private String extractImportedInvoiceNumber(Map<String, String> row) {
+        String directInvoiceNumber = getFirstValue(row, INVOICE_NUMBER_KEYS);
+        if (directInvoiceNumber != null && !directInvoiceNumber.isBlank()) {
+            return normalizeImportedInvoiceNumber(directInvoiceNumber);
+        }
+
+        String invoiceLine = getFirstValue(row, INVOICE_LINE_KEYS);
+        if (invoiceLine != null && !invoiceLine.isBlank()) {
+            return normalizeImportedInvoiceNumber(invoiceLine);
+        }
+
+        return null;
+    }
+
+    private String normalizeImportedInvoiceNumber(String rawInvoiceNumber) {
+        String trimmed = rawInvoiceNumber == null ? "" : rawInvoiceNumber.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        String extracted = trimmed.length() > EXCEL_INVOICE_NUMBER_LENGTH
+                ? trimmed.substring(0, EXCEL_INVOICE_NUMBER_LENGTH)
+                : trimmed;
+        return extracted.replace('/', '-');
     }
 
     private String normalizeKey(String key) {
