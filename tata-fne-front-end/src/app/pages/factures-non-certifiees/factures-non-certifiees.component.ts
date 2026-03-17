@@ -561,7 +561,13 @@ export class FacturesNonCertifieesComponent {
     this.loadError.set(null);
     this.invoiceService.getInvoices().subscribe({
       next: (invoices) => {
-        this.invoices.set(invoices.map((invoice) => ({ ...invoice, source: 'api' })));
+        this.invoices.set(
+          invoices.map((invoice) => ({
+            ...invoice,
+            invoiceNumber: this.sanitizeInvoiceNumber(invoice.invoiceNumber),
+            source: 'api'
+          }))
+        );
         this.selected.set(new Set());
         this.loadState.set('idle');
       },
@@ -1087,13 +1093,26 @@ export class FacturesNonCertifieesComponent {
   private readonly lineQuantityKeys = ['lignesdefacturequantite', 'quantite', 'qty', 'quantity'];
   private readonly lineTaxKeys = ['lignesdefacturetaxes', 'codetaxe', 'taxe', 'taxcode'];
   private readonly customTaxAmountKeys = ['lignesdefacturetaxeslibelledetaxe'];
+  private readonly invoiceNumberLength = 14;
 
   private extractInvoiceNumberRaw(normalized: Record<string, string>): string {
+    const directInvoiceNumber = this.getFirstValue(normalized, this.invoiceNumberKeys);
+    if (directInvoiceNumber) {
+      return this.takeInvoiceNumberPrefix(directInvoiceNumber);
+    }
+
     const lignesFacture = this.getFirstValue(normalized, this.invoiceLineKeys) || '';
-    return lignesFacture.length > 23 ? lignesFacture.substring(0, 23) : lignesFacture;
+    return this.takeInvoiceNumberPrefix(lignesFacture);
   }
 
-  private sanitizeInvoiceNumber(invoiceNumberRaw: string): string {
+  private takeInvoiceNumberPrefix(value: string | null | undefined): string {
+    const trimmed = (value || '').trim();
+    return trimmed.length > this.invoiceNumberLength
+      ? trimmed.substring(0, this.invoiceNumberLength)
+      : trimmed;
+  }
+
+  private sanitizeInvoiceNumber(invoiceNumberRaw: string | null | undefined): string {
     return (invoiceNumberRaw || '').replace(/\//g, '-');
   }
 
