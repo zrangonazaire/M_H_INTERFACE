@@ -26,6 +26,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
     private final JwtFilter jwtAuthFilter;
+    private final com.bzdata.TataFneBackend.auditTrail.UserActionAuditFilter userActionAuditFilter;
     private final AuthenticationProvider authenticationProvider;
 
     @Bean
@@ -94,7 +95,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(userActionAuditFilter, JwtFilter.class);
 
         return http.build();
     }

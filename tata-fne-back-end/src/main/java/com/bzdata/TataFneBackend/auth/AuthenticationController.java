@@ -1,6 +1,7 @@
 package com.bzdata.TataFneBackend.auth;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +39,14 @@ public class AuthenticationController {
 
     @PostMapping(value = "/authenticate",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthenticationResponse> authenticate(
-            @RequestBody @Valid AuthenticationRequest request
+            @RequestBody @Valid AuthenticationRequest request,
+            HttpServletRequest httpServletRequest
     ) {
-        return ResponseEntity.ok(service.authenticate(request));
+        return ResponseEntity.ok(service.authenticate(
+                request,
+                resolveClientIp(httpServletRequest),
+                httpServletRequest.getHeader("User-Agent")
+        ));
     }
     @GetMapping(value = "/activate-account",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public void confirm(
@@ -72,6 +78,20 @@ public class AuthenticationController {
     ) {
         service.resetPassword(request);
         return ResponseEntity.ok().build();
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        var forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        var realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+
+        return request.getRemoteAddr();
     }
 
 }

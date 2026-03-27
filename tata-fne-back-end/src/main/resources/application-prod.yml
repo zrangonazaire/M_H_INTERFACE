@@ -45,7 +45,7 @@ application:
 
   mailing:
     frontend:
-      activation-url: http://51.75.69.139/activate-account
+      activation-url: https://www.norma-factfne.com/activate-account
 
   file:
     uploads:

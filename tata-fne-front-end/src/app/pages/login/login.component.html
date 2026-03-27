@@ -52,7 +52,14 @@
           <a routerLink="/forgot-password" class="link" routerLinkActive="active" (click)="navigateToForgotPassword()">Mot de passe oublié ?</a>
         </div>
 
+        <p class="policy">{{ sessionPolicyLabel }}</p>
         <p class="hint">Les champs suivis d'un * sont obligatoires</p>
+
+        @if (infoMessage()) {
+          <div class="info">
+            {{ infoMessage() }}
+          </div>
+        }
 
         @if (errorMessage()) {
           <div class="error">

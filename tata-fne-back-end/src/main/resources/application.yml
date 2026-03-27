@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: dev
   servlet:
     multipart:
       max-file-size: 50MB
@@ -9,5 +9,6 @@ spring:
 springdoc:
   default-produces-media-type: application/json
 server:
+  forward-headers-strategy: framework
   servlet:
     context-path: /api/v1/

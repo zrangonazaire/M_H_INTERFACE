@@ -50,10 +50,25 @@
       <div class="pill pill-admin">Accès administrateur</div>
       <div class="pill pill-system">Paramètres système</div>
       <div class="pill pill-full">Gestion complète</div>
+      <div class="pill pill-session">Sessions supervisees</div>
     </section>
 
     <section class="tabs-section">
       <div class="tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'audit'"
+          (click)="setActiveTab('audit')"
+        >
+          Journal d'audit
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'sessions'"
+          (click)="setActiveTab('sessions')"
+        >
+          Suivi des connexions utilisateurs
+        </button>
         <button 
           class="tab-btn" 
           [class.active]="activeTab() === 'departments'"
@@ -132,6 +147,350 @@
     @if (success()) {
       <div class="alert success">
         {{ success() }}
+      </div>
+    }
+
+    <!-- Audit Management Tab -->
+    @if (activeTab() === 'audit') {
+      <div class="api-section audit-section">
+        <section class="audit-card">
+          <div class="audit-card__header">
+            <div>
+              <h4>Journal d'audit complet des actions utilisateurs</h4>
+              <p>TraÃ§abilitÃ© des actions HTTP par utilisateur, module, endpoint et rÃ©sultat.</p>
+            </div>
+
+            <div class="audit-card__meta">
+              <span>{{ auditPagination().totalItems }} action(s) trouvÃ©e(s)</span>
+              <span>Page {{ auditPagination().currentPage + 1 }} / {{ auditPagination().totalPages }}</span>
+            </div>
+          </div>
+
+          <form class="audit-filters" (ngSubmit)="applyAuditFilters()">
+            <div class="form-group">
+              <label for="auditSearch">Recherche</label>
+              <input
+                id="auditSearch"
+                type="text"
+                class="form-control"
+                placeholder="Utilisateur, module, action, endpoint"
+                [(ngModel)]="auditFilterForm.search"
+                name="auditSearch"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="auditModule">Module</label>
+              <select
+                id="auditModule"
+                class="form-control"
+                [(ngModel)]="auditFilterForm.module"
+                name="auditModule"
+              >
+                <option value="">Tous les modules</option>
+                @for (module of auditModules(); track module) {
+                  <option [value]="module">{{ module }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="auditMethod">MÃ©thode HTTP</label>
+              <select
+                id="auditMethod"
+                class="form-control"
+                [(ngModel)]="auditFilterForm.httpMethod"
+                name="auditMethod"
+              >
+                <option value="">Toutes</option>
+                @for (method of auditHttpMethods; track method) {
+                  <option [value]="method">{{ method }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="auditResult">RÃ©sultat</label>
+              <select
+                id="auditResult"
+                class="form-control"
+                [(ngModel)]="auditFilterForm.result"
+                name="auditResult"
+              >
+                <option value="">Tous</option>
+                @for (option of auditResultOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="auditFromDate">Date du</label>
+              <input
+                id="auditFromDate"
+                type="date"
+                class="form-control"
+                [(ngModel)]="auditFilterForm.fromDate"
+                name="auditFromDate"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="auditToDate">au</label>
+              <input
+                id="auditToDate"
+                type="date"
+                class="form-control"
+                [(ngModel)]="auditFilterForm.toDate"
+                name="auditToDate"
+              >
+            </div>
+
+            <div class="audit-filters__actions">
+              <button type="submit" class="btn-primary" [disabled]="auditLoading()">
+                Filtrer
+              </button>
+              <button type="button" class="btn-secondary" [disabled]="auditLoading()" (click)="resetAuditFilters()">
+                RÃ©initialiser
+              </button>
+            </div>
+          </form>
+
+          @if (auditLoading()) {
+            <div class="session-table-card__empty">
+              Chargement du journal d'audit...
+            </div>
+          } @else if (auditLogs().length === 0) {
+            <div class="session-table-card__empty">
+              Aucune action auditÃ©e pour les filtres sÃ©lectionnÃ©s.
+            </div>
+          } @else {
+            <div class="audit-table-meta">
+              <span>{{ auditPagination().totalItems }} action(s) trouvÃ©e(s)</span>
+              <span>Affichage de {{ getAuditStartIndex() }} Ã  {{ getAuditEndIndex() }}</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table audit-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Utilisateur</th>
+                    <th>Module</th>
+                    <th>Action</th>
+                    <th>RÃ©sultat</th>
+                    <th>DÃ©tails</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (auditLog of auditLogs(); track auditLog.id) {
+                    <tr [class.audit-table__row--expanded]="isAuditExpanded(auditLog.id)">
+                      <td>{{ formatConnectionDate(auditLog.occurredAt) }}</td>
+                      <td>
+                        <div class="connection-user">
+                          <strong>{{ getAuditUserName(auditLog) }}</strong>
+                          <span>{{ getAuditUserEmail(auditLog) }}</span>
+                        </div>
+                      </td>
+                      <td>{{ auditLog.module }}</td>
+                      <td>
+                        <div class="audit-action">
+                          <strong>{{ auditLog.action }}</strong>
+                          <span>{{ auditLog.endpoint }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span [class]="getAuditResultClass(auditLog.result)">
+                          {{ formatAuditResult(auditLog.result) }}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="audit-details-toggle"
+                          (click)="toggleAuditDetails(auditLog.id)"
+                        >
+                          {{ isAuditExpanded(auditLog.id) ? 'Masquer' : 'Voir' }}
+                        </button>
+                      </td>
+                    </tr>
+
+                    @if (isAuditExpanded(auditLog.id)) {
+                      <tr class="audit-table__detail-row">
+                        <td colspan="6">
+                          <div class="audit-detail">
+                            <div class="audit-detail__summary">
+                              {{ getAuditSummary(auditLog) }}
+                            </div>
+
+                            <div class="audit-detail__grid">
+                              <div class="audit-detail__block">
+                                <h5>RequÃªte</h5>
+                                <pre>{{ auditLog.requestPayload || 'Aucune charge utile capturÃ©e.' }}</pre>
+                              </div>
+
+                              <div class="audit-detail__block">
+                                <h5>RÃ©ponse</h5>
+                                <pre>{{ auditLog.responsePayload || 'Aucune charge utile capturÃ©e.' }}</pre>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="audit-pagination">
+              <div class="audit-pagination__info">
+                Affichage de {{ getAuditStartIndex() }} Ã  {{ getAuditEndIndex() }} sur {{ auditPagination().totalItems }} actions
+              </div>
+
+              <div class="audit-pagination__actions">
+                <select
+                  class="form-control audit-pagination__size"
+                  [value]="auditPagination().pageSize"
+                  (change)="changeAuditPageSize($event)"
+                >
+                  <option [value]="8">8</option>
+                  <option [value]="15">15</option>
+                  <option [value]="25">25</option>
+                </select>
+
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  (click)="changeAuditPage(auditPagination().currentPage - 1)"
+                  [disabled]="auditPagination().currentPage === 0"
+                >
+                  PrÃ©cÃ©dente
+                </button>
+
+                <span class="audit-pagination__page">
+                  Page {{ auditPagination().currentPage + 1 }} / {{ auditPagination().totalPages }}
+                </span>
+
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  (click)="changeAuditPage(auditPagination().currentPage + 1)"
+                  [disabled]="auditPagination().currentPage >= auditPagination().totalPages - 1"
+                >
+                  Suivante
+                </button>
+              </div>
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    <!-- Sessions Management Tab -->
+    @if (activeTab() === 'sessions') {
+      <div class="api-section sessions-section">
+        <section class="session-table-card">
+          <div class="session-table-card__header">
+            <div>
+              <h4>Suivi des connexions utilisateurs</h4>
+              <p>Journal recent des connexions, activites et deconnexions des utilisateurs.</p>
+            </div>
+
+            @if (getCurrentConnection(); as currentConnection) {
+              <div class="connection-summary">
+                <span>Connecte le {{ formatConnectionDate(currentConnection.connectedAt) }}</span>
+                <span>Deconnexion auto dans {{ formatConnectionRemaining(getConnectionRemainingMs(currentConnection)) }}</span>
+              </div>
+            }
+          </div>
+
+          @if (connectionAuditLoading()) {
+            <div class="session-table-card__empty">
+              Chargement du suivi des connexions...
+            </div>
+          } @else if (connectionSessions().length === 0) {
+            <div class="session-table-card__empty">
+              Aucune connexion historisee pour le moment.
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="data-table connection-table">
+                <thead>
+                  <tr>
+                    <th>Utilisateur</th>
+                    <th>Connexion</th>
+                    <th>Derniere activite</th>
+                    <th>Deconnexion</th>
+                    <th>Statut</th>
+                    <th>Temps restant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (connection of getVisibleConnectionSessions(); track connection.id) {
+                    <tr [class.connection-table__row--current]="connection.currentSession">
+                      <td>
+                        <div class="connection-user">
+                          <strong>{{ connection.userFullName }}</strong>
+                          <span>{{ connection.userEmail }}</span>
+                        </div>
+                      </td>
+                      <td>{{ formatConnectionDate(connection.connectedAt) }}</td>
+                      <td>{{ formatConnectionDate(connection.lastActivityAt) }}</td>
+                      <td>{{ formatConnectionDate(connection.disconnectedAt) }}</td>
+                      <td>
+                        <span [class]="getConnectionStatusClass(connection.status)">
+                          {{ formatConnectionStatus(connection.status) }}
+                        </span>
+                      </td>
+                      <td>{{ formatConnectionRemaining(getConnectionRemainingMs(connection)) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="connection-pagination">
+              <div class="connection-pagination__info">
+                Affichage de {{ getConnectionStartIndex() }} a {{ getConnectionEndIndex() }} sur {{ connectionSessions().length }} connexions
+              </div>
+
+              <div class="connection-pagination__actions">
+                <select
+                  class="form-control connection-pagination__size"
+                  [value]="connectionPagination().pageSize"
+                  (change)="changeConnectionPageSize($event)"
+                >
+                  <option [value]="5">5</option>
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                </select>
+
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  (click)="changeConnectionPage(connectionPagination().currentPage - 1)"
+                  [disabled]="connectionPagination().currentPage === 0"
+                >
+                  Precedente
+                </button>
+
+                <span class="connection-pagination__page">
+                  Page {{ connectionPagination().currentPage + 1 }} / {{ getConnectionPageCount() }}
+                </span>
+
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  (click)="changeConnectionPage(connectionPagination().currentPage + 1)"
+                  [disabled]="connectionPagination().currentPage >= getConnectionPageCount() - 1"
+                >
+                  Suivante
+                </button>
+              </div>
+            </div>
+          }
+        </section>
       </div>
     }
 

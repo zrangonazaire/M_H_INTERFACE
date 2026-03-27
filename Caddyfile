@@ -1,0 +1,21 @@
+{
+	# Optionnel : remplacez par votre email pour les alertes Let's Encrypt
+	# email admin@norma-factfne.com
+}
+
+norma-factfne.com {
+	redir https://www.norma-factfne.com{uri} permanent
+}
+
+www.norma-factfne.com {
+	encode gzip zstd
+
+	@api path /api/v1*
+	handle @api {
+		reverse_proxy springboot:8089
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}

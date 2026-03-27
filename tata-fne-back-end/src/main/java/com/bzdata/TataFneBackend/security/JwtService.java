@@ -13,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static io.jsonwebtoken.Jwts.*;
@@ -55,12 +56,17 @@ public class JwtService {
                 .toList();
         return builder()
                 .setClaims(extraClaims)
+                .setId(UUID.randomUUID().toString())
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .claim("authorities", authorities)
                 .signWith(getSignInKey(), Jwts.SIG.HS256)
                 .compact();
+    }
+
+    public Date extractExpirationDate(String token) {
+        return extractExpiration(token);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

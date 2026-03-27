@@ -21,7 +21,7 @@
           <input
             type="text"
             [ngModel]="fneUsername()"
-            (ngModelChange)="fneUsername.set($event)"
+            (ngModelChange)="onFneUsernameChange($event)"
             placeholder="ex: ncc_12345"
           />
         </div>
@@ -40,6 +40,11 @@
           </button>
         </div>
       </div>
+      @if (fneLogin()) {
+        <div class="alert info">
+          Connecte: {{ fneLogin()?.username }} (expiration: {{ fneLogin()?.expiresAt ? (fneLogin()?.expiresAt | date:'dd/MM/yyyy HH:mm:ss') : 'N/A' }})
+        </div>
+      }
     </section>
 
     <section class="card filters-card">
@@ -66,7 +71,7 @@
           </select>
         </div>
         <div class="actions actions-double">
-          <button class="secondary" type="button" [disabled]="isLoading()" (click)="syncInvoicesFromFne()">
+          <button class="secondary" type="button" [disabled]="isLoading() || !isFneAuthenticated()" (click)="syncInvoicesFromFne()">
             {{ isLoading() ? 'Chargement...' : 'Synchroniser FNE' }}
           </button>
         </div>

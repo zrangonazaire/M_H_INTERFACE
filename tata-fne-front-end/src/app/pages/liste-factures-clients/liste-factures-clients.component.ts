@@ -8,6 +8,7 @@ import { AuthenticationService } from '../../core/services/authentication.servic
 import {
   FneClientInvoicesQuery,
   FneInvoiceService,
+  FneStoredLoginResponse,
   FneInvoiceSyncResult
 } from '../../core/services/fne-invoice.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
@@ -31,6 +32,8 @@ export class ListeFacturesClientsComponent {
 
   protected readonly fneUsername = signal(localStorage.getItem(this.fneUsernameStorageKey) ?? '');
   protected readonly fnePassword = signal('');
+  protected readonly fneLogin = signal<FneStoredLoginResponse | null>(null);
+  protected readonly isFneAuthenticated = computed(() => this.fneLogin() !== null);
 
   protected readonly page = signal(1);
   protected readonly perPage = signal(12);
@@ -87,6 +90,17 @@ export class ListeFacturesClientsComponent {
     this.loadInvoicesFromDatabase();
   }
 
+  protected onFneUsernameChange(value: string): void {
+    const next = value ?? '';
+    const trimmed = next.trim();
+    this.fneUsername.set(next);
+
+    const currentLogin = this.fneLogin();
+    if (currentLogin && currentLogin.username !== trimmed) {
+      this.fneLogin.set(null);
+    }
+  }
+
   protected connectToFne(): void {
     const username = this.fneUsername().trim();
     const password = this.fnePassword().trim();
@@ -106,7 +120,9 @@ export class ListeFacturesClientsComponent {
       .subscribe({
         next: (res) => {
           this.fnePassword.set('');
+          this.fneUsername.set(username);
           localStorage.setItem(this.fneUsernameStorageKey, username);
+          this.fneLogin.set(res);
           this.success.set(res.message || 'Connexion FNE reussie.');
         },
         error: (err) => {
@@ -117,10 +133,17 @@ export class ListeFacturesClientsComponent {
   }
 
   protected syncInvoicesFromFne(): void {
+    const login = this.fneLogin();
+    if (!login) {
+      this.error.set("Veuillez d'abord vous connecter a la FNE pour recuperer le token.");
+      this.success.set(null);
+      return;
+    }
+
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.invoiceService.syncClientInvoices(this.buildQuery(), this.fneUsername().trim())
+    this.invoiceService.syncClientInvoices(this.buildQuery(), login.username)
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
