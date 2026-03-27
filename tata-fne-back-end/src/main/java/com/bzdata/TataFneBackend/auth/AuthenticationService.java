@@ -1,5 +1,6 @@
 package com.bzdata.TataFneBackend.auth;
 
+import com.bzdata.TataFneBackend.auditTrail.AuditRequestAttributes;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +18,11 @@ import com.bzdata.TataFneBackend.user.Token;
 import com.bzdata.TataFneBackend.user.TokenRepository;
 import com.bzdata.TataFneBackend.user.User;
 import com.bzdata.TataFneBackend.user.UserRepository;
+import com.bzdata.TataFneBackend.userSession.UserConnectionSessionService;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +38,7 @@ public class AuthenticationService {
     private final RoleRepository roleRepository;
     private final EmailService emailService;
     private final TokenRepository tokenRepository;
+    private final UserConnectionSessionService userConnectionSessionService;
 
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
@@ -78,7 +82,7 @@ public class AuthenticationService {
         sendValidationEmail(user);
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request, String clientIp, String userAgent) {
         var auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -102,6 +106,18 @@ public class AuthenticationService {
 
 
         var jwtToken = jwtService.generateToken(claims, (User) auth.getPrincipal());
+        var expiresAt = LocalDateTime.ofInstant(
+                jwtService.extractExpirationDate(jwtToken).toInstant(),
+                ZoneId.systemDefault()
+        );
+        var currentRequest = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (currentRequest instanceof org.springframework.web.context.request.ServletRequestAttributes servletRequestAttributes) {
+            var servletRequest = servletRequestAttributes.getRequest();
+            servletRequest.setAttribute(AuditRequestAttributes.USER_ID, user.getId());
+            servletRequest.setAttribute(AuditRequestAttributes.USER_FULL_NAME, user.getFullName());
+            servletRequest.setAttribute(AuditRequestAttributes.USER_EMAIL, user.getEmail());
+        }
+        userConnectionSessionService.registerLogin(user, jwtToken, clientIp, userAgent, expiresAt);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();

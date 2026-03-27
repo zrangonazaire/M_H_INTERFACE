@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,10 @@ import { AttributionService } from '../../core/services/attribution.service';
 import { UserService } from '../../core/services/user.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { RegistrationRequest, ChangePasswordRequest, UserDTO } from '../../core/models/auth';
+import { UserActionAuditLog } from '../../core/models/user-action-audit-log';
+import { UserConnectionSession } from '../../core/models/user-connection-session';
+import { UserActionAuditService } from '../../core/services/user-action-audit.service';
+import { UserConnectionSessionService } from '../../core/services/user-connection-session.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
@@ -22,10 +26,27 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
   templateUrl: './parametres.component.html',
   styleUrl: './parametres.component.scss'
 })
-export class ParametresComponent implements OnInit {
+export class ParametresComponent implements OnInit, OnDestroy {
+  protected readonly auditLogs = signal<UserActionAuditLog[]>([]);
+  protected readonly auditModules = signal<string[]>([]);
+  protected readonly auditLoading = signal(false);
+  protected readonly expandedAuditLogId = signal<number | null>(null);
+  protected readonly auditPagination = signal({
+    currentPage: 0,
+    pageSize: 8,
+    totalItems: 0,
+    totalPages: 1
+  });
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
-  protected readonly userEtab= signal('Compte');
+  protected readonly userEtab = signal('Compte');
+  protected readonly connectionSessions = signal<UserConnectionSession[]>([]);
+  protected readonly connectionAuditLoading = signal(false);
+  protected readonly connectionPagination = signal({
+    currentPage: 0,
+    pageSize: 5
+  });
+  protected readonly currentTimestamp = signal(Date.now());
 
   // API Data
   roles = signal<any[]>([]);
@@ -144,8 +165,15 @@ export class ParametresComponent implements OnInit {
     confirmationPassword: ''
   });
 
+  protected auditFilterForm = this.createDefaultAuditFilterForm();
+  protected readonly auditHttpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  protected readonly auditResultOptions = [
+    { value: 'SUCCESS', label: 'Succes' },
+    { value: 'ERROR', label: 'Echec' }
+  ];
+
   // UI State
-  activeTab = signal('roles');
+  activeTab = signal('audit');
   loading = signal(false);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
@@ -164,6 +192,8 @@ export class ParametresComponent implements OnInit {
   // Role-User Management State
   selectedUserForRole = signal<number | null>(null);
   selectedRoleForUser = signal<string>('');
+  private connectionAuditIntervalId: number | null = null;
+  private countdownIntervalId: number | null = null;
 
   constructor(
     private readonly auth: AuthenticationService,
@@ -176,7 +206,9 @@ export class ParametresComponent implements OnInit {
     private readonly societyService: SocietyService,
     private readonly attributionService: AttributionService,
     private readonly userService: UserService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
+    private readonly userActionAuditService: UserActionAuditService,
+    private readonly userConnectionSessionService: UserConnectionSessionService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.auth.getCurrentPdv() ?? 'Compte');
@@ -185,10 +217,26 @@ export class ParametresComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAllData();
+    this.loadAuditModules();
+    this.loadAuditLogs();
+    this.loadConnectionSessions();
+    this.startConnectionAuditRefresh();
+    this.startConnectionCountdown();
+  }
+
+  ngOnDestroy(): void {
+    if (this.connectionAuditIntervalId !== null) {
+      window.clearInterval(this.connectionAuditIntervalId);
+      this.connectionAuditIntervalId = null;
+    }
+
+    if (this.countdownIntervalId !== null) {
+      window.clearInterval(this.countdownIntervalId);
+      this.countdownIntervalId = null;
+    }
   }
 
   loadAllData(): void {
-    debugger;
     this.loading.set(true);
     this.error.set(null);
 
@@ -639,11 +687,353 @@ export class ParametresComponent implements OnInit {
     return pages.filter(page => page !== -1);
   }
 
+  protected loadConnectionSessions(showLoader = true): void {
+    if (showLoader) {
+      this.connectionAuditLoading.set(true);
+    }
+
+    this.userConnectionSessionService.getRecentSessions(100).subscribe({
+      next: (sessions) => {
+      this.connectionSessions.set(sessions);
+      this.ensureConnectionPageInRange();
+      },
+      error: () => {
+        if (showLoader) {
+          this.notificationService.warning('Le suivi des connexions est momentanement indisponible.');
+        }
+      }
+    }).add(() => {
+      if (showLoader) {
+        this.connectionAuditLoading.set(false);
+      }
+    });
+  }
+
+  protected loadAuditLogs(page = this.auditPagination().currentPage): void {
+    const nextPage = Math.max(page, 0);
+    this.auditLoading.set(true);
+    this.expandedAuditLogId.set(null);
+
+    this.userActionAuditService.getAuditLogs({
+      page: nextPage,
+      size: this.auditPagination().pageSize,
+      ...this.buildAuditFilters()
+    }).subscribe({
+      next: (result) => {
+        this.auditLogs.set(result.auditLogs);
+        this.auditPagination.set({
+          currentPage: result.currentPage,
+          pageSize: this.auditPagination().pageSize,
+          totalItems: result.totalItems,
+          totalPages: Math.max(1, result.totalPages)
+        });
+      },
+      error: () => {
+        this.notificationService.warning('Le journal d audit est momentanement indisponible.');
+      }
+    }).add(() => this.auditLoading.set(false));
+  }
+
+  protected loadAuditModules(): void {
+    this.userActionAuditService.getModules().subscribe({
+      next: (modules) => this.auditModules.set(modules),
+      error: () => {
+        this.auditModules.set([]);
+      }
+    });
+  }
+
+  protected applyAuditFilters(): void {
+    this.loadAuditLogs(0);
+  }
+
+  protected resetAuditFilters(): void {
+    this.auditFilterForm = this.createDefaultAuditFilterForm();
+    this.loadAuditLogs(0);
+  }
+
+  protected changeAuditPage(page: number): void {
+    const maxPage = Math.max(0, this.auditPagination().totalPages - 1);
+    this.loadAuditLogs(Math.min(Math.max(page, 0), maxPage));
+  }
+
+  protected changeAuditPageSize(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    if (!target?.value) {
+      return;
+    }
+
+    this.auditPagination.update((pagination) => ({
+      ...pagination,
+      currentPage: 0,
+      pageSize: Number(target.value)
+    }));
+    this.loadAuditLogs(0);
+  }
+
+  protected toggleAuditDetails(id: number): void {
+    this.expandedAuditLogId.update((currentId) => currentId === id ? null : id);
+  }
+
+  protected isAuditExpanded(id: number): boolean {
+    return this.expandedAuditLogId() === id;
+  }
+
+  protected getAuditStartIndex(): number {
+    if (this.auditPagination().totalItems === 0) {
+      return 0;
+    }
+
+    return this.auditPagination().currentPage * this.auditPagination().pageSize + 1;
+  }
+
+  protected getAuditEndIndex(): number {
+    return Math.min(
+      (this.auditPagination().currentPage + 1) * this.auditPagination().pageSize,
+      this.auditPagination().totalItems
+    );
+  }
+
+  protected getAuditSummary(auditLog: UserActionAuditLog): string {
+    return `${auditLog.httpMethod} | HTTP ${auditLog.httpStatus} | ${auditLog.durationMs} ms | IP ${auditLog.clientIp ?? 'N/A'}`;
+  }
+
+  protected getAuditResultClass(result: string): string {
+    return result === 'SUCCESS'
+      ? 'audit-result audit-result--success'
+      : 'audit-result audit-result--error';
+  }
+
+  protected formatAuditResult(result: string): string {
+    return result === 'SUCCESS' ? 'Succes' : 'Echec';
+  }
+
+  protected getAuditUserName(auditLog: UserActionAuditLog): string {
+    return auditLog.userFullName?.trim() || 'Utilisateur inconnu';
+  }
+
+  protected getAuditUserEmail(auditLog: UserActionAuditLog): string {
+    return auditLog.userEmail?.trim() || 'Session non authentifiee';
+  }
+
+  protected getCurrentConnection(): UserConnectionSession | null {
+    return this.connectionSessions().find((session) => session.currentSession)
+      ?? this.connectionSessions().find((session) => session.status === 'ACTIVE')
+      ?? null;
+  }
+
+  protected getVisibleConnectionSessions(): UserConnectionSession[] {
+    const { currentPage, pageSize } = this.connectionPagination();
+    const startIndex = currentPage * pageSize;
+    return this.connectionSessions().slice(startIndex, startIndex + pageSize);
+  }
+
+  protected getConnectionPageCount(): number {
+    const totalItems = this.connectionSessions().length;
+    const pageSize = this.connectionPagination().pageSize;
+    return Math.max(1, Math.ceil(totalItems / pageSize));
+  }
+
+  protected changeConnectionPage(page: number): void {
+    const maxPage = this.getConnectionPageCount() - 1;
+    const nextPage = Math.min(Math.max(page, 0), maxPage);
+
+    this.connectionPagination.update((pagination) => ({
+      ...pagination,
+      currentPage: nextPage
+    }));
+  }
+
+  protected changeConnectionPageSize(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    if (!target?.value) {
+      return;
+    }
+
+    const pageSize = Number(target.value);
+    this.connectionPagination.set({
+      currentPage: 0,
+      pageSize
+    });
+  }
+
+  protected getConnectionStartIndex(): number {
+    if (this.connectionSessions().length === 0) {
+      return 0;
+    }
+
+    return this.connectionPagination().currentPage * this.connectionPagination().pageSize + 1;
+  }
+
+  protected getConnectionEndIndex(): number {
+    const { currentPage, pageSize } = this.connectionPagination();
+    return Math.min((currentPage + 1) * pageSize, this.connectionSessions().length);
+  }
+
+  protected getConnectionRemainingMs(connection: UserConnectionSession): number {
+    const expiresAtMs = this.parseConnectionDate(connection.expiresAt);
+    if (expiresAtMs === null) {
+      return connection.remainingMs;
+    }
+
+    if (connection.status === 'ACTIVE' && connection.disconnectedAt === null) {
+      return Math.max(0, expiresAtMs - this.currentTimestamp());
+    }
+
+    const disconnectedAtMs = this.parseConnectionDate(connection.disconnectedAt);
+    if (disconnectedAtMs !== null) {
+      return Math.max(0, expiresAtMs - disconnectedAtMs);
+    }
+
+    return Math.max(0, connection.remainingMs);
+  }
+
+  protected formatConnectionDate(value: string | null): string {
+    if (!value) {
+      return '-';
+    }
+
+    const timestamp = this.parseConnectionDate(value);
+    if (timestamp === null) {
+      return value.replace('T', ' ');
+    }
+
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'short',
+      timeStyle: 'medium'
+    }).format(date);
+  }
+
+  protected formatConnectionRemaining(durationMs: number): string {
+    if (durationMs === null || Number.isNaN(durationMs)) {
+      return 'Non disponible';
+    }
+
+    if (durationMs <= 0) {
+      return 'Expiree';
+    }
+
+    const totalSeconds = Math.floor(durationMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours} h ${minutes} min`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes} min ${seconds}s`;
+    }
+
+    return `${seconds}s`;
+  }
+
+  protected getConnectionStatusClass(status: UserConnectionSession['status']): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'connection-status connection-status--active';
+      case 'LOGGED_OUT':
+        return 'connection-status connection-status--logged-out';
+      case 'EXPIRED':
+        return 'connection-status connection-status--expired';
+      default:
+        return 'connection-status';
+    }
+  }
+
+  protected formatConnectionStatus(status: UserConnectionSession['status']): string {
+    return status;
+  }
+
+  private startConnectionAuditRefresh(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.connectionAuditIntervalId = window.setInterval(() => {
+      this.loadConnectionSessions(false);
+    }, 30000);
+  }
+
+  private startConnectionCountdown(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.countdownIntervalId = window.setInterval(() => {
+      this.currentTimestamp.set(Date.now());
+    }, 1000);
+  }
+
+  private parseConnectionDate(value: string | null): number | null {
+    if (!value) {
+      return null;
+    }
+
+    const timestamp = new Date(value).getTime();
+    return Number.isNaN(timestamp) ? null : timestamp;
+  }
+
+  private ensureConnectionPageInRange(): void {
+    const maxPage = this.getConnectionPageCount() - 1;
+    if (this.connectionPagination().currentPage <= maxPage) {
+      return;
+    }
+
+    this.connectionPagination.update((pagination) => ({
+      ...pagination,
+      currentPage: maxPage
+    }));
+  }
+
   // UI Helpers
   setActiveTab(tab: string): void {
     this.activeTab.set(tab);
     this.error.set(null);
     this.success.set(null);
+
+    if (tab === 'audit' && this.auditLogs().length === 0) {
+      this.loadAuditModules();
+      this.loadAuditLogs();
+    }
+  }
+
+  private buildAuditFilters(): {
+    search?: string;
+    module?: string;
+    httpMethod?: string;
+    result?: string;
+    fromDate?: string;
+    toDate?: string;
+  } {
+    return {
+      search: this.auditFilterForm.search || undefined,
+      module: this.auditFilterForm.module || undefined,
+      httpMethod: this.auditFilterForm.httpMethod || undefined,
+      result: this.auditFilterForm.result || undefined,
+      fromDate: this.auditFilterForm.fromDate || undefined,
+      toDate: this.auditFilterForm.toDate || undefined
+    };
+  }
+
+  private createDefaultAuditFilterForm(): {
+    search: string;
+    module: string;
+    httpMethod: string;
+    result: string;
+    fromDate: string;
+    toDate: string;
+  } {
+    return {
+      search: '',
+      module: '',
+      httpMethod: '',
+      result: '',
+      fromDate: '',
+      toDate: ''
+    };
   }
 
   private handleError(message: string): void {

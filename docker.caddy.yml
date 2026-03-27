@@ -1,0 +1,71 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-sql-tata-fne
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tata_fne_db
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - tata-fne-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U username -d tata_fne_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  springboot:
+    image: bigbossoh/tata-fne-backend:1.6
+    container_name: springboot-tata-fne
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tata_fne_db
+      SPRING_DATASOURCE_USERNAME: username
+      SPRING_DATASOURCE_PASSWORD: password
+      SERVER_PORT: 8089
+    expose:
+      - "8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tata-fne-network
+    restart: unless-stopped
+
+  frontend:
+    image: bigbossoh/tata-fne-frontend:1.6
+    container_name: angular-tata-fne
+    expose:
+      - "80"
+    depends_on:
+      - springboot
+    networks:
+      - tata-fne-network
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    container_name: caddy-tata
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - tata-fne-network
+    restart: unless-stopped
+
+networks:
+  tata-fne-network:
+    driver: bridge
+
+volumes:
+  postgres:
+  caddy_data:
+  caddy_config:
