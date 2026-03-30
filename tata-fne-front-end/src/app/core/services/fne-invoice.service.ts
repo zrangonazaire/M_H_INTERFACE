@@ -24,6 +24,8 @@ export interface FneClientInvoicesQuery {
   sortBy: string;
   listing: string;
   complete: boolean;
+  query?: string;
+  status?: string;
 }
 
 export interface FneInvoiceSyncResult {
@@ -238,7 +240,9 @@ export class FneInvoiceService {
       .set('toDate', query.toDate)
       .set('sortBy', query.sortBy)
       .set('listing', query.listing)
-      .set('complete', String(query.complete));
+      .set('complete', String(query.complete))
+      .set('query', query.query?.trim() ?? '')
+      .set('status', query.status?.trim() ?? 'all');
 
     return this.http.get<FneInvoiceSyncResult>(`${this.baseUrl}/fne/invoices`, { params });
   }
@@ -255,7 +259,9 @@ export class FneInvoiceService {
       .set('toDate', query.toDate)
       .set('sortBy', query.sortBy)
       .set('listing', query.listing)
-      .set('complete', String(query.complete));
+      .set('complete', String(query.complete))
+      .set('query', query.query?.trim() ?? '')
+      .set('status', query.status?.trim() ?? 'all');
 
     if (username && username.trim()) {
       params = params.set('username', username.trim());

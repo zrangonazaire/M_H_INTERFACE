@@ -55,6 +55,26 @@ public class UserController {
                         .build());
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<HttpResponse> getUsersPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var usersPage = userService.getAllUsers(page, size);
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Users retrieved successfully with pagination")
+                        .statusCode(HttpStatus.OK.value())
+                        .httpStatus(HttpStatus.OK)
+                        .data(Map.of(
+                                "users", usersPage.getContent(),
+                                "currentPage", usersPage.getNumber(),
+                                "totalItems", usersPage.getTotalElements(),
+                                "totalPages", usersPage.getTotalPages()
+                        ))
+                        .build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<HttpResponse> getUserById(@PathVariable Integer id) {
         UserDTO user = userService.getUserById(id);

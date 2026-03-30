@@ -50,6 +50,7 @@ public class SecurityConfig {
                                 "/configuration/ui",
                                 "/configuration/security",
                                 "/webjars/**",
+                                "/metrics/**",
                                 "/actuator/**",
                                 "/actuator")
                         .permitAll()

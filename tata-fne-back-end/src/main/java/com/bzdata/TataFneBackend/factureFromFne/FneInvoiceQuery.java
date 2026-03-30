@@ -11,7 +11,9 @@ public record FneInvoiceQuery(
         LocalDate toDate,
         String sortBy,
         String listing,
-        Boolean complete
+        Boolean complete,
+        String query,
+        String status
 ) {
     public int resolvedPage() {
         return page == null || page < 1 ? 1 : page;
@@ -38,6 +40,21 @@ public record FneInvoiceQuery(
 
     public boolean resolvedComplete() {
         return complete == null || complete;
+    }
+
+    public String resolvedQuery() {
+        return StringUtils.hasText(query) ? query.trim() : "";
+    }
+
+    public String resolvedStatus() {
+        if (!StringUtils.hasText(status)) {
+            return "all";
+        }
+        String normalized = status.trim().toLowerCase();
+        return switch (normalized) {
+            case "tous", "toutes", "all" -> "all";
+            default -> normalized;
+        };
     }
 
     public LocalDate resolvedToDate() {

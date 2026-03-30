@@ -1,11 +1,13 @@
 package com.bzdata.TataFneBackend.user;
 
 import com.bzdata.TataFneBackend.role.RoleDTO;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface UserService {
     List<UserDTO> getAllUsers();
+    Page<UserDTO> getAllUsers(int page, int size);
     UserDTO getUserById(Integer id);
     UserDTO toggleAccountLock(Integer id, boolean accountLocked);
     UserDTO toggleAccountStatus(Integer id, boolean enabled);

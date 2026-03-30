@@ -14,6 +14,7 @@ import {
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 type InvoiceRow = Record<string, unknown>;
+type InvoiceStatus = 'a_certifier' | 'en_attente' | 'rejete' | 'certifie' | 'inconnu';
 
 @Component({
   selector: 'app-liste-factures-clients',
@@ -42,6 +43,10 @@ export class ListeFacturesClientsComponent {
   protected readonly sortBy = signal('-date');
   protected readonly listing = signal<'issued' | 'received'>('issued');
   protected readonly complete = signal(true);
+
+  protected readonly query = signal('');
+  protected readonly statusFilter = signal<'all' | InvoiceStatus>('all');
+  private quickSearchDebounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly isConnecting = signal(false);
   protected readonly isLoading = signal(false);
@@ -99,6 +104,25 @@ export class ListeFacturesClientsComponent {
     if (currentLogin && currentLogin.username !== trimmed) {
       this.fneLogin.set(null);
     }
+  }
+
+  protected onQuickSearchChange(value: string): void {
+    this.query.set(value ?? '');
+    this.page.set(1);
+
+    if (this.quickSearchDebounceHandle) {
+      clearTimeout(this.quickSearchDebounceHandle);
+    }
+
+    this.quickSearchDebounceHandle = setTimeout(() => {
+      this.loadInvoicesFromDatabase();
+    }, 350);
+  }
+
+  protected onStatusFilterChange(value: string): void {
+    this.statusFilter.set((value as 'all' | InvoiceStatus) ?? 'all');
+    this.page.set(1);
+    this.loadInvoicesFromDatabase();
   }
 
   protected connectToFne(): void {
@@ -473,7 +497,9 @@ export class ListeFacturesClientsComponent {
       toDate: this.toDate(),
       sortBy: this.sortBy(),
       listing: this.normalizeListingValue(this.listing()),
-      complete: this.complete()
+      complete: this.complete(),
+      query: this.query(),
+      status: this.statusFilter()
     };
   }
 

@@ -21,7 +21,7 @@ services:
       retries: 5
 
   springboot:
-    image: astairenazaire/bem
+    image: astairenazaire/back-https
     container_name: springboot-modern-hygiene-fne
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/modern_hygiene_db
@@ -29,8 +29,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       SERVER_PORT: 8089
       JAVA_TOOL_OPTIONS: -Duser.language=fr -Duser.country=FR
-    ports:
-      - "8089:8089"
+    expose:
+      - "8089"
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,15 +39,32 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: astairenazaire/fem
+    image: astairenazaire/front-https
     container_name: angular-modern-hygiene-fne
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - springboot
     networks:
       - modern-hygiene-fne-network
     restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    container_name: caddy-modern-hygiene-fne
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - springboot
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - modern-hygiene-fne-network
 
 networks:
   modern-hygiene-fne-network:
@@ -56,3 +73,5 @@ networks:
 volumes:
   postgres:
     driver: local
+  caddy_data:
+  caddy_config:

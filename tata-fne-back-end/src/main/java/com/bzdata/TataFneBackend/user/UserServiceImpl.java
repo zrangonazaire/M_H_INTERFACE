@@ -5,6 +5,9 @@ import com.bzdata.TataFneBackend.role.RoleDTO;
 import com.bzdata.TataFneBackend.role.RoleMapper;
 import com.bzdata.TataFneBackend.role.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +28,12 @@ public class UserServiceImpl implements UserService {
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
         return userMapper.toDTOList(users);
+    }
+
+    @Override
+    public Page<UserDTO> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findAll(pageable).map(userMapper::toDTO);
     }
 
     @Override

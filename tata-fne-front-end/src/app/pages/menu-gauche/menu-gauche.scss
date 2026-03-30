@@ -69,6 +69,100 @@
   transition: background-color 0.15s ease;
 }
 
+.menu-item--group {
+  grid-template-columns: auto 1fr auto;
+}
+
+button.menu-item {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.submenu-item.submenu-item--group {
+  grid-template-columns: auto 1fr auto;
+}
+
+button.submenu-item {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.menu-item[aria-expanded='true'] .chevron,
+.submenu-item[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}
+
+.submenu {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  margin-left: 0.35rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.submenu--nested {
+  margin-left: 0.75rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.submenu-item {
+  color: inherit;
+  text-decoration: none;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: background-color 0.15s ease;
+}
+
+.submenu-item .icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 0.78rem;
+}
+
+.submenu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.submenu-item.active,
+.submenu-item.router-link-active {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
 .menu-item .icon {
   width: 28px;
   height: 28px;
@@ -94,6 +188,11 @@
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+button.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .menu-item.disabled:hover {

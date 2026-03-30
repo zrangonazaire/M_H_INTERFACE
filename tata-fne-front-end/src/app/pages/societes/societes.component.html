@@ -1,0 +1,382 @@
+<div class="layout">
+  <app-menu-gauche></app-menu-gauche>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="breadcrumbs">Pages / Paramètres / Sociétés</div>
+      <div class="top-actions">
+        <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Chargement des données...</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="alert error">
+        {{ error() }}
+      </div>
+    }
+
+    @if (success()) {
+      <div class="alert success">
+        {{ success() }}
+      </div>
+    }
+
+    <div class="api-section">
+      <h3>Gestion des Sociétés</h3>
+
+      <!-- Create Society Form -->
+      <div class="card">
+        <div class="card-header">
+          <h4>Créer une Nouvelle Société</h4>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="createSociety()" class="api-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="raisonSociale">Raison Sociale *</label>
+                <input
+                  type="text"
+                  id="raisonSociale"
+                  [(ngModel)]="newSociety().raisonSociale"
+                  name="raisonSociale"
+                  required
+                  class="form-control"
+                  placeholder="Nom complet de la société"
+                >
+              </div>
+              <div class="form-group">
+                <label for="sigle">Sigle *</label>
+                <input
+                  type="text"
+                  id="sigle"
+                  [(ngModel)]="newSociety().sigle"
+                  name="sigle"
+                  required
+                  class="form-control"
+                  placeholder="Sigle de la société"
+                >
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="formeJuridique">Forme Juridique *</label>
+                <input
+                  type="text"
+                  id="formeJuridique"
+                  [(ngModel)]="newSociety().formeJuridique"
+                  name="formeJuridique"
+                  required
+                  class="form-control"
+                  placeholder="Ex: SARL, SA, SAS"
+                >
+              </div>
+              <div class="form-group">
+                <label for="numeroRccm">Numéro RCCM *</label>
+                <input
+                  type="text"
+                  id="numeroRccm"
+                  [(ngModel)]="newSociety().numeroRccm"
+                  name="numeroRccm"
+                  required
+                  class="form-control"
+                  placeholder="Numéro RCCM"
+                >
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="numeroIfu">Numéro IFU *</label>
+                <input
+                  type="text"
+                  id="numeroIfu"
+                  [(ngModel)]="newSociety().numeroIfu"
+                  name="numeroIfu"
+                  required
+                  class="form-control"
+                  placeholder="Numéro IFU"
+                >
+              </div>
+              <div class="form-group">
+                <label for="capitalSocial">Capital Social *</label>
+                <input
+                  type="number"
+                  id="capitalSocial"
+                  [(ngModel)]="newSociety().capitalSocial"
+                  name="capitalSocial"
+                  required
+                  class="form-control"
+                  placeholder="Capital social"
+                  step="0.1"
+                  min="0"
+                >
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="siegeSocial">Siège Social *</label>
+                <input
+                  type="text"
+                  id="siegeSocial"
+                  [(ngModel)]="newSociety().siegeSocial"
+                  name="siegeSocial"
+                  required
+                  class="form-control"
+                  placeholder="Siège social"
+                >
+              </div>
+              <div class="form-group">
+                <label for="pays">Pays *</label>
+                <input
+                  type="text"
+                  id="pays"
+                  [(ngModel)]="newSociety().pays"
+                  name="pays"
+                  required
+                  class="form-control"
+                  placeholder="Pays"
+                >
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="ville">Ville *</label>
+                <input
+                  type="text"
+                  id="ville"
+                  [(ngModel)]="newSociety().ville"
+                  name="ville"
+                  required
+                  class="form-control"
+                  placeholder="Ville"
+                >
+              </div>
+              <div class="form-group">
+                <label for="telephone">Téléphone *</label>
+                <input
+                  type="tel"
+                  id="telephone"
+                  [(ngModel)]="newSociety().telephone"
+                  name="telephone"
+                  required
+                  class="form-control"
+                  placeholder="Téléphone"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input
+                type="email"
+                id="email"
+                [(ngModel)]="newSociety().email"
+                name="email"
+                required
+                class="form-control"
+                placeholder="Email"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="siteWeb">Site Web</label>
+              <input
+                type="url"
+                id="siteWeb"
+                [(ngModel)]="newSociety().siteWeb"
+                name="siteWeb"
+                class="form-control"
+                placeholder="https://www.example.com"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="dirigeantPrincipal">Dirigeant Principal *</label>
+              <input
+                type="text"
+                id="dirigeantPrincipal"
+                [(ngModel)]="newSociety().dirigeantPrincipal"
+                name="dirigeantPrincipal"
+                required
+                class="form-control"
+                placeholder="Nom du dirigeant principal"
+              >
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="exerciceComptableDebut">Exercice Comptable Début *</label>
+                <input
+                  type="date"
+                  id="exerciceComptableDebut"
+                  [(ngModel)]="newSociety().exerciceComptableDebut"
+                  name="exerciceComptableDebut"
+                  required
+                  class="form-control"
+                >
+              </div>
+              <div class="form-group">
+                <label for="exerciceComptableFin">Exercice Comptable Fin *</label>
+                <input
+                  type="date"
+                  id="exerciceComptableFin"
+                  [(ngModel)]="newSociety().exerciceComptableFin"
+                  name="exerciceComptableFin"
+                  required
+                  class="form-control"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="objetSocial">Objet Social *</label>
+              <textarea
+                id="objetSocial"
+                [(ngModel)]="newSociety().objetSocial"
+                name="objetSocial"
+                required
+                class="form-control"
+                rows="3"
+                placeholder="Description de l'objet social"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="adresse">Adresse Complète *</label>
+              <textarea
+                id="adresse"
+                [(ngModel)]="newSociety().adresse"
+                name="adresse"
+                required
+                class="form-control"
+                rows="3"
+                placeholder="Adresse complète"
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner-small"></span> Création...
+              } @else {
+                Créer Société
+              }
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Societies List -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h4>Liste des Sociétés ({{ societies().length }})</h4>
+        </div>
+        <div class="card-body">
+          @if (societies().length === 0) {
+            <p class="empty-state">Aucune société trouvée.</p>
+          } @else {
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Raison Sociale</th>
+                    <th>Sigle</th>
+                    <th>Forme Juridique</th>
+                    <th>Numéro RCCM</th>
+                    <th>Téléphone</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (soc of societies(); track soc.id) {
+                    <tr>
+                      <td>{{ soc.id }}</td>
+                      <td>{{ soc.raisonSociale }}</td>
+                      <td>{{ soc.sigle }}</td>
+                      <td>{{ soc.formeJuridique }}</td>
+                      <td>{{ soc.numeroRccm }}</td>
+                      <td>{{ soc.telephone }}</td>
+                      <td>{{ soc.email }}</td>
+                      <td>
+                        <button class="btn-secondary btn-sm">Modifier</button>
+                        <button class="btn-danger btn-sm">Supprimer</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls mt-4">
+              <div class="pagination-info">
+                Affichage de {{ pagination().currentPage * pagination().pageSize + 1 }} à
+                {{ getPaginationEndIndex() }}
+                sur {{ pagination().totalItems }} sociétés
+              </div>
+
+              <div class="pagination-actions">
+                <div class="page-size-selector">
+                  <select
+                    [(ngModel)]="pagination().pageSize"
+                    (change)="changePageSize($any($event.target).value)"
+                    class="form-control"
+                  >
+                    <option value="5">5 par page</option>
+                    <option value="10">10 par page</option>
+                    <option value="20">20 par page</option>
+                    <option value="50">50 par page</option>
+                  </select>
+                </div>
+
+                <div class="page-navigation">
+                  <button class="btn-secondary btn-sm" (click)="loadSocietiesPage(0)" [disabled]="pagination().currentPage === 0">
+                    &laquo; Première
+                  </button>
+                  <button
+                    class="btn-secondary btn-sm"
+                    (click)="loadSocietiesPage(pagination().currentPage - 1)"
+                    [disabled]="pagination().currentPage === 0"
+                  >
+                    &lsaquo; Précédente
+                  </button>
+
+                  <span class="page-indicator">
+                    Page {{ pagination().currentPage + 1 }} sur {{ pagination().totalPages }}
+                  </span>
+
+                  <button
+                    class="btn-secondary btn-sm"
+                    (click)="loadSocietiesPage(pagination().currentPage + 1)"
+                    [disabled]="pagination().currentPage >= pagination().totalPages - 1"
+                  >
+                    Suivante &rsaquo;
+                  </button>
+                  <button
+                    class="btn-secondary btn-sm"
+                    (click)="loadSocietiesPage(pagination().totalPages - 1)"
+                    [disabled]="pagination().currentPage >= pagination().totalPages - 1"
+                  >
+                    Dernière &raquo;
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

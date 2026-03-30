@@ -1,0 +1,102 @@
+<div class="layout">
+  <app-menu-gauche></app-menu-gauche>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="breadcrumbs">Pages / Paramètres / Rôles</div>
+      <div class="top-actions">
+        <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Chargement des données...</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="alert error">
+        {{ error() }}
+      </div>
+    }
+
+    @if (success()) {
+      <div class="alert success">
+        {{ success() }}
+      </div>
+    }
+
+    <div class="api-section">
+      <h3>Gestion des Rôles</h3>
+
+      <!-- Create Role Form -->
+      <div class="card">
+        <div class="card-header">
+          <h4>Créer un Nouveau Rôle</h4>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="createRole()" class="api-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="roleCode">Code du Rôle</label>
+                <input type="text" id="roleCode" [(ngModel)]="newRole().code" name="code" required
+                       class="form-control" placeholder="Ex: ADMIN">
+              </div>
+              <div class="form-group">
+                <label for="roleName">Nom du Rôle</label>
+                <input type="text" id="roleName" [(ngModel)]="newRole().nom" name="nom" required
+                       class="form-control" placeholder="Ex: Administrateur">
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner-small"></span> Création...
+              } @else {
+                Créer Rôle
+              }
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Roles List -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h4>Liste des Rôles ({{ roles().length }})</h4>
+        </div>
+        <div class="card-body">
+          @if (roles().length === 0) {
+            <p class="empty-state">Aucun rôle trouvé. Créez votre premier rôle.</p>
+          } @else {
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (role of roles(); track role.code) {
+                    <tr>
+                      <td>{{ role.code }}</td>
+                      <td>{{ role.nom }}</td>
+                      <td>
+                        <button class="btn-secondary btn-sm">Modifier</button>
+                        <button class="btn-danger btn-sm">Supprimer</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

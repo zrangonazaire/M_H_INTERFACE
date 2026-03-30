@@ -1,0 +1,56 @@
+<div class="login-page">
+  <section class="form-panel">
+    <div class="form-card">
+      <div class="headline">
+        <p class="eyebrow">Activation</p>
+        <h1>Activez votre compte</h1>
+        <p class="lede">Saisissez le code à 6 chiffres reçu par email.</p>
+      </div>
+
+      @if (successMessage()) {
+        <div class="success-message">
+          <div class="success-icon">✓</div>
+          <h2>{{ successMessage() }}</h2>
+          <p>Vous allez être redirigé vers la page de connexion.</p>
+        </div>
+      } @else {
+        <form [formGroup]="activationForm" (ngSubmit)="submit()" novalidate>
+          <label class="field-label" for="otp">Code d’activation *</label>
+          <div class="otp-container">
+            @for (digit of otp; track $index) {
+              <input
+                id="otp-{{ $index }}"
+                type="text"
+                maxlength="1"
+                inputmode="numeric"
+                pattern="[0-9]"
+                [value]="digit"
+                (input)="onOtpChange($index, $event)"
+                (paste)="onOtpPaste($event)"
+                class="otp-input"
+                autocomplete="one-time-code"
+              />
+            }
+          </div>
+
+          @if (errorMessage()) {
+            <div class="error">
+              {{ errorMessage() }}
+            </div>
+          }
+
+          <button class="primary" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Activation...' : 'Activer le compte' }}
+          </button>
+
+          <p class="hint">Le code est valable 15 minutes.</p>
+        </form>
+      }
+
+      <div class="actions">
+        <a routerLink="/login" class="link" (click)="goToLogin()">Retour à la connexion</a>
+      </div>
+    </div>
+  </section>
+</div>
+

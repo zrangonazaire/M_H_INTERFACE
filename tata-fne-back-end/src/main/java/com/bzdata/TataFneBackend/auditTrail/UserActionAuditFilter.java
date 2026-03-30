@@ -41,6 +41,7 @@ public class UserActionAuditFilter extends OncePerRequestFilter {
             "/webjars",
             "/configuration",
             "/actuator",
+            "/metrics",
             "/error",
             "/audit-logs",
             "/user-sessions"

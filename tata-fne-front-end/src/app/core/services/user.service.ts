@@ -54,9 +54,11 @@ export class UserService {
   }
 
   getUsersPaginated(page: number, size: number): Observable<{ users: User[], currentPage: number, totalItems: number, totalPages: number }> {
-    return this.http.get<{ users: User[], currentPage: number, totalItems: number, totalPages: number }>(
-      `${this.baseUrl}/users/paginated?page=${page}&size=${size}`
-    );
+    return this.http
+      .get<ApiResponse<{ users: User[]; currentPage: number; totalItems: number; totalPages: number }>>(
+        `${this.baseUrl}/users/paginated?page=${page}&size=${size}`
+      )
+      .pipe(map((response) => response.data));
   }
 
   // Get user by ID
@@ -94,8 +96,6 @@ export class UserService {
       .pipe(map((response) => response.data.user));
   }
    getIfRoleExiteByIdUser(idUser: number,idRole: number): Observable<boolean> {
-    //http://localhost:8089/api/v1/users/11/roles/1/checkroleexist
-    debugger
     return this.http
       .get<boolean>(`${this.baseUrl}/users/${idUser}/roles/${idRole}/checkroleexist`);
       /* 

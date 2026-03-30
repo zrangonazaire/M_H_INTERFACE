@@ -34,19 +34,23 @@ public class FneInvoiceController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "-date") String sortBy,
             @RequestParam(defaultValue = "issued") String listing,
-            @RequestParam(defaultValue = "true") Boolean complete
+            @RequestParam(defaultValue = "true") Boolean complete,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "all") String status
     ) {
-        FneInvoiceQuery query = new FneInvoiceQuery(
+        FneInvoiceQuery invoiceQuery = new FneInvoiceQuery(
                 page,
                 perPage,
                 fromDate,
                 toDate,
                 sortBy,
                 listing,
-                complete
+                complete,
+                query,
+                status
         );
 
-        return ResponseEntity.ok(invoiceService.findFromDatabase(query));
+        return ResponseEntity.ok(invoiceService.findFromDatabase(invoiceQuery));
     }
 
     @PostMapping("/sync")
@@ -58,18 +62,22 @@ public class FneInvoiceController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "-date") String sortBy,
             @RequestParam(defaultValue = "issued") String listing,
-            @RequestParam(defaultValue = "true") Boolean complete
+            @RequestParam(defaultValue = "true") Boolean complete,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "all") String status
     ) {
-        FneInvoiceQuery query = new FneInvoiceQuery(
+        FneInvoiceQuery invoiceQuery = new FneInvoiceQuery(
                 page,
                 perPage,
                 fromDate,
                 toDate,
                 sortBy,
                 listing,
-                complete
+                complete,
+                query,
+                status
         );
 
-        return ResponseEntity.ok(invoiceService.syncAndStore(query, username));
+        return ResponseEntity.ok(invoiceService.syncAndStore(invoiceQuery, username));
     }
 }

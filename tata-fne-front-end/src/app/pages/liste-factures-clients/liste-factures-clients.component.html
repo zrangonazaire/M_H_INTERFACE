@@ -101,6 +101,29 @@
           </button>
         </div>
       </div>
+
+      <div class="filters-grid table-filters">
+        <div class="field">
+          <label>Recherche rapide</label>
+          <input
+            type="text"
+            placeholder="Référence, client, identifiant..."
+            [ngModel]="query()"
+            (ngModelChange)="onQuickSearchChange($event)"
+          />
+        </div>
+        <div class="field">
+          <label>Statut</label>
+          <select [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)">
+            <option value="all">Tous</option>
+            <option value="a_certifier">A certifier</option>
+            <option value="en_attente">En attente</option>
+            <option value="rejete">Rejeté</option>
+            <option value="certifie">Certifié</option>
+          </select>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table>
           <thead>

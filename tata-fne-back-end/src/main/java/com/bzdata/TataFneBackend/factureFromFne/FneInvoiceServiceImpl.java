@@ -68,7 +68,9 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
                     query.resolvedToDate(),
                     query.resolvedSortBy(),
                     query.resolvedListing(),
-                    query.resolvedComplete()
+                    query.resolvedComplete(),
+                    query.resolvedQuery(),
+                    query.resolvedStatus()
             );
 
             JsonNode root = fetchInvoicesWithRefresh(pageQuery, username);
@@ -211,7 +213,65 @@ public class FneInvoiceServiceImpl implements FneInvoiceService {
                         cb.isNull(root.get("source"))
                 );
 
-        Page<FneReceivedInvoiceEntity> resultPage = receivedInvoiceRepository.findAll(byDateRange.and(byListing), pageable);
+        Specification<FneReceivedInvoiceEntity> specification = byDateRange.and(byListing);
+
+        String resolvedQuery = query.resolvedQuery();
+        if (StringUtils.hasText(resolvedQuery)) {
+            String term = resolvedQuery.toLowerCase(Locale.ROOT);
+            String escaped = term
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            String pattern = "%" + escaped + "%";
+
+            Specification<FneReceivedInvoiceEntity> byQuickSearch = (root, cq, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("reference")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("clientCompanyName")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("clientNcc")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("externalId")), pattern, '\\')
+            );
+
+            specification = specification.and(byQuickSearch);
+        }
+
+        String resolvedStatusFilter = query.resolvedStatus();
+        if (StringUtils.hasText(resolvedStatusFilter) && !"all".equalsIgnoreCase(resolvedStatusFilter)) {
+            String statusFilter = resolvedStatusFilter.toLowerCase(Locale.ROOT);
+            Specification<FneReceivedInvoiceEntity> byStatus = (root, cq, cb) -> {
+                var statusField = cb.lower(root.get("status"));
+
+                return switch (statusFilter) {
+                    case "rejete" -> cb.or(
+                            cb.like(statusField, "%rejet%"),
+                            cb.like(statusField, "%reject%"),
+                            cb.like(statusField, "%rejected%")
+                    );
+                    case "certifie" -> cb.or(
+                            cb.like(statusField, "%certifi%"),
+                            cb.like(statusField, "%certified%"),
+                            cb.like(statusField, "%valide%"),
+                            cb.like(statusField, "%validated%")
+                    );
+                    case "en_attente" -> cb.or(
+                            cb.like(statusField, "%attente%"),
+                            cb.like(statusField, "%pending%"),
+                            cb.like(statusField, "%in_progress%"),
+                            cb.like(statusField, "%in progress%")
+                    );
+                    case "a_certifier" -> cb.or(
+                            cb.like(statusField, "%a certifier%"),
+                            cb.like(statusField, "%a_certifier%"),
+                            cb.like(statusField, "%to certify%"),
+                            cb.like(statusField, "%draft%")
+                    );
+                    default -> cb.like(statusField, "%" + statusFilter.replace('_', ' ') + "%");
+                };
+            };
+
+            specification = specification.and(byStatus);
+        }
+
+        Page<FneReceivedInvoiceEntity> resultPage = receivedInvoiceRepository.findAll(specification, pageable);
         Map<String, CreditNoteMetadata> creditNotesByParentId = loadCreditNotesByParentId(resultPage.getContent());
         ArrayNode data = objectMapper.createArrayNode();
         for (FneReceivedInvoiceEntity entity : resultPage.getContent()) {

@@ -1,6 +1,6 @@
-import { Component, signal, OnDestroy, OnInit } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthenticationService } from '../../core/services/authentication.service';
 import { RoleService } from '../../core/services/role.service';
@@ -14,9 +14,7 @@ import { UserService } from '../../core/services/user.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { RegistrationRequest, ChangePasswordRequest, UserDTO } from '../../core/models/auth';
 import { UserActionAuditLog } from '../../core/models/user-action-audit-log';
-import { UserConnectionSession } from '../../core/models/user-connection-session';
 import { UserActionAuditService } from '../../core/services/user-action-audit.service';
-import { UserConnectionSessionService } from '../../core/services/user-connection-session.service';
 import { MenuGauche } from '../menu-gauche/menu-gauche';
 
 @Component({
@@ -26,7 +24,13 @@ import { MenuGauche } from '../menu-gauche/menu-gauche';
   templateUrl: './parametres.component.html',
   styleUrl: './parametres.component.scss'
 })
-export class ParametresComponent implements OnInit, OnDestroy {
+export class ParametresComponent implements OnInit {
+  private readonly supportedTabs = new Set([
+    'departments',
+    'functionalities',
+    'etablissements',
+    'attributions',
+  ]);
   protected readonly auditLogs = signal<UserActionAuditLog[]>([]);
   protected readonly auditModules = signal<string[]>([]);
   protected readonly auditLoading = signal(false);
@@ -40,13 +44,6 @@ export class ParametresComponent implements OnInit, OnDestroy {
   protected readonly userFullName = signal('Compte');
   protected readonly userPdv = signal('Compte');
   protected readonly userEtab = signal('Compte');
-  protected readonly connectionSessions = signal<UserConnectionSession[]>([]);
-  protected readonly connectionAuditLoading = signal(false);
-  protected readonly connectionPagination = signal({
-    currentPage: 0,
-    pageSize: 5
-  });
-  protected readonly currentTimestamp = signal(Date.now());
 
   // API Data
   roles = signal<any[]>([]);
@@ -173,7 +170,7 @@ export class ParametresComponent implements OnInit, OnDestroy {
   ];
 
   // UI State
-  activeTab = signal('audit');
+  activeTab = signal('departments');
   loading = signal(false);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
@@ -192,11 +189,10 @@ export class ParametresComponent implements OnInit, OnDestroy {
   // Role-User Management State
   selectedUserForRole = signal<number | null>(null);
   selectedRoleForUser = signal<string>('');
-  private connectionAuditIntervalId: number | null = null;
-  private countdownIntervalId: number | null = null;
 
   constructor(
     private readonly auth: AuthenticationService,
+    private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly roleService: RoleService,
     private readonly functionalityService: FunctionalityService,
@@ -207,8 +203,7 @@ export class ParametresComponent implements OnInit, OnDestroy {
     private readonly attributionService: AttributionService,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
-    private readonly userActionAuditService: UserActionAuditService,
-    private readonly userConnectionSessionService: UserConnectionSessionService
+    private readonly userActionAuditService: UserActionAuditService
   ) {
     this.userFullName.set(this.auth.getCurrentFullName() ?? 'Compte');
     this.userPdv.set(this.auth.getCurrentPdv() ?? 'Compte');
@@ -216,24 +211,20 @@ export class ParametresComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const tab = (params.get('tab') ?? '').trim();
+      if (!tab) {
+        return;
+      }
+      if (!this.supportedTabs.has(tab)) {
+        return;
+      }
+      if (this.activeTab() !== tab) {
+        this.setActiveTab(tab);
+      }
+    });
+
     this.loadAllData();
-    this.loadAuditModules();
-    this.loadAuditLogs();
-    this.loadConnectionSessions();
-    this.startConnectionAuditRefresh();
-    this.startConnectionCountdown();
-  }
-
-  ngOnDestroy(): void {
-    if (this.connectionAuditIntervalId !== null) {
-      window.clearInterval(this.connectionAuditIntervalId);
-      this.connectionAuditIntervalId = null;
-    }
-
-    if (this.countdownIntervalId !== null) {
-      window.clearInterval(this.countdownIntervalId);
-      this.countdownIntervalId = null;
-    }
   }
 
   loadAllData(): void {
@@ -242,20 +233,10 @@ export class ParametresComponent implements OnInit, OnDestroy {
 
     try {
       // Load all data in parallel
-      this.roleService.getRoles().subscribe({
-        next: (roles) => this.roles.set(roles),
-        error: (err) => this.handleError('Erreur lors du chargement des rôles')
-      });
-
       this.functionalityService.getFunctionalities().subscribe({
 
         next: (functionalities) => this.functionalities.set(functionalities),
         error: (err) => this.handleError('Erreur lors du chargement des fonctionnalités')
-      });
-
-      this.roleFunctionalityService.getRoleFunctionalities().subscribe({
-        next: (roleFunctionalities) => this.roleFunctionalities.set(roleFunctionalities),
-        error: (err) => this.handleError('Erreur lors du chargement des rôles-fonctionnalités')
       });
 
       this.departmentService.getDepartments().subscribe({
@@ -268,16 +249,8 @@ export class ParametresComponent implements OnInit, OnDestroy {
         error: (err) => this.handleError('Erreur lors du chargement des établissements')
       });
 
-      this.societyService.getSocietiesPaginated(this.pagination().currentPage, this.pagination().pageSize).subscribe({
-        next: (result) => {
-          this.societies.set(result.societies);
-          this.pagination.update(p => ({
-            ...p,
-            currentPage: result.currentPage,
-            totalItems: result.totalItems,
-            totalPages: result.totalPages
-          }));
-        },
+      this.societyService.getSocieties().subscribe({
+        next: (societies) => this.societies.set(societies),
         error: (err) => this.handleError('Erreur lors du chargement des sociétés')
       });
 
@@ -285,9 +258,6 @@ export class ParametresComponent implements OnInit, OnDestroy {
         next: (attributions) => this.attributions.set(attributions),
         error: (err) => this.handleError('Erreur lors du chargement des attributions')
       });
-
-      // Load users with pagination
-      this.loadUsersPage(0);
 
       // Also load all users for dropdowns and department management
       this.userService.getUsers().subscribe({
@@ -687,28 +657,6 @@ export class ParametresComponent implements OnInit, OnDestroy {
     return pages.filter(page => page !== -1);
   }
 
-  protected loadConnectionSessions(showLoader = true): void {
-    if (showLoader) {
-      this.connectionAuditLoading.set(true);
-    }
-
-    this.userConnectionSessionService.getRecentSessions(100).subscribe({
-      next: (sessions) => {
-      this.connectionSessions.set(sessions);
-      this.ensureConnectionPageInRange();
-      },
-      error: () => {
-        if (showLoader) {
-          this.notificationService.warning('Le suivi des connexions est momentanement indisponible.');
-        }
-      }
-    }).add(() => {
-      if (showLoader) {
-        this.connectionAuditLoading.set(false);
-      }
-    });
-  }
-
   protected loadAuditLogs(page = this.auditPagination().currentPage): void {
     const nextPage = Math.max(page, 0);
     this.auditLoading.set(true);
@@ -816,78 +764,6 @@ export class ParametresComponent implements OnInit, OnDestroy {
     return auditLog.userEmail?.trim() || 'Session non authentifiee';
   }
 
-  protected getCurrentConnection(): UserConnectionSession | null {
-    return this.connectionSessions().find((session) => session.currentSession)
-      ?? this.connectionSessions().find((session) => session.status === 'ACTIVE')
-      ?? null;
-  }
-
-  protected getVisibleConnectionSessions(): UserConnectionSession[] {
-    const { currentPage, pageSize } = this.connectionPagination();
-    const startIndex = currentPage * pageSize;
-    return this.connectionSessions().slice(startIndex, startIndex + pageSize);
-  }
-
-  protected getConnectionPageCount(): number {
-    const totalItems = this.connectionSessions().length;
-    const pageSize = this.connectionPagination().pageSize;
-    return Math.max(1, Math.ceil(totalItems / pageSize));
-  }
-
-  protected changeConnectionPage(page: number): void {
-    const maxPage = this.getConnectionPageCount() - 1;
-    const nextPage = Math.min(Math.max(page, 0), maxPage);
-
-    this.connectionPagination.update((pagination) => ({
-      ...pagination,
-      currentPage: nextPage
-    }));
-  }
-
-  protected changeConnectionPageSize(event: Event): void {
-    const target = event.target as HTMLSelectElement | null;
-    if (!target?.value) {
-      return;
-    }
-
-    const pageSize = Number(target.value);
-    this.connectionPagination.set({
-      currentPage: 0,
-      pageSize
-    });
-  }
-
-  protected getConnectionStartIndex(): number {
-    if (this.connectionSessions().length === 0) {
-      return 0;
-    }
-
-    return this.connectionPagination().currentPage * this.connectionPagination().pageSize + 1;
-  }
-
-  protected getConnectionEndIndex(): number {
-    const { currentPage, pageSize } = this.connectionPagination();
-    return Math.min((currentPage + 1) * pageSize, this.connectionSessions().length);
-  }
-
-  protected getConnectionRemainingMs(connection: UserConnectionSession): number {
-    const expiresAtMs = this.parseConnectionDate(connection.expiresAt);
-    if (expiresAtMs === null) {
-      return connection.remainingMs;
-    }
-
-    if (connection.status === 'ACTIVE' && connection.disconnectedAt === null) {
-      return Math.max(0, expiresAtMs - this.currentTimestamp());
-    }
-
-    const disconnectedAtMs = this.parseConnectionDate(connection.disconnectedAt);
-    if (disconnectedAtMs !== null) {
-      return Math.max(0, expiresAtMs - disconnectedAtMs);
-    }
-
-    return Math.max(0, connection.remainingMs);
-  }
-
   protected formatConnectionDate(value: string | null): string {
     if (!value) {
       return '-';
@@ -905,68 +781,6 @@ export class ParametresComponent implements OnInit, OnDestroy {
     }).format(date);
   }
 
-  protected formatConnectionRemaining(durationMs: number): string {
-    if (durationMs === null || Number.isNaN(durationMs)) {
-      return 'Non disponible';
-    }
-
-    if (durationMs <= 0) {
-      return 'Expiree';
-    }
-
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    if (hours > 0) {
-      return `${hours} h ${minutes} min`;
-    }
-
-    if (minutes > 0) {
-      return `${minutes} min ${seconds}s`;
-    }
-
-    return `${seconds}s`;
-  }
-
-  protected getConnectionStatusClass(status: UserConnectionSession['status']): string {
-    switch (status) {
-      case 'ACTIVE':
-        return 'connection-status connection-status--active';
-      case 'LOGGED_OUT':
-        return 'connection-status connection-status--logged-out';
-      case 'EXPIRED':
-        return 'connection-status connection-status--expired';
-      default:
-        return 'connection-status';
-    }
-  }
-
-  protected formatConnectionStatus(status: UserConnectionSession['status']): string {
-    return status;
-  }
-
-  private startConnectionAuditRefresh(): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    this.connectionAuditIntervalId = window.setInterval(() => {
-      this.loadConnectionSessions(false);
-    }, 30000);
-  }
-
-  private startConnectionCountdown(): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    this.countdownIntervalId = window.setInterval(() => {
-      this.currentTimestamp.set(Date.now());
-    }, 1000);
-  }
-
   private parseConnectionDate(value: string | null): number | null {
     if (!value) {
       return null;
@@ -976,28 +790,11 @@ export class ParametresComponent implements OnInit, OnDestroy {
     return Number.isNaN(timestamp) ? null : timestamp;
   }
 
-  private ensureConnectionPageInRange(): void {
-    const maxPage = this.getConnectionPageCount() - 1;
-    if (this.connectionPagination().currentPage <= maxPage) {
-      return;
-    }
-
-    this.connectionPagination.update((pagination) => ({
-      ...pagination,
-      currentPage: maxPage
-    }));
-  }
-
   // UI Helpers
   setActiveTab(tab: string): void {
     this.activeTab.set(tab);
     this.error.set(null);
     this.success.set(null);
-
-    if (tab === 'audit' && this.auditLogs().length === 0) {
-      this.loadAuditModules();
-      this.loadAuditLogs();
-    }
   }
 
   private buildAuditFilters(): {

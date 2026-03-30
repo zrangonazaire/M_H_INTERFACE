@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface UserActionAuditRepository extends JpaRepository<UserActionAudit, Long>, JpaSpecificationExecutor<UserActionAudit> {
 
+    long countByResult(UserActionAuditResult result);
+
     @Query("select distinct audit.module from UserActionAudit audit where audit.module is not null order by audit.module asc")
     List<String> findDistinctModules();
 

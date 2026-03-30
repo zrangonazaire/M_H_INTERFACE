@@ -23,10 +23,110 @@
       <span class="icon">L</span>
       Liste Factures Clients/Fournisseurs
     </a>
-    <a class="menu-item" [class.disabled]="!hasAdminRole()" routerLink="/parametres" routerLinkActive="active">
-      <span class="icon">P</span>
-      Parametres
-    </a>
+
+    <div class="menu-group">
+      <button
+        class="menu-item menu-item--group"
+        type="button"
+        [class.active]="isParametresActive()"
+        [class.disabled]="!hasAdminRole()"
+        [disabled]="!hasAdminRole()"
+        (click)="toggleParametresMenu()"
+        [attr.aria-expanded]="parametresExpanded()"
+        aria-controls="parametres-submenu"
+      >
+        <span class="icon">⚙</span>
+        Paramètres
+        <span class="chevron" aria-hidden="true">▾</span>
+      </button>
+
+      @if (parametresExpanded() && hasAdminRole()) {
+        <div id="parametres-submenu" class="submenu">
+          <button
+            class="submenu-item submenu-item--group"
+            type="button"
+            (click)="toggleObservabiliteMenu()"
+            [attr.aria-expanded]="observabiliteExpanded()"
+            aria-controls="observabilite-submenu"
+          >
+            <span class="icon">O</span>
+            Observabilité
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+
+          @if (observabiliteExpanded()) {
+            <div id="observabilite-submenu" class="submenu submenu--nested">
+              <a class="submenu-item" routerLink="/metriques" routerLinkActive="active">
+                <span class="icon">M</span>
+                Métriques et sessions
+              </a>
+              <a class="submenu-item" routerLink="/journal-audit" routerLinkActive="active">
+                <span class="icon">J</span>
+                Journal d'audit
+              </a>
+              <a class="submenu-item" routerLink="/historique-excel" routerLinkActive="active">
+                <span class="icon">X</span>
+                Historique fichiers Excel
+              </a>
+            </div>
+          }
+
+          <button
+            class="submenu-item submenu-item--group"
+            type="button"
+            (click)="toggleFneMenu()"
+            [attr.aria-expanded]="fneExpanded()"
+            aria-controls="fne-submenu"
+          >
+            <span class="icon">F</span>
+            FNE
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+
+          @if (fneExpanded()) {
+            <div id="fne-submenu" class="submenu submenu--nested">
+              <a class="submenu-item" routerLink="/configuration-fne-active" routerLinkActive="active">
+                <span class="icon">C</span>
+                Configuration FNE active
+              </a>
+            </div>
+          }
+
+          <button
+            class="submenu-item submenu-item--group"
+            type="button"
+            (click)="toggleConfigurationMenu()"
+            [attr.aria-expanded]="configurationExpanded()"
+            aria-controls="configuration-submenu"
+          >
+            <span class="icon">⚙</span>
+            Configuration
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+
+          @if (configurationExpanded()) {
+            <div id="configuration-submenu" class="submenu submenu--nested">
+              <a class="submenu-item" routerLink="/societes" routerLinkActive="active">
+                <span class="icon">S</span>
+                Sociétés
+              </a>
+              <a class="submenu-item" routerLink="/utilisateurs" routerLinkActive="active">
+                <span class="icon">U</span>
+                Utilisateurs
+              </a>
+              <a class="submenu-item" routerLink="/roles" routerLinkActive="active">
+                <span class="icon">R</span>
+                Rôles
+              </a>
+              <a class="submenu-item" routerLink="/attribution-roles" routerLinkActive="active">
+                <span class="icon">A</span>
+                Attribution rôles
+              </a>
+            </div>
+          }
+        </div>
+      }
+    </div>
   </nav>
 
   <div class="logout">

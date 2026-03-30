@@ -1,0 +1,325 @@
+<div class="layout">
+  <app-menu-gauche></app-menu-gauche>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="header-main">
+        <div class="breadcrumbs">Home / Parametres / Metriques et sessions</div>
+        <h1>Métriques et sessions</h1>
+        <p class="lede">
+          Surveillance en temps réel : HTTP, ressources système, base de données, métriques FNE et sessions utilisateurs.
+          Rafraîchissement automatique toutes les 30 secondes.
+        </p>
+      </div>
+
+      <div class="top-actions">
+        <a class="link">{{ userFullName() }} - {{ userPdv() }} - {{ userEtab() }}</a>
+      </div>
+    </header>
+
+    @if (error()) {
+      <div class="alert error">{{ error() }}</div>
+    }
+    @if (loadState() === 'loading') {
+      <div class="alert info">Chargement des métriques…</div>
+    }
+
+    @if (metrics()) {
+      <section class="summary">
+        <div class="metric-card">
+          <div class="metric-icon icon-blue">✓</div>
+          <div class="metric-body">
+            <div class="metric-label">STATUT</div>
+            <div class="metric-value">{{ metrics()!.status }}</div>
+            <div class="metric-hint">Collecte : {{ formatClock(metrics()!.collectedAt) }}</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-sky">⏱</div>
+          <div class="metric-body">
+            <div class="metric-label">TEMPS DE RÉPONSE MOYEN</div>
+            <div class="metric-value">{{ formatMs(metrics()!.http.avgResponseTimeMs) }}</div>
+            <div class="metric-hint">Max : {{ formatMs(metrics()!.http.maxResponseTimeMs) }}</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-green">✓</div>
+          <div class="metric-body">
+            <div class="metric-label">TAUX DE SUCCÈS</div>
+            <div class="metric-value">{{ formatPercent(metrics()!.http.successRatePct) }}</div>
+            <div class="metric-hint">
+              {{ metrics()!.http.successRequests }} / {{ metrics()!.http.totalRequests }} requêtes
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-red">!</div>
+          <div class="metric-body">
+            <div class="metric-label">TAUX D’ERREUR</div>
+            <div class="metric-value">{{ formatPercent(metrics()!.http.errorRatePct) }}</div>
+            <div class="metric-hint">{{ metrics()!.http.errorRequests }} échec(s)</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span class="section-icon">⚙</span>
+          Ressources système
+        </div>
+
+        <div class="cards-4">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">CPU</span>
+              <span class="card-value">{{ formatPercent(metrics()!.system.cpuUsagePct) }}</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar" [style.width.%]="clampPercent(metrics()!.system.cpuUsagePct)"></div>
+            </div>
+            <div class="card-sub">Utilisation du processus JVM</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Mémoire JVM</span>
+              <span class="card-value">{{ formatPercent(metrics()!.system.jvmMemoryUsagePct) }}</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar green" [style.width.%]="clampPercent(metrics()!.system.jvmMemoryUsagePct)"></div>
+            </div>
+            <div class="card-sub">
+              {{ formatMo(metrics()!.system.jvmUsedBytes) }} / {{ formatMo(metrics()!.system.jvmMaxBytes) }}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Statut BDD</span>
+              <span
+                class="card-value"
+                [class.status-up]="isUp(metrics()!.system.dbStatus)"
+                [class.status-down]="!isUp(metrics()!.system.dbStatus)"
+              >
+                {{ metrics()!.system.dbStatus }}
+              </span>
+            </div>
+            <div class="card-sub">Validation : {{ formatMs(metrics()!.system.dbValidationTimeMs) }}</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Taille BDD</span>
+              <span class="card-value">{{ formatDataSize(metrics()!.system.dbSizeBytes) }}</span>
+            </div>
+            <div class="card-sub">Espace disque occupé par la base</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Connexions BDD</span>
+              <span class="card-value">{{ formatPercent(metrics()!.system.dbUsagePct) }}</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar amber" [style.width.%]="clampPercent(metrics()!.system.dbUsagePct)"></div>
+            </div>
+            <div class="card-sub">
+              {{ metrics()!.system.dbActiveConnections ?? 0 }} actives / {{ metrics()!.system.dbMaxConnections ?? 0 }} max (HikariCP)
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span class="section-icon">🧾</span>
+          Métriques FNE — Factures
+        </div>
+
+        <div class="cards-4">
+          <div class="kpi">
+            <div class="kpi-icon purple">▦</div>
+            <div class="kpi-body">
+              <div class="kpi-label">TOTAL FACTURES</div>
+              <div class="kpi-value">{{ metrics()!.fneInvoices.total }}</div>
+            </div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-icon green">✓</div>
+            <div class="kpi-body">
+              <div class="kpi-label">CERTIFIÉES FNE</div>
+              <div class="kpi-value">{{ metrics()!.fneInvoices.certified }}</div>
+              <div class="kpi-sub">{{ formatPercent(metrics()!.fneInvoices.certifiedRatePct) }}</div>
+            </div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-icon amber">⧗</div>
+            <div class="kpi-body">
+              <div class="kpi-label">EN ATTENTE</div>
+              <div class="kpi-value">{{ metrics()!.fneInvoices.pending }}</div>
+            </div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-icon red">✕</div>
+            <div class="kpi-body">
+              <div class="kpi-label">ANNULÉES</div>
+              <div class="kpi-value">{{ metrics()!.fneInvoices.cancelled }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <span class="section-icon">🧭</span>
+          Journal d’audit
+        </div>
+
+        <div class="cards-3 audit-grid">
+          <div class="kpi compact">
+            <div class="kpi-icon sky">▤</div>
+            <div class="kpi-body">
+              <div class="kpi-label">TOTAL ACTIONS</div>
+              <div class="kpi-value">{{ metrics()!.audit.totalActions }}</div>
+            </div>
+          </div>
+
+          <div class="kpi compact">
+            <div class="kpi-icon green">✓</div>
+            <div class="kpi-body">
+              <div class="kpi-label">SUCCÈS</div>
+              <div class="kpi-value">{{ metrics()!.audit.successActions }}</div>
+            </div>
+          </div>
+
+          <div class="kpi compact">
+            <div class="kpi-icon red">!</div>
+            <div class="kpi-body">
+              <div class="kpi-label">ÉCHECS</div>
+              <div class="kpi-value">{{ metrics()!.audit.errorActions }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon">👥</span>
+        Sessions utilisateurs
+      </div>
+
+      <section class="session-table-card">
+        <div class="session-table-card__header">
+          <div>
+            <h4>Suivi des connexions utilisateurs</h4>
+            <p>Journal récent des connexions, activités et déconnexions des utilisateurs.</p>
+          </div>
+
+          @if (getCurrentConnection(); as currentConnection) {
+            <div class="connection-summary">
+              <span>Connecté le {{ formatConnectionDate(currentConnection.connectedAt) }}</span>
+              <span>Déconnexion auto dans {{ formatConnectionRemaining(getConnectionRemainingMs(currentConnection)) }}</span>
+            </div>
+          }
+        </div>
+
+        @if (connectionAuditLoading()) {
+          <div class="session-table-card__empty">
+            Chargement du suivi des connexions...
+          </div>
+        } @else if (connectionError()) {
+          <div class="session-table-card__empty">
+            {{ connectionError() }}
+          </div>
+        } @else if (connectionSessions().length === 0) {
+          <div class="session-table-card__empty">
+            Aucune connexion historisée pour le moment.
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="data-table connection-table">
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Connexion</th>
+                  <th>Dernière activité</th>
+                  <th>Déconnexion</th>
+                  <th>Statut</th>
+                  <th>Temps restant</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (connection of getVisibleConnectionSessions(); track connection.id) {
+                  <tr [class.connection-table__row--current]="connection.currentSession">
+                    <td>
+                      <div class="connection-user">
+                        <strong>{{ connection.userFullName }}</strong>
+                        <span>{{ connection.userEmail }}</span>
+                      </div>
+                    </td>
+                    <td>{{ formatConnectionDate(connection.connectedAt) }}</td>
+                    <td>{{ formatConnectionDate(connection.lastActivityAt) }}</td>
+                    <td>{{ formatConnectionDate(connection.disconnectedAt) }}</td>
+                    <td>
+                      <span [class]="getConnectionStatusClass(connection.status)">
+                        {{ formatConnectionStatus(connection.status) }}
+                      </span>
+                    </td>
+                    <td>{{ formatConnectionRemaining(getConnectionRemainingMs(connection)) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="connection-pagination">
+            <div class="connection-pagination__info">
+              Affichage de {{ getConnectionStartIndex() }} à {{ getConnectionEndIndex() }} sur {{ connectionSessions().length }} connexions
+            </div>
+
+            <div class="connection-pagination__actions">
+              <select
+                class="form-control connection-pagination__size"
+                [value]="connectionPagination().pageSize"
+                (change)="changeConnectionPageSize($event)"
+              >
+                <option [value]="5">5</option>
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+              </select>
+
+              <button
+                type="button"
+                class="btn-secondary btn-sm"
+                (click)="changeConnectionPage(connectionPagination().currentPage - 1)"
+                [disabled]="connectionPagination().currentPage === 0"
+              >
+                Précédente
+              </button>
+
+              <span class="connection-pagination__page">
+                Page {{ connectionPagination().currentPage + 1 }} / {{ getConnectionPageCount() }}
+              </span>
+
+              <button
+                type="button"
+                class="btn-secondary btn-sm"
+                (click)="changeConnectionPage(connectionPagination().currentPage + 1)"
+                [disabled]="connectionPagination().currentPage >= getConnectionPageCount() - 1"
+              >
+                Suivante
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    </section>
+  </div>
+</div>
